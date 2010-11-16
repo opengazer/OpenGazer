@@ -1,0 +1,140 @@
+Download:
+
+1. Tarball from 
+
+   http://www.inference.phy.cam.ac.uk/opengazer/
+
+2. Or from sourceforge 
+
+   http://sourceforge.net/projects/opengazer
+
+   $ svn co https://opengazer.svn.sourceforge.net/svnroot/opengazer
+
+Requirements:
+  vxl >= 1.5.1	        http://vxl.sourceforge.net/
+  opencv >= 0.9.7	http://sourceforge.net/projects/opencvlibrary
+  gtkmm-2.4 >= 2.8.0	http://www.gtkmm.org/
+  cairomm-1.0 >= 0.6.0  http://cairographics.org/cairomm/
+  boost >= 1.32.0	http://www.boost.org/
+	
+Under Debian testing:
+
+  # apt-get install libcv-dev libhighgui-dev libcvaux-dev \
+    	    	    libgtkmm-2.4-dev libcairomm-1.0-dev libboost-dev
+
+  (vxl must be installed from the source)		    
+  Important: in vxl's ccmake, set BUILD_SHARED_LIBS to ON.
+
+Compilation:
+
+  > tar xzf opengazer-0.1.tar.gz 
+  > cd opengazer-0.1
+
+  Edit the VXLDIR variable in the Makefile to point to your vxl
+  include headers
+
+  > make 
+
+  Define the variable LD_LIBRARY_PATH to point to your vxl shared libraries
+
+  > export LD_LIBRARY_PATH=$VXLDIR/lib
+
+Instructions:
+
+0. Make sure that you have read access to webcam device file
+   (/dev/video0).  In Debian/Ubuntu you can achieve that by adding
+   yourself to the video group
+
+   > sudo addgroup $USER video
+
+   Then logout and login again (important).
+
+1. Set up the drivers to your camera correctly.  Put the camera into
+   640x480 mode.  With pwc drivers you have to say
+
+   > sudo rmmod pwc
+   > sudo modprobe pwc size=vga
+
+2. Put the camera centrally under you monitor, so that the height of
+   your face in the image is about half of the height of the image,
+   and close to the centre of the image.  Make sure the background
+   light level is reasonably constant across the image.
+
+3. Make VXLDIR point to your vxl libraries, for example 
+
+   > export VXLDIR=/opt
+
+   Define the variable LD_LIBRARY_PATH to point to your vxl shared libraries
+
+   > export LD_LIBRARY_PATH=$VXLDIR/lib:$LD_LIBRARY_PATH
+
+   Start the opengazer program
+
+   > ./opengazer
+
+4. While keeping your head still, use the mouse to select points on
+   your face that will be used to track your head.  The first two
+   points much be eye corners.  Select at least two other salient
+   points (recommended 7-8 in total).  Double-clicking on an existing
+   point removes it.  The first two points (corresponding to eye
+   corners) will be blue, the other will be green.  When a point
+   becomes red, it means that it lost track.  When you are happy with
+   your selection, click "Save points".
+
+   You need at least four points in total, but I recommend 7-8.  Once
+   they have been selected, the position of your head will be tracked
+   and the rotation estimates displayed as white and blue lines from
+   the center of the screen.  The blue line indicates the difference
+   in head position between the first frame and the current position:
+   make sure that it is as short as possible at all times!
+
+5. Now you can exit the program, run it again, click "load points",
+   and the points you selected in point 3 should appear.  You have
+   probably noted a white and blue line in the center of the image;
+   they indicate the current rotation of your head.  The shorter the
+   blue line, the closer your head position is to the original.  While
+   using the gaze tracker, try to orient your head so that the length
+   of the blue line is as small as possible.
+
+6. The next step is calibration.  Remember, in order for this gaze
+   tracker to work, you must keep your head absolutely still.  Press
+   "Calibrate".  You will now be asked to look at various points on
+   the screen, indicated by a red circle.  Remember: do not move your
+   head, only your eyes!  
+
+7. During the calibration and afterwards, a small blue will indicate
+   the estimated position of your gaze focus.
+
+
+
+DEVELOPING OPENGAZER
+
+1. The coordinates of the calibration points are stored in
+   "calpoints.txt".  Feel free to change them.  For example, by having
+   only two calibration points: one on the left of the screen, and the
+   other on the right, you can use opengazer as a binary switch.
+
+2. Opengazer shows the current estimate of the gaze point as a small
+   purle circle on the screen.  
+
+   It also outputs this information to the standard output.  Each line
+   has the format
+
+   Xcoordinate Ycoordinate -> IDoftheclosestcalibrationpoint
+
+   Opengazer also opens a local UDP socket at port 20230 to which it
+   sends the current estimates X and Y.  
+
+   To add more output methods, or to change the existing one, take a
+   look at files "OutputMethods.cpp" and "OutputMethods.h".
+
+3. Other files used by opengazer
+
+   calpoints.txt   Coordinates calibration points 
+   		   (as fraction of the screen)
+
+   points.txt      Coordinates of the tracking points on the user face, in
+   		   pixels.  This file is saved when the user clicks
+   		   "Save points"
+   
+   
