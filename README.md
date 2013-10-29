@@ -1,13 +1,13 @@
 CVC Eye-Tracker
 ===========================
-The eye-tracking software is based on the open source project [Opengazer] (http://www.inference.phy.cam.ac.uk/opengazer/)
+This eye-tracking software is based on the open source project [Opengazer] (http://www.inference.phy.cam.ac.uk/opengazer/)
 and is improved with several features. The updated software supports video recording
 for offline processing, offline batch processing, enhanced video outputting for visual
 analysis of experiments and a head repositioning feature which allows users to correct
 their head pose during eye-tracker usage in order to improve accuracy.
 
-This software is the result of on-going research in Computer Vision Center (CVC) and 
-Universitat Autonoma de Barcelona, Barcelona. 
+This software is the result of [on-going research] (http://mv.cvc.uab.es/projects/eye-tracker) in [Computer Vision Center (CVC)] (http://www.cvc.uab.es/index.asp?idioma=en) and 
+[Universitat Autònoma de Barcelona] (http://uab.es/english/), Barcelona.
 
 The installation steps for Mac OS X and Ubuntu systems are below.
 
@@ -25,16 +25,16 @@ might take a long time since all these packages have a lot of dependencies:
   - sudo port install gtkmm cairomm gsl cmake ffmpeg opencv fann boost vxl
 
 4. Download and install [XQuartz] (http://xquartz.macosforge.org/landing/)
-5. Open a terminal and build software:
+5. Open a terminal and build the software:
   - cd opengazer
   - make
 
-NOTES: For reference, during my development phase, I was compiling with Apple's GCC (
-gcc version 4.2.1 (Apple Inc. build 5658)). And these are the versions of the software
+NOTES: For reference, during my development phase, I was compiling with Apple's GCC (gcc
+version 4.2.1 (Apple Inc. build 5658)). And these are the versions of the software
 that I was using:
 
-  - cairomm @1.10.0_2+x11
   - gtkmm @2.24.4_0+x11
+  - cairomm @1.10.0_2+x11
   - gsl @1.16_0
   - cmake @2.8.11.2_0
   - ffmpeg @1.2.2_0+gpl2
@@ -44,7 +44,7 @@ that I was using:
   - vxl @1.17.0_0
 
 Version @2.4.6_1 of OpenCV from MacPorts has a bug which prevents access to the webcam. In such a
-case, a preferred version (@2.4.6_0) can be installed with the following steps (steps from [here] (http://www.codedrop.ca/blog/archives/56)):
+case, the preferred version (@2.4.6_0) can be installed with the following steps (steps from [here] (http://www.codedrop.ca/blog/archives/56)):
 
 1. Modify the configuration file of MacPorts:
   - sudo nano /opt/local/etc/macports/sources.conf
@@ -89,13 +89,13 @@ Tested on a clean installation of Ubuntu 12.04 with a Logitech webcam.
 
 4. Build VXL from source
   - Download and extract [VXL (1.14.0) source] (http://sourceforge.net/projects/vxl/files/vxl/1.14/vxl-1.14.0.zip/download), create a new directory named "build" under "vxl-1.14.0"
-  - Open terinal, change directory to build and run:
+  - Open terinal, change directory to "build" and run:
     - ccmake  ..
   - Set the following options:
-    - // ".. advanced options? [No]:"    YES
-    - // BUILD_SHARED_LIBS=ON
-    - // EXAMPLES=OFF
-    - // TESTING=OFF
+    - "... advanced options? [No]:"    YES
+    - BUILD_SHARED_LIBS=ON
+    - EXAMPLES=OFF
+    - TESTING=OFF
   - If you receive errors about python, set python directories to empty in the configuration
   - Build the library:
     - make
@@ -122,13 +122,13 @@ Usage Instructions
 
 
 		OPTIONS:
-			subject:	Subject's name to be used in the output file name.
-			resolution:	Resolution for the camera. 480 for 640x480 resolution, 720 for 1280x720.
-			setup:		Experiment setup name and also the folder to read the test and calibration point locations.
+			subject:		Subject's name to be used in the output file name.
+			resolution:		Resolution for the camera. 480 for 640x480 resolution, 720 for 1280x720.
+			setup:			Experiment setup name and also the folder to read the test and calibration point locations.
 			headdistance:	Subject's head distance in cm to be included in the output file for automatic error calculation purposes.
-			record:		Whether a video of the experiment should be recorded for offline processing purposes.
-			overlay:	Whether target point and estimation pointers are written as an overlay to the recorded video. Should not be used when offline processing is desired on the output video.
-			input:		Input video path in case of offline processing.
+			record:			Whether a video of the experiment should be recorded for offline processing purposes.
+			overlay:		Whether target point and estimation pointers are written as an overlay to the recorded video. Should not be used when offline processing is desired on the output video.
+			input:			Input video path in case of offline processing.
 
 
 		SAMPLE USAGES:
@@ -147,21 +147,13 @@ Usage Instructions
 4. Initialize the face tracking component by pressing the button
    "Choose Points". 
 
-5. Now you can exit the program, run it again, click "load points",
-   and the points you selected in point 3 should appear.  You have
-   probably noted a white and blue line in the center of the image;
-   they indicate the current rotation of your head.  The shorter the
-   blue line, the closer your head position is to the original.  While
-   using the gaze tracker, try to orient your head so that the length
-   of the blue line is as small as possible.
-
-6. The next step is calibration.  Remember, in order for this gaze
+5. The next step is calibration.  Remember, in order for this gaze
    tracker to work, you must keep your head absolutely still.  Press
    "Calibrate".  You will now be asked to look at various points on
    the screen, indicated by a target sign.  Remember: do not move your
    head, only your eyes! 
 
-7. When calibration is finished, the sample frog game will be started.
+6. When calibration is finished, the sample frog game will be started.
    Here, the aim is finding the frog which is hidden in a cluttered
    environment. You have to use your gaze to locate the frog and stare
    at it for a few seconds until the frog is teleported to another
