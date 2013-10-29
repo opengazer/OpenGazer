@@ -10,6 +10,7 @@ public:
     FaceDetector(char *cascadename="haarcascade_frontalface_alt.xml");
     ~FaceDetector();
     vector<CvRect> detect(const IplImage *img);
+    vector<CvRect> detect_in_grayscale(const IplImage *img);
 };
 
 

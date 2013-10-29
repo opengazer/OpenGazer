@@ -39,6 +39,7 @@ TrackingSystem::TrackingSystem(CvSize size):
 void TrackingSystem::doprocessing(const IplImage *frame, 
 				  IplImage *image) 
 {
+	if(tracker_status != STATUS_PAUSED) {
     tracker.track(frame, 2);
     if (tracker.countactivepoints() < 4) {
 	tracker.draw(image);
@@ -47,11 +48,13 @@ void TrackingSystem::doprocessing(const IplImage *frame,
 
     headtracker.updatetracker();
     eyex.extractEye(frame);	// throws Tracking Exception
-    gazetracker.update(eyex.eyefloat.get());
+    gazetracker.update(eyex.eyefloat.get(), eyex.eyegrey.get());
+    gazetracker.update_left(eyex.eyefloat_left.get(), eyex.eyegrey_left.get());
 	
     displayeye(image, 0, 0, 0, 2);
     tracker.draw(image);
     headtracker.draw(image);
+}
 }
 
 void TrackingSystem::displayeye(IplImage *image, 
@@ -63,6 +66,7 @@ void TrackingSystem::displayeye(IplImage *image,
 
     static IplImage *eyegreytemp = cvCreateImage( eyesize, 8, 1 );
     static FeatureDetector features(EyeExtractor::eyesize);
+    static FeatureDetector features_left(EyeExtractor::eyesize);
 
     features.addSample(eyex.eyegrey.get());
 
@@ -80,6 +84,20 @@ void TrackingSystem::displayeye(IplImage *image,
 
     cvConvertScale(features.getMean().get(),  eyegreytemp);
     cvSetImageROI(image, cvRect(basex, basey, eyedx*2, eyedy*2));
+    cvCvtColor(eyegreytemp, image, CV_GRAY2RGB);
+
+	// ONUR DUPLICATED CODE FOR LEFT EYE
+    features_left.addSample(eyex.eyegrey_left.get());
+
+    cvSetImageROI(image, cvRect(basex + 100, basey, eyedx*2, eyedy*2));
+    cvCvtColor(eyex.eyegrey_left.get(), image, CV_GRAY2RGB);
+
+    cvSetImageROI(image, cvRect(basex + 100, basey + stepy*1,
+				    eyedx*2, eyedy*2));
+    cvCvtColor(eyex.eyegrey_left.get(), image, CV_GRAY2RGB);
+
+    cvConvertScale(features_left.getMean().get(),  eyegreytemp);
+    cvSetImageROI(image, cvRect(basex + 100, basey, eyedx*2, eyedy*2));
     cvCvtColor(eyegreytemp, image, CV_GRAY2RGB);
 
 // //     features.getVariance(eyegreytemp);

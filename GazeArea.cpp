@@ -15,9 +15,19 @@ GazeArea::GazeArea(int argc, char **argv,
 GazeArea::~GazeArea(void) {}
 
 bool GazeArea::on_idle() {
-    gazetracker.doprocessing();
-    queue_draw();
-    return true;
+	try {
+	    gazetracker.doprocessing();
+		queue_draw();
+		gazetracker.simulateClicks();
+		return true;	
+	}
+  	catch (QuitNow)
+    {
+		gazetracker.cleanUp();
+		exit(0);
+    }
+
+	return true;
 }
 
 bool GazeArea::on_expose_event(GdkEventExpose *event) {
@@ -57,7 +67,7 @@ bool GazeArea::on_button_press_event(GdkEventButton *event) {
 	    PointTracker &tracker = gazetracker.tracking->tracker;
 	    int closest = tracker.getClosestTracker(point);
 	    if (closest >= 0 &&
-		point.distance(tracker.currentpoints[closest]) <= 10)
+		point.distance(tracker.currentpoints[closest]) <= 25)
 		lastPointId = closest;
 	    else
 		lastPointId = -1;

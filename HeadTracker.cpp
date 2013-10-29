@@ -1,5 +1,17 @@
 #include "HeadTracker.h"
 #include "FMatrixAffineCompute.cpp"
+#include <fstream>
+
+// Decide whether two numbers have the same sign
+bool issamesign(int a, int b) { 
+	if(a > 0 && b < 0)
+		return false;
+	
+	if(a < 0 && b > 0)
+		return false;
+	
+	return true;
+}
 
 static double squarenorm(HomPoint point) {
     return square(point.x()) + square(point.y());
@@ -77,13 +89,17 @@ vector<bool> HeadTracker::detectinliers(vector<HomPoint> const &prev,
 
     for(int i=0; i<inliers.size(); i++)
 	if (!inliers[i]) {
-	    tracker.status[i] = false;
+		tracker.status[i] = false;
+
   	    tracker.currentpoints[i].x = 
-		0.9 * (tracker.origpoints[i].x + transitions[maxindex].x())
-		+ 0.1 * tracker.currentpoints[i].x;
+		0.3 * (tracker.origpoints[i].x + transitions[maxindex].x())
+		+ 0.7 * tracker.currentpoints[i].x;
+			//tracker.origpoints[i].x + transitions[maxindex].x();
+			
   	    tracker.currentpoints[i].y = 
-		0.9 * (tracker.origpoints[i].y + transitions[maxindex].y())
-		+ 0.1 * tracker.currentpoints[i].y;
+		0.3 * (tracker.origpoints[i].y + transitions[maxindex].y())
+		+ 0.7 * tracker.currentpoints[i].y;
+			//tracker.origpoints[i].y + transitions[maxindex].y();
 	}
 
     return inliers;
@@ -114,21 +130,34 @@ HeadTracker::predictpoints(double xx0, double yy0, double xx1, double yy1,
 	    fabs(p2.y() - tracker.currentpoints[i].y);
 
 	double diff = diff1 > diff2 ? diff2 : diff1;
-
 	// dubious code, I'm not sure about it
 	if (!tracker.status[i]) {
-	    tracker.currentpoints[i].x = 
-		0.5 * tracker.currentpoints[i].x + 0.5 * p1.x();
-	    tracker.currentpoints[i].y = 
-		0.5 * tracker.currentpoints[i].y + 0.5 * p1.y();
+		//cout << "P1 and P2: " << p1.x() << ", " << p1.y() << " - " << p2.x() << ", " << p2.y() << endl;
+		//cout << "DEPTH: " << depths[i] << endl;
+		//cout << "DIFFS: " << diff1 << ", " << diff2 << endl;
+		
+		if(diff == diff1) {
+		    tracker.currentpoints[i].x = 
+			0 * tracker.currentpoints[i].x + 1 * p1.x();
+		    tracker.currentpoints[i].y = 
+			0 * tracker.currentpoints[i].y + 1 * p1.y();
+			//cout << "UPDATED WITH P1 POSITION" << endl;
+		}
+		else{
+		    tracker.currentpoints[i].x = 
+			0 * tracker.currentpoints[i].x + 1 * p2.x();
+		    tracker.currentpoints[i].y = 
+			0 * tracker.currentpoints[i].y + 1 * p2.y();
+			cout << "UPDATED WITH P2 POSITION" << endl;
+		}
 	}
     }
 }
-
 void HeadTracker::updatetracker(void) {
-    depths.resize(tracker.pointcount());
-    detectinliers(tracker.getpoints(&PointTracker::origpoints, true), 
-		  tracker.getpoints(&PointTracker::currentpoints, true));
+	try{
+	    depths.resize(tracker.pointcount());
+	    detectinliers(tracker.getpoints(&PointTracker::origpoints, true), 
+			  tracker.getpoints(&PointTracker::currentpoints, true));
 
     vector<HomPoint> origpoints = 
 	tracker.getpoints(&PointTracker::origpoints, false);
@@ -140,13 +169,18 @@ void HeadTracker::updatetracker(void) {
     double xx1 = mean(currentpoints, &HomPoint::x);
     double yy1 = mean(currentpoints, &HomPoint::y);
 
-    Vector fmatrix = computeAffineFMatrix(origpoints, currentpoints);
+	    Vector fmatrix = computeAffineFMatrix(origpoints, currentpoints);
+	
+		if(fmatrix.empty()) {
+			//cout << "Problem in computeAffineFMatrix" << endl;
+			return;
+		}
     
-    double a = fmatrix[0];
-    double b = fmatrix[1];
-    double c = fmatrix[2];
-    double d = fmatrix[3];
-    double e = fmatrix[4];
+	    double a = fmatrix[0];
+	    double b = fmatrix[1];
+	    double c = fmatrix[2];
+	    double d = fmatrix[3];
+	    double e = fmatrix[4];
 
     // compute the change
 
@@ -219,8 +253,12 @@ void HeadTracker::updatetracker(void) {
 //             else
 // 		depths[i] = newdepths[i];
 	
-    predictpoints(xx0, yy0, xx1, yy1,
- 		  rotx, roty, atx, aty);
+	    predictpoints(xx0, yy0, xx1, yy1,
+	 		  rotx, roty, atx, aty);
+	}
+	catch (std::exception &ex) {
+		cout << ex.what() << endl;
+    }
 
 }
 

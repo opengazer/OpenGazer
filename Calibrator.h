@@ -34,18 +34,22 @@ class MovingTarget: public FrameFunction {
 		 int dwelltime=20);
     virtual ~MovingTarget();
     virtual void process();
+	Point getActivePoint();
+	int getDwellTime();
+    int getPointFrame();
+    bool active();
+    bool isLast();
  protected:
     vector<Point> points;
     const int dwelltime;
     int getPointNo();
-    int getPointFrame();
-    bool active();
 };
 
 class Calibrator: public MovingTarget {
     static const Point defaultpointarr[];
     shared_ptr<TrackingSystem> trackingsystem;
     scoped_ptr<FeatureDetector> averageeye;
+    scoped_ptr<FeatureDetector> averageeye_left;
 public:
     static vector<Point> defaultpoints;
     static vector<Point> loadpoints(istream& in);
@@ -57,6 +61,7 @@ public:
     virtual ~Calibrator();
     virtual void process();
     static vector<Point> scaled(const vector<Point>& points, double x, double y);
+    static vector<Point> scaled(const vector<Point>& points, int x, int y, double width, double height);
 };
 
 

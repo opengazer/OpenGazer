@@ -8,13 +8,14 @@
 class GazeTrackerGtk: public Gtk::Window {
  protected:
   //Member widgets:
-    Gtk::Button calibratebutton, loadbutton, savebutton, clearbutton;
+    Gtk::Button calibratebutton, loadbutton, savebutton, clearbutton, choosebutton, pausebutton;
     Gtk::VBox vbox;
     Gtk::HBox buttonbar;
 
  public:
     GazeArea picture;
     GazeTrackerGtk(int argc, char **argv);
+	void changePauseButtonText();
     virtual ~GazeTrackerGtk();
     
 };

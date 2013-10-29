@@ -1,6 +1,9 @@
 #pragma once
 
+#define BOOST_FILESYSTEM_VERSION 3
+
 #include <opencv/cv.h>
+#include <opencv/highgui.h>
 #include <math.h>
 #include <vector>
 #include <iostream>
@@ -8,8 +11,32 @@
 #include <gdkmm.h>
 #include <boost/shared_ptr.hpp>
 #include <boost/scoped_ptr.hpp>
+#include <boost/regex.hpp>
+#include <boost/filesystem.hpp>
+#include <boost/filesystem/path.hpp>
+#include <boost/lexical_cast.hpp>
+#include <fann.h>
 
+//#define EXPERIMENT_MODE
 //#define DEBUG
+
+
+// Tracker status constants
+#define STATUS_IDLE	1			// App is not doing anything
+#define STATUS_CALIBRATED	2		// App is not doing anything but is calibrated
+
+#define STATUS_CALIBRATING	11	// App is calibrating
+#define STATUS_TESTING	12		// App is testing
+#define STATUS_PAUSED	13		// App is paused
+
+#ifndef _UTILS_H
+#define _UTILS_H
+extern int tracker_status;
+extern bool is_tracker_calibrated;
+extern int dwelltime_parameter;
+extern int sleep_parameter;
+#endif
+
 
 using namespace std;
 using namespace boost;
@@ -26,6 +53,16 @@ typedef vnl_vector<double> Vector;
 typedef vnl_matrix<double> Matrix;
 
 
+struct QuitNow: public std::exception
+  {
+  QuitNow() { }
+  virtual ~QuitNow() throw() { }
+  virtual const char* what() throw()
+    {
+    return "QuitNow: request normal termination of program.\n"
+           "(You should not see this message. Please report it if you do.)";
+    }
+  };
 
 template <class T>
 inline T square(T a) {
@@ -151,5 +188,14 @@ namespace boost {
 
 void releaseImage(IplImage *image);
 shared_ptr<IplImage> createImage(const CvSize &size, int depth, int channels);
+void mapToFirstMonitorCoordinates(Point monitor2point, Point& monitor1point);
+void mapToVideoCoordinates(Point monitor2point, double resolution, Point& videoPoint, bool reverse_x = true);
+void mapToNeuralNetworkCoordinates(Point point, Point& nnpoint);
+void mapFromNeuralNetworkToScreenCoordinates(Point nnpoint, Point& point);
+string getUniqueFileName(string directory, string base_file_name);
 
 typedef shared_ptr<const IplImage> SharedImage;
+
+void normalizeGrayScaleImage(IplImage *image, double standard_mean = 127, double standard_std = 50);
+void normalizeGrayScaleImage2(IplImage *image, double standard_mean = 127, double standard_std = 50);
+
