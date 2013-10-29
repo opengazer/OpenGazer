@@ -3,7 +3,9 @@
 int tracker_status = STATUS_IDLE;
 bool is_tracker_calibrated = false;
 int dwelltime_parameter = 20;
+int test_dwelltime_parameter = 20;
 int sleep_parameter = 0;
+CvRect* face_rectangle = NULL;
 
 void releaseImage(IplImage *image) {
 //     cout << "deleting shared image" << endl;
@@ -144,16 +146,16 @@ void normalizeGrayScaleImage2(IplImage *image, double standard_mean, double stan
     double minVal, maxVal;
     double scale = 1;
     
-    double interval_start = 70;
-    double interval_end = 180;
+    double interval_start = 25;
+    double interval_end = 230;
     
     cvMinMaxLoc(image, &minVal, &maxVal);
     cvConvertScale(image, image, 1, -1 * minVal);   // Subtract the minimum value
 
     // If pixel intensities are between 0 and 1
     if(maxVal < 2) {
-		interval_start = 0.2;
-		interval_end = 0.8;
+		interval_start = interval_start/255.0;
+		interval_end = interval_end/255.0;
     }
     
     scale = (interval_end-interval_start) / (maxVal - minVal);  

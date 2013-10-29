@@ -39,6 +39,7 @@ public:
     bool areallpointsactive(void);
     int pointcount();
     void draw(IplImage *canvas);
+    void normalizeOriginalGrey();
 
     vector<HomPoint> 
 	getpoints(const vector<CvPoint2D32f> PointTracker::*points, 

@@ -122,6 +122,11 @@ void PointTracker::cleartrackers() {
     synchronizepoints();
 }
 
+void PointTracker::normalizeOriginalGrey() {
+    cvSetImageROI(orig_grey.get(), *face_rectangle);
+	normalizeGrayScaleImage2(orig_grey.get(), 90, 160);
+	cvResetImageROI(orig_grey.get());
+}
 void PointTracker::track(const IplImage *frame, int pyramiddepth) 
 {
 	try {
@@ -129,9 +134,15 @@ void PointTracker::track(const IplImage *frame, int pyramiddepth)
 	    assert(origpoints.size() == currentpoints.size());
 	    status.resize(currentpoints.size());
 	    cvCvtColor(frame, grey.get(), CV_BGR2GRAY );
-	
+
+		if(face_rectangle != NULL) {
+		    cvSetImageROI(grey.get(), *face_rectangle);
+			normalizeGrayScaleImage2(grey.get(), 90, 160);
+			cvResetImageROI(grey.get());
+		}
+
 		// Apply median filter of 5x5
-	    //cvSmooth(grey.get(), grey.get(), CV_MEDIAN, 5);
+	    cvSmooth(grey.get(), grey.get(), CV_MEDIAN, 5);
 	
 	    if (!currentpoints.empty()) {
 
@@ -170,15 +181,11 @@ void PointTracker::retrack(const IplImage *frame, int pyramiddepth)
 			cout << "CP["<< i <<"]" << currentpoints[i].x << ", " << currentpoints[i].y << endl;
 		}
 			
-		flags = CV_LKFLOW_INITIAL_GUESSES;
+		flags = 0;
 	    cvCvtColor(frame, grey.get(), CV_BGR2GRAY );
 	
 		// Apply median filter of 5x5
-	    //cvSmooth(grey.get(), grey.get(), CV_MEDIAN, 5);
-	
-		cvSaveImage("retrack_orig_grey.png", orig_grey.get());
-			cvSaveImage("retrack_grey.png", grey.get());
-	
+	    cvSmooth(grey.get(), grey.get(), CV_MEDIAN, 5);
 			// then calculate the position based on the original
 			// template without any pyramids
 			cvCalcOpticalFlowPyrLK(orig_grey.get(), grey.get(), 
@@ -186,11 +193,12 @@ void PointTracker::retrack(const IplImage *frame, int pyramiddepth)
 					       &origpoints[0], &currentpoints[0], pointcount(), 
 					       cvSize(win_size, win_size), 
 					       pyramiddepth*3, &status[0], 0,
-					       cvTermCriteria(CV_TERMCRIT_EPS,70,0.003), 
+					       cvTermCriteria(CV_TERMCRIT_EPS,200,0.0001), 
 					       flags);
 
 		//	}
 
+            flags = CV_LKFLOW_INITIAL_GUESSES;
 			flags |= CV_LKFLOW_PYR_A_READY;
 	    
 	    cvCopy(grey.get(), last_grey.get(), 0);

@@ -28,13 +28,11 @@ MovingTarget::~MovingTarget() {
 void MovingTarget::process() {
     if (getPointNo() != points.size() && active()) {
         int id = getPointNo();
-        cout << "MT: id= " << id << ", frame= " << getPointFrame() << endl;
-    
+        
         if (getPointFrame() == 1) 
             pointer->setPosition((int)points[id].x, (int)points[id].y); 
     }
     else {
-        cout << "MT: id= " << getPointNo() << ", frame= LAST" << endl << endl;
         if(getPointNo() == points.size() && tracker_status == STATUS_TESTING) {
             tracker_status = STATUS_CALIBRATED;
         }

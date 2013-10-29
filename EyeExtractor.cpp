@@ -63,8 +63,8 @@ EyeExtractor::EyeExtractor(const PointTracker &tracker):
 void EyeExtractor::extractEye(const IplImage *origimage) 
     throw (TrackingException) 
 {
-    if (!tracker.status[tracker.eyepoint1])
-	throw TrackingException();
+    //if (!tracker.status[tracker.eyepoint1])
+	//throw TrackingException();
 
     double x0 = tracker.currentpoints[tracker.eyepoint1].x;
     double y0 = tracker.currentpoints[tracker.eyepoint1].y;
@@ -93,8 +93,8 @@ void EyeExtractor::extractEye(const IplImage *origimage)
 void EyeExtractor::extractLeftEye(const IplImage *origimage) 
     throw (TrackingException) 
 {
-    if (!tracker.status[tracker.eyepoint1])
-	throw TrackingException();
+    //if (!tracker.status[tracker.eyepoint1])
+	//throw TrackingException();
 
     double x0 = tracker.currentpoints[tracker.eyepoint2].x;
     double y0 = tracker.currentpoints[tracker.eyepoint2].y;

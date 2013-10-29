@@ -34,7 +34,9 @@
 extern int tracker_status;
 extern bool is_tracker_calibrated;
 extern int dwelltime_parameter;
+extern int test_dwelltime_parameter;
 extern int sleep_parameter;
+extern CvRect* face_rectangle;
 #endif
 
 

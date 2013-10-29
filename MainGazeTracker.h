@@ -23,8 +23,10 @@ struct CommandLineArguments {
     vector<string> options;
      
     CommandLineArguments(int argc, char **argv);
+    ~CommandLineArguments();
     bool isoption(string option);
 	string getoptionvalue(string option);
+    vector<int> getoptionvalueasvector(string option);
 };
 
 
@@ -111,4 +113,5 @@ class MainGazeTracker {
     void choosepoints();
 	void pauseOrRepositionHead();
     void clearpoints();
+    void extract_face_region_rectangle(IplImage* frame, vector<HomPoint> feature_points);
 };

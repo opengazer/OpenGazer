@@ -4,12 +4,14 @@
 #include "MainGazeTracker.h"
 #include <boost/thread/thread.hpp> 
 #include <boost/lexical_cast.hpp>
+#include <sys/types.h>
+#include <unistd.h>
 
 class VideoWriter {
     CvVideoWriter *video;
 public:
-    VideoWriter(CvSize size) : 
-	video(cvCreateVideoWriter("out.avi", 0x58564944, 15.0, size))
+    VideoWriter(CvSize size, string filename) : 
+	video(cvCreateVideoWriter(filename.c_str(), 0x58564944, 15.0, size, 1))
     {}
     
     void write(const IplImage *image) {
@@ -33,6 +35,10 @@ CommandLineArguments::CommandLineArguments(int argc, char** argv) {
 	    parameters.push_back(value);
 	}
 }
+CommandLineArguments::~CommandLineArguments() {
+    options = std::vector<string>();
+    parameters = std::vector<string>();
+}
 
 bool CommandLineArguments::isoption(string option) {
     xforeach(iter, options)
@@ -47,6 +53,26 @@ string CommandLineArguments::getoptionvalue(string option) {
 		    return parameters[i];
 	}
     return "";
+}
+
+vector<int> CommandLineArguments::getoptionvalueasvector(string option) {
+    vector<int> return_vector;
+    for(int i=0; i<options.size(); i++) {
+		if (options[i].compare(option) == 0) {
+            string input = parameters[i];
+            istringstream ss(input);
+            string token;
+
+            while(std::getline(ss, token, ',')) {
+                return_vector.push_back(atoi(token.c_str()));
+                std::cout << "PARSED: " << token << '\n';
+            }
+            
+		    return return_vector;
+        }
+	}
+    
+    return return_vector;
 }
 
 VideoInput::VideoInput(): 
@@ -250,12 +276,6 @@ MainGazeTracker::MainGazeTracker(int argc, char** argv,
 		conversionimage = cvCreateImage(cvSize(640, 480), 8, 3 );
 	}
 	
-	// --record parameter
-	if (args.getoptionvalue("record").compare("1") == 0) {
-	    video.reset(new VideoWriter(videoinput->size));
-	    //video.reset(new VideoWriter(cvSize(1920, 1080)));
-		recording = true;
-	}
 	
 	if (args.getoptionvalue("overlay").compare("1") == 0)
 		videooverlays = true;
@@ -272,17 +292,33 @@ MainGazeTracker::MainGazeTracker(int argc, char** argv,
 	else
 		dwelltime_parameter = 20;
 	
+	// --testdwelltime parameter
+	if (args.getoptionvalue("testdwelltime").compare("") != 0)
+		test_dwelltime_parameter = atoi(args.getoptionvalue("testdwelltime").c_str());
+	else
+		test_dwelltime_parameter = dwelltime_parameter;
+	
 	// --sleep parameter
 	if (args.getoptionvalue("sleep").compare("") != 0)
 		sleep_parameter = atoi(args.getoptionvalue("sleep").c_str());
 	else
 		sleep_parameter = 0;
 		
-		
-	
+	// --folder parameter
+    string folder_parameter = "../outputs";
+    
+	if (args.getoptionvalue("outputfolder").compare("") != 0)
+		folder_parameter = args.getoptionvalue("outputfolder");
+
 	// --subject parameter
-	base_path = getUniqueFileName("../outputs", args.getoptionvalue("subject") + "_" + args.getoptionvalue("setup") + "_" + args.getoptionvalue("resolution"));
+	base_path = getUniqueFileName(folder_parameter, args.getoptionvalue("subject") + "_" + args.getoptionvalue("setup") + "_" + args.getoptionvalue("resolution"));
 	
+    	// --record parameter
+	if (args.getoptionvalue("record").compare("1") == 0) {
+	    video.reset(new VideoWriter(videoinput->size, base_path.substr(0, base_path.length() - 4) + ".avi"));
+	    recording = true;
+	}
+
 	outputfile = new ofstream((base_path + "_").c_str());
 
 	// First write the system time
@@ -329,6 +365,19 @@ MainGazeTracker::MainGazeTracker(int argc, char** argv,
 		game_win = new GameWindow (&(tracking->gazetracker.output));
 	}
 	game_win->show();
+
+    if(videoinput.get()->get_resolution() == 720) {
+        repositioning_image = cvCreateImage(cvSize(1280, 720), 8, 3 );
+    }
+    else if(videoinput.get()->get_resolution() == 1080) {
+        repositioning_image = cvCreateImage(cvSize(1920, 1080), 8, 3 );
+    }
+    else if(videoinput.get()->get_resolution() == 480) {
+        repositioning_image = cvCreateImage(cvSize(640, 480), 8, 3 );
+    }
+    
+    game_win->setRepositioningImage(repositioning_image);
+    face_rectangle = NULL;
 }
 
 void MainGazeTracker::addTracker(Point point) {
@@ -418,6 +467,10 @@ void MainGazeTracker::choosepoints() {
 
 		// Save point selection image 
 		tracking->tracker.save_image();
+
+		// Calculate the area containing the face
+		extract_face_region_rectangle(videoinput->frame, tracking->tracker.getpoints(&PointTracker::lastpoints, true));
+		tracking->tracker.normalizeOriginalGrey();
     }
     catch (ios_base::failure &e) {
 	cout << e.what() << endl;
@@ -488,7 +541,7 @@ void MainGazeTracker::doprocessing(void) {
 			if(videoinput->get_resolution() == 720) {
 				image_norm *= 1.05;
 			}
-			cout << "WHOLE NORM: " << image_norm << endl;
+			//cout << "WHOLE NORM: " << image_norm << endl;
 		}
 	
 		
@@ -557,10 +610,10 @@ void MainGazeTracker::doprocessing(void) {
 		int rectangle_thickness = 15;
 		CvScalar color;
 		
-		if(image_norm < 1200) {
+		if(image_norm < 1500) {
 			color = CV_RGB(0, 255, 0);
 		}
-		else if(image_norm < 1900) {
+		else if(image_norm < 2500) {
 			color = CV_RGB(0, 165, 255);
 		}
 		else {
@@ -611,7 +664,27 @@ void MainGazeTracker::doprocessing(void) {
 					cvCircle((CvArr*) conversionimage, cvPoint(estimation.x, estimation.y), 8, cvScalar(255, 0, 0), -1, 8, 0);
 				}
 			}
-		
+
+            if(tracker_status == STATUS_PAUSED) {
+                int rectangle_thickness = 15;
+                CvScalar color;
+                
+                if(image_norm < 1900) {
+                    color = CV_RGB(0, 255, 0);
+                }
+                else if(image_norm < 3000) {
+                    color = CV_RGB(255, 165, 0);
+                }
+                else {
+                    color = CV_RGB(255, 0, 0);
+                }
+                                
+                cvRectangle(conversionimage, cvPoint(0, 0), cvPoint(rectangle_thickness, videoinput->size.height), color, CV_FILLED);	//left
+                cvRectangle(conversionimage, cvPoint(0, 0), cvPoint(videoinput->size.width, rectangle_thickness), color, CV_FILLED);	//top
+                cvRectangle(conversionimage, cvPoint(videoinput->size.width-rectangle_thickness, 0), cvPoint(videoinput->size.width, videoinput->size.height), color, CV_FILLED);	//right
+                cvRectangle(conversionimage, cvPoint(0, videoinput->size.height-rectangle_thickness), cvPoint(videoinput->size.width, videoinput->size.height), color, CV_FILLED);	//bottm
+            }
+
 			video->write(conversionimage); //conversionimage);
 		}
 		else {
@@ -694,7 +767,7 @@ MainGazeTracker::~MainGazeTracker(void) {
 void MainGazeTracker::cleanUp(void) {
 	outputfile->close();
 	rename((base_path + "_").c_str(), (base_path).c_str());
-	rename("out.avi", (base_path.substr(0, base_path.length() - 4) + ".avi").c_str());
+	//rename("out.avi", (base_path.substr(0, base_path.length() - 4) + ".avi").c_str());
 }
 
 
@@ -1206,8 +1279,8 @@ void detect_eye_corners(IplImage* img, double resolution, Point points[]){
 	
 	//points[0] = Point(both_eyes->x + left_eye_corners_x_sum, both_eyes->y + left_eye_corners_y_sum);
 	//points[1] = Point(both_eyes->x + right_eye_corners_x_sum, both_eyes->y + right_eye_corners_y_sum);
-	points[0] = Point(left_eye_center_x - 0.28*x_diff, left_eye_center_y - 0.28*y_diff);// + x_diff/40);
-	points[1] = Point(right_eye_center_x + 0.28*x_diff, right_eye_center_y + 0.28*y_diff);// + x_diff/40);
+	points[0] = Point(left_eye_center_x - 0.29*x_diff, left_eye_center_y - 0.29*y_diff);// + x_diff/40);
+	points[1] = Point(right_eye_center_x + 0.29*x_diff, right_eye_center_y + 0.29*y_diff);// + x_diff/40);
 
 	
 	/// Drawing a circle around corners
@@ -1318,4 +1391,34 @@ void check_rect_size(IplImage* image, CvRect* rect) {
 	if(rect->y + rect->height >= image->height) {
 		rect->height = image->height - rect->y - 1;
 	}
+}
+
+
+void MainGazeTracker::extract_face_region_rectangle(IplImage* frame, vector<HomPoint> feature_points) {
+	int min_x = 10000;
+	int max_x = 0;
+	int min_y = 10000;
+	int max_y = 0;
+	
+	// Find the boundaries of the feature points
+	for(int i=0; i< (int) feature_points.size(); i++) {
+		min_x = feature_points[i].x() < min_x ? feature_points[i].x() : min_x;
+		min_y = feature_points[i].y() < min_y ? feature_points[i].y() : min_y;
+		max_x = feature_points[i].x() > max_x ? feature_points[i].x() : max_x;
+		max_y = feature_points[i].y() > max_y ? feature_points[i].y() : max_y;
+	}
+	
+	int dif_x = max_x - min_x;
+	int dif_y = max_y - min_y;
+	
+	min_x -= 0.4 * dif_x;
+	max_x += 0.4 * dif_x;
+	min_y -= 0.5 * dif_y;
+	max_y += 0.5 * dif_y;
+	
+	face_rectangle = new CvRect();
+	face_rectangle->x = min_x;
+	face_rectangle->y = min_y;
+	face_rectangle->width = max_x - min_x;
+	face_rectangle->height = max_y - min_y;
 }
