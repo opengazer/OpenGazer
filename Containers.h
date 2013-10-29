@@ -8,7 +8,7 @@
 	iter != container.end(); iter++)			\
 	if ((*iter)->parent == this)
 
-template <class ParentType, class ChildType> class Container;
+template <class ParentType, class ChildType> class BaseContainer;
 
 template <class ParentType, class ChildType> 
 class  Containee {
@@ -21,7 +21,7 @@ class  Containee {
 };
 
 template <class ParentType, class ChildType>		
-class Container {
+class BaseContainer {
     typedef shared_ptr<ChildType> ChildPtr;
     static bool isFinished(const ChildPtr &object) { 
 	return !(object && object->parent);
@@ -48,13 +48,13 @@ class Container {
  	parent->removeFinished(); 
     }
 
-    virtual ~Container() {
+    virtual ~BaseContainer() {
 	clear();
     }
 };
 
 template <class ParentPtr, class ChildPtr>
-class ProcessContainer: public Container<ParentPtr, ChildPtr> {
+class ProcessContainer: public BaseContainer<ParentPtr, ChildPtr> {
  public:
     virtual void process() {
 	xforeachactive(iter, this->objects)

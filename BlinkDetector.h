@@ -6,9 +6,10 @@ using namespace boost;
 
 struct StateNode {
     int minduration, maxduration;
-    double threshold;
-    StateNode(int minduration, int maxduration, double threshold);
+    double threshold, finish_threshold;
+    StateNode(int minduration, int maxduration, double threshold, double finish_threshold);
     bool isSatisfied(double value) const;
+	bool isFinished(double value) const;
 };
 
 class LinearStateSystem {
@@ -35,6 +36,7 @@ class BlinkDetector {
     scoped_ptr<IplImage> averageEye;
     LambdaAccumulator acc;
     LinearStateSystem states;
+	bool initialized;
     static vector<StateNode> constructStates();
  public:
     BlinkDetector();

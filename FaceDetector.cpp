@@ -24,9 +24,11 @@ FaceDetector::~FaceDetector() {
 }
 
 vector<CvRect> FaceDetector::detect(const IplImage *img) {
-    double scale = 1.3;
-    IplImage* gray = cvCreateImage( cvSize(img->width,img->height), 8, 1 );
-    IplImage* small_img = 
+	vector<CvRect> result;
+	try {
+	   double scale = 1.3;
+	   IplImage* gray = cvCreateImage( cvSize(img->width,img->height), 8, 1 );
+	   IplImage* small_img = 
 	cvCreateImage( cvSize( cvRound (img->width/scale),
 			       cvRound (img->height/scale)), 8, 1 );
     int i;
@@ -41,7 +43,6 @@ vector<CvRect> FaceDetector::detect(const IplImage *img) {
 			     1.1, 2, 0/*CV_HAAR_DO_CANNY_PRUNING*/,
 			     cvSize(30, 30) );
 
-    vector<CvRect> result;
     for( i = 0; i < (faces ? faces->total : 0); i++ ) {
 	CvRect *rect = (CvRect*)cvGetSeqElem( faces, i );
 	result.push_back(cvRect((int)(rect->x * scale),
@@ -54,6 +55,48 @@ vector<CvRect> FaceDetector::detect(const IplImage *img) {
     cvReleaseImage(&small_img);
 //     cvReleaseSeq(&faces);
 
-    return result;
+	   return result;
+	}
+   catch (std::exception &ex) {
+		cout << ex.what() << endl;
+		return result;
+   }
+}
+
+vector<CvRect> FaceDetector::detect_in_grayscale(const IplImage *gray) {
+	vector<CvRect> result;
+	try {
+	   double scale = 1.3;
+	   IplImage* small_img = 
+	cvCreateImage( cvSize( cvRound (gray->width/scale),
+			       cvRound (gray->height/scale)), 8, 1 );
+	   int i;
+
+	   cvResize( gray, small_img, CV_INTER_LINEAR );
+	   cvEqualizeHist( small_img, small_img );
+	   cvClearMemStorage( storage );
+
+	   CvSeq* faces = 
+	cvHaarDetectObjects( small_img, cascade, storage,
+			     1.1, 2, 0/*CV_HAAR_DO_CANNY_PRUNING*/,
+			     cvSize(30, 30) );
+
+	   for( i = 0; i < (faces ? faces->total : 0); i++ ) {
+	CvRect *rect = (CvRect*)cvGetSeqElem( faces, i );
+	result.push_back(cvRect((int)(rect->x * scale),
+				(int)(rect->y * scale),
+				(int)(rect->width * scale),
+				(int)(rect->height * scale)));
+	   }
+
+	   cvReleaseImage(&small_img);
+	//     cvReleaseSeq(&faces);
+
+	   return result;
+	}
+   catch (std::exception &ex) {
+		cout << ex.what() << endl;
+		return result;
+   }
 }
 

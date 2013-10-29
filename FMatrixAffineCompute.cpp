@@ -38,7 +38,12 @@ Vector computeAffineFMatrix(vector<HomPoint> const& points1,
 	matrix(i, 3) = points2[i].y() - centroid[3];
     }
 
-//     cout << "fmatrixcompute: " << endl << matrix << endl << endl;
+    //cout << "fmatrixcompute: " << endl << matrix << endl << endl;
+
+	if(matrix.empty()) {
+		Vector dummy(0);
+		return dummy;
+	}
 
     vnl_svd<double> svd(matrix);
 

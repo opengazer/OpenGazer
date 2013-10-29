@@ -54,6 +54,13 @@ void PointTracker::save(string filename, string newpoints,
 	throw ios_base::failure("No face found in the image");
 }
 
+
+void PointTracker::save_image() 
+{
+	cvSaveImage("point-selection-frame.png", orig_grey.get());
+}
+
+
 void PointTracker::load(string filename, string newpoints, 
 			const IplImage *frame) 
 {
@@ -115,43 +122,99 @@ void PointTracker::cleartrackers() {
     synchronizepoints();
 }
 
+void PointTracker::normalizeOriginalGrey() {
+    cvSetImageROI(orig_grey.get(), *face_rectangle);
+	normalizeGrayScaleImage2(orig_grey.get(), 90, 160);
+	cvResetImageROI(orig_grey.get());
+}
 void PointTracker::track(const IplImage *frame, int pyramiddepth) 
 {
-    assert(lastpoints.size() == currentpoints.size());
-    assert(origpoints.size() == currentpoints.size());
-    status.resize(currentpoints.size());
-    cvCvtColor(frame, grey.get(), CV_BGR2GRAY );
-    if (!currentpoints.empty()) {
-	// first calculate the new position of the features based
-	// on the (pyramidal) last frame and position estimations
-	cvCalcOpticalFlowPyrLK(last_grey.get(), grey.get(), 
-			       last_pyramid.get(), pyramid.get(),
-			       &lastpoints[0], &currentpoints[0], pointcount(), 
-			       cvSize(win_size,win_size), 2, &status[0], 0,
-			       cvTermCriteria(CV_TERMCRIT_ITER|
-					      CV_TERMCRIT_EPS,20,0.01), 
-			       flags);
+	try {
+	    assert(lastpoints.size() == currentpoints.size());
+	    assert(origpoints.size() == currentpoints.size());
+	    status.resize(currentpoints.size());
+	    cvCvtColor(frame, grey.get(), CV_BGR2GRAY );
 
-	// then calculate the position based on the original
-	// template without any pyramids
-	cvCalcOpticalFlowPyrLK(orig_grey.get(), grey.get(), 
-			       orig_pyramid.get(), pyramid.get(),
-			       &origpoints[0], &currentpoints[0], pointcount(), 
-			       cvSize(win_size, win_size), 
-			       pyramiddepth, &status[0], 0,
-			       cvTermCriteria(CV_TERMCRIT_ITER|
-					      CV_TERMCRIT_EPS,20,0.01), 
-			       flags);
+		if(face_rectangle != NULL) {
+		    cvSetImageROI(grey.get(), *face_rectangle);
+			normalizeGrayScaleImage2(grey.get(), 90, 160);
+			cvResetImageROI(grey.get());
+		}
 
+		// Apply median filter of 5x5
+	    cvSmooth(grey.get(), grey.get(), CV_MEDIAN, 5);
+	
+	    if (!currentpoints.empty()) {
 
-	flags |= CV_LKFLOW_PYR_A_READY;
+			// then calculate the position based on the original
+			// template without any pyramids
+			cvCalcOpticalFlowPyrLK(orig_grey.get(), grey.get(), 
+					       orig_pyramid.get(), pyramid.get(),
+					       &origpoints[0], &currentpoints[0], pointcount(), 
+					       cvSize(win_size, win_size), 
+					       pyramiddepth*3, &status[0], 0,
+					       cvTermCriteria(CV_TERMCRIT_EPS,20,0.03), 
+					       flags);
+
+		//	}
+
+			flags |= CV_LKFLOW_PYR_A_READY;
+	    }
+
+	    cvCopy(grey.get(), last_grey.get(), 0);
+	    cvCopy(pyramid.get(), last_pyramid.get(), 0);
+	    lastpoints = currentpoints;
+	}
+    catch (std::exception &ex) {
+		cout << ex.what() << endl;
+		cleartrackers();
     }
-
-    cvCopy(grey.get(), last_grey.get(), 0);
-    cvCopy(pyramid.get(), last_pyramid.get(), 0);
-    lastpoints = currentpoints;
 }
 
+void PointTracker::retrack(const IplImage *frame, int pyramiddepth) 
+{
+	try {
+		currentpoints = origpoints;
+		
+		cout << "RETRACKING" << endl;
+		for(int i=0; i< (int) currentpoints.size(); i++) {
+			cout << "CP["<< i <<"]" << currentpoints[i].x << ", " << currentpoints[i].y << endl;
+		}
+			
+		flags = 0;
+	    cvCvtColor(frame, grey.get(), CV_BGR2GRAY );
+	
+		// Apply median filter of 5x5
+	    cvSmooth(grey.get(), grey.get(), CV_MEDIAN, 5);
+			// then calculate the position based on the original
+			// template without any pyramids
+			cvCalcOpticalFlowPyrLK(orig_grey.get(), grey.get(), 
+					       orig_pyramid.get(), pyramid.get(),
+					       &origpoints[0], &currentpoints[0], pointcount(), 
+					       cvSize(win_size, win_size), 
+					       pyramiddepth*3, &status[0], 0,
+					       cvTermCriteria(CV_TERMCRIT_EPS,200,0.0001), 
+					       flags);
+
+		//	}
+
+            flags = CV_LKFLOW_INITIAL_GUESSES;
+			flags |= CV_LKFLOW_PYR_A_READY;
+	    
+	    cvCopy(grey.get(), last_grey.get(), 0);
+	    cvCopy(pyramid.get(), last_pyramid.get(), 0);
+	    lastpoints = currentpoints;
+	
+			cout << endl << "AFTER RETRACKING" << endl;
+			for(int i=0; i< (int) currentpoints.size(); i++) {
+				cout << "CP["<< i <<"]" << currentpoints[i].x << ", " << currentpoints[i].y << endl;
+			}
+	}
+    catch (std::exception &ex) {
+		cout << ex.what() << endl;
+		cleartrackers();
+    }
+}
 int PointTracker::countactivepoints(void) {
     return count_if(status.begin(), status.end(), 
 		    bind1st(not_equal_to<char>(), 0));
@@ -162,6 +225,7 @@ bool PointTracker::areallpointsactive(void) {
 }
 
 void PointTracker::draw(IplImage *canvas) {
+	try{
     for(int i=0; i< (int) currentpoints.size(); i++)
 	cvCircle( canvas, cvPointFrom32f(currentpoints[i]), 3, 
 		  status[i]?(i == eyepoint1 || i == eyepoint2 ? 
@@ -169,6 +233,11 @@ void PointTracker::draw(IplImage *canvas) {
 			     CV_RGB(0,255,0)):
 		  CV_RGB(0,0,255), 
 		  -1, 8,0);
+		}
+	    catch (std::exception &ex) {
+			cout << ex.what() << endl;
+			cleartrackers();
+	    }
 }
 
 int PointTracker::pointcount() {

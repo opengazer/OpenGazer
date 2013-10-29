@@ -26,17 +26,29 @@ MovingTarget::~MovingTarget() {
 }
 
 void MovingTarget::process() {
-    if (active()) {
-	int id = getPointNo();
-	if (getPointFrame() == 1) 
-	    pointer->setPosition((int)points[id].x, (int)points[id].y);	
+    if (getPointNo() != points.size() && active()) {
+        int id = getPointNo();
+        
+        if (getPointFrame() == 1) 
+            pointer->setPosition((int)points[id].x, (int)points[id].y); 
     }
-    else
-	detach();
+    else {
+        if(getPointNo() == points.size() && tracker_status == STATUS_TESTING) {
+            tracker_status = STATUS_CALIBRATED;
+        }
+        detach();
+    }
 }
 
 bool MovingTarget::active() {
+    if(parent == NULL) 
+        return false;
+    
     return getPointNo() < (int) points.size();
+}
+
+bool MovingTarget::isLast() {
+    return getPointNo() == ((int) points.size()) - 1;
 }
 
 int MovingTarget::getPointNo() {
@@ -47,11 +59,21 @@ int MovingTarget::getPointFrame() {
     return getFrame() % dwelltime;
 }
 
+int MovingTarget::getDwellTime() {
+    return dwelltime;
+}
+
+Point MovingTarget::getActivePoint() {
+    int id = getPointNo();
+    
+    return points[id];
+}
+
 Calibrator::Calibrator(const int &framecount, 
-		       const shared_ptr<TrackingSystem> &trackingsystem,
-		       const vector<Point>& points, 
-		       const shared_ptr<WindowPointer> &pointer,
-		       int dwelltime): 
+               const shared_ptr<TrackingSystem> &trackingsystem,
+               const vector<Point>& points, 
+               const shared_ptr<WindowPointer> &pointer,
+               int dwelltime): 
     MovingTarget(framecount, points, pointer, dwelltime),
     trackingsystem(trackingsystem)
 {
@@ -61,20 +83,59 @@ Calibrator::Calibrator(const int &framecount,
 
 
 void Calibrator::process() {
+    static int dummy = 0;
+    
     if (active()) {
-	int id = getPointNo();
-	int frame = getPointFrame();
-	if (frame == 1) // start
-	    averageeye.reset(new FeatureDetector(EyeExtractor::eyesize));
-
-	if (frame >= dwelltime/2) // middle
-	    averageeye->addSample(trackingsystem->eyex.eyefloat.get());
-
-	if (frame == dwelltime-1) { // end
-	    trackingsystem->gazetracker.
-		addExemplar(points[id], averageeye->getMean().get(),
-			    trackingsystem->eyex.eyegrey.get());
-	}
+        int id = getPointNo();
+        int frame = getPointFrame();
+        if (frame == 1) {// start
+            averageeye.reset(new FeatureDetector(EyeExtractor::eyesize));
+            averageeye_left.reset(new FeatureDetector(EyeExtractor::eyesize));
+        }
+        if (frame >= 11) { // middle    ONUR dwelltime/2 changed to 11
+            if(!trackingsystem->eyex.isBlinking()) {
+                averageeye->addSample(trackingsystem->eyex.eyefloat.get());
+                averageeye_left->addSample(trackingsystem->eyex.eyefloat_left.get());
+                
+                // Neural network 
+                //if(dummy % 8 == 0) {  // Only add samples on the 11-19-27-35 frames
+                //for(int i=0; i<1000; i++) {   // Train 100 times with each frame
+                    trackingsystem->gazetracker.
+                    addSampleToNN(points[id], trackingsystem->eyex.eyefloat.get(), trackingsystem->eyex.eyegrey.get());
+                    trackingsystem->gazetracker.
+                    addSampleToNN_left(points[id], trackingsystem->eyex.eyefloat_left.get(), trackingsystem->eyex.eyegrey_left.get());
+                    
+                    dummy++;
+                //}
+            }
+            else {
+                cout << "Skipped adding sample!!!!" << endl;
+            }
+        }
+    
+        if (frame == dwelltime-1) { // end
+            trackingsystem->gazetracker.
+            addExemplar(points[id], averageeye->getMean().get(),
+                    trackingsystem->eyex.eyegrey.get());
+            // ONUR DUPLICATED CODE
+            trackingsystem->gazetracker.
+            addExemplar_left(points[id], averageeye_left->getMean().get(),
+                    trackingsystem->eyex.eyegrey_left.get());
+                
+            if(id == points.size()-1) {
+                tracker_status = STATUS_CALIBRATED;
+                is_tracker_calibrated = true;
+                
+                //trackingsystem->gazetracker.trainNN();
+                //trackingsystem->gazetracker.calculateTrainingErrors();
+            }
+        
+            // If we have processed the last target
+            // Calculate training error and output on screen
+            //if(isLast()) {
+            //  trackingsystem->gazetracker.calculateTrainingErrors();
+            //}
+        }
     }
     MovingTarget::process();
 }
@@ -119,5 +180,17 @@ vector<Point> Calibrator::scaled(const vector<Point> &points,
 	result.push_back(Point(iter->x * x, iter->y * y));
 // 	result.push_back(Point(iter->x * scale + dx, iter->y * scale + dy));
 
+    return result;
+}
+
+vector<Point> Calibrator::scaled(const vector<Point> &points,
+                          int x, int y, double width, double height) 
+{
+    vector<Point> result;
+
+    xforeach(iter, points) {
+    result.push_back(Point(iter->x * width + x, iter->y * height + y));
+        //cout << "ADDED POINT (" << iter->x * width + x << ", " << iter->y * height + y << ")" << endl;
+    }
     return result;
 }

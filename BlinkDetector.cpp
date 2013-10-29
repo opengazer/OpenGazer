@@ -3,8 +3,8 @@
 #include "EyeExtractor.h"
 #include "utils.h"
 
-StateNode::StateNode(int minduration, int maxduration, double threshold):
-    minduration(minduration), maxduration(maxduration), threshold(threshold) 
+StateNode::StateNode(int minduration, int maxduration, double threshold, double finish_threshold):
+    minduration(minduration), maxduration(maxduration), threshold(threshold), finish_threshold(finish_threshold)
 {
 }
 
@@ -15,6 +15,13 @@ bool StateNode::isSatisfied(double value) const {
 	return value <= -threshold;
 }
 
+bool StateNode::isFinished(double value) const {
+    if (threshold > 0)
+	return value < finish_threshold;
+    else
+	return value > -finish_threshold;
+}
+
 LinearStateSystem::LinearStateSystem(const vector<StateNode> &states): 
     states(states), currentState(0), duration(0)
 {
@@ -22,11 +29,11 @@ LinearStateSystem::LinearStateSystem(const vector<StateNode> &states):
 }
 
 void LinearStateSystem::updateState(double value) {
-    cout << "update state: " << value << endl;
+    //cout << "update state: " << value << endl;
     duration++;
     if (currentState > 0 &&
 	((duration < states[currentState].minduration &&
-	  !states[currentState].isSatisfied(value)) || 
+	  !states[currentState].isSatisfied(value)) ||
 	 duration > states[currentState].maxduration))
 	setState(0);
 
@@ -63,24 +70,30 @@ double LambdaAccumulator::getValue() {
 BlinkDetector::BlinkDetector():
     averageEye(cvCreateImage(EyeExtractor::eyesize, IPL_DEPTH_32F, 1)),
     acc(0.1, 1000.0), 
-    states(constructStates())
+    states(constructStates()),
+	initialized(false)
 {
 }
 
 vector<StateNode> BlinkDetector::constructStates() {
     vector<StateNode> states;
-    states.push_back(StateNode(0, 0, +0.00)); 
-    states.push_back(StateNode(1, 8, +1.50)); 
-    states.push_back(StateNode(1, 8, -1.20)); // blink
-    states.push_back(StateNode(1, 8, +1.50)); 
-    states.push_back(StateNode(1, 8, -1.20)); // double blink
+// 1.60 - 1.20
+    states.push_back(StateNode(0, 0, +0.00, +0.00)); 
+    states.push_back(StateNode(1, 8, +1.80, 0.30)); 
+    states.push_back(StateNode(3, 6, -1.40, -0.20)); // blink
+    states.push_back(StateNode(1, 8, +1.80, 0.30)); 
+    states.push_back(StateNode(3, 6, -1.40, -0.20)); // double blink
     return states;
 }
 
 void BlinkDetector::update(const scoped_ptr<IplImage> &eyefloat) {
+	if(!initialized) {
+		cvCopy(eyefloat.get(), averageEye.get());
+		initialized = true;
+	}
     double distance = cvNorm(eyefloat.get(), averageEye.get(), CV_L2);
     acc.update(distance);
-    cout << "update distance" << distance << " -> " << acc.getValue() << endl;
+    //cout << "update distance" << distance << " -> " << acc.getValue() << endl;
     states.updateState(distance / acc.getValue());
     cvRunningAvg(eyefloat.get(), averageEye.get(), 0.05);
 }

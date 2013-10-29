@@ -6,17 +6,23 @@
 
 int main(int argc, char **argv)
 {
-    Gtk::Main kit(argc, argv);
-    Glib::thread_init();
+	try {
+	    Gtk::Main kit(argc, argv);
+	    Glib::thread_init();
 
-//     CalibrationWindow calwindow;
-//     calwindow.show();
+	//     CalibrationWindow calwindow;
+	//     calwindow.show();
 
-    GazeTrackerGtk helloworld(argc, argv);
+	    GazeTrackerGtk helloworld(argc, argv);
 
-    helloworld.show();
+	    helloworld.show();
 
-    Gtk::Main::run(helloworld);
+	    Gtk::Main::run(helloworld);
+	}
+  	catch (QuitNow)
+    {
+    	cout << "Caught it!\n";
+    }
     
     return 0;
 }

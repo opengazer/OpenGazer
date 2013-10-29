@@ -8,7 +8,7 @@
 using namespace std;
 typedef vgl_vector_2d<double> HomPoint;
 
-class TrackingException: public exception {};
+class TrackingException: public std::exception {};
 
 class PointTracker {
 public:
@@ -34,10 +34,12 @@ public:
     void removetracker(int id);
     int getClosestTracker(const Point &point);
     void track(const IplImage *frame, int pyramiddepth=1);
+	void retrack(const IplImage *frame, int pyramiddepth=1);
     int countactivepoints(void);
     bool areallpointsactive(void);
     int pointcount();
     void draw(IplImage *canvas);
+    void normalizeOriginalGrey();
 
     vector<HomPoint> 
 	getpoints(const vector<CvPoint2D32f> PointTracker::*points, 
@@ -45,4 +47,5 @@ public:
 
     void save(string filename, string newname, const IplImage *frame);
     void load(string filename, string newname, const IplImage *frame);
+    void save_image();
 };
