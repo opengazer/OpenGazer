@@ -210,7 +210,6 @@ void GameArea::showContents() {
             last_updated_region->y = bounds.y;
             last_updated_region->width = bounds.width;
             last_updated_region->height = bounds.height;
-			// TODO Show the necessary image centered on screen and leave the last_updated_region nicely
 		}
 #ifdef EXPERIMENT_MODE
 		else if(false) {		// For the experiment mode, never show the game
@@ -410,8 +409,6 @@ void GameArea::showContents() {
                 return;
 			}
 			
-			//cvSet(current, background_color2);		//TODO Uncomment
-			
 			if(calibrationPoint.x > 0 && calibrationPoint.y > 0) {
 				CvRect currentBounds = cvRect(calibrationPoint.x - 25, calibrationPoint.y - 25, 50, 50);
 				CvRect targetBounds = cvRect(0, 0, 50, 50);
@@ -468,69 +465,6 @@ void GameArea::showContents() {
 		else {
 			clearLastUpdatedRegion();
 		}
-		/*else if(illumination_calibration_taking_place) {
-			const int width = background->width;
-			const int height = background->height;
-
-			Glib::RefPtr<Gdk::GC> gc = Gdk::GC::create(window);
-			
-			Point calibrationPoint = Point(width/2, height/2);
-						
-			cvSet(current, background_color2);		//TODO Uncomment
-		
-		//	if(tracker_status == STATUS_TESTING)
-		//		cvSet(current, CV_RGB(0, 0, 0));
-		//	else
-		//		cvSet(current, CV_RGB(255, 255, 255));
-		    
-			
-			if(calibrationPoint.x > 0 && calibrationPoint.y > 0) {
-				
-				CvRect currentBounds = cvRect(calibrationPoint.x - 25, calibrationPoint.y - 25, 50, 50);
-				CvRect targetBounds = cvRect(0, 0, 50, 50);
-				
-				if(currentBounds.x < 0) {
-					currentBounds.width += currentBounds.x;		// Remove the amount from the width
-					targetBounds.x -= currentBounds.x;
-					targetBounds.width += currentBounds.x;
-					currentBounds.x = 0;
-				}
-				if(currentBounds.y < 0) {
-					currentBounds.height += currentBounds.y;		// Remove the amount from the height
-					targetBounds.y -= currentBounds.y;
-					targetBounds.height += currentBounds.y;
-					currentBounds.y = 0;
-				}
-				if(currentBounds.width + currentBounds.x > background->width) {
-					currentBounds.width = background->width - currentBounds.x; 
-				}
-				if(currentBounds.height + currentBounds.y > background->height) {
-					currentBounds.height = background->height - currentBounds.y; 
-				}
-				
-				cvSetImageROI(current, currentBounds);
-				cvSetImageROI(target, targetBounds);
-				//cout << "7" << endl;
-	cout << "GAME WIN" << endl;
-				cvCopy(target, current);
-	cout << "GAME WIN 2" << endl;
-				//cout << "8" << endl;
-				
-				cvResetImageROI(current);
-				cvResetImageROI(target);
-			}
-	
-			Glib::RefPtr<Gdk::Pixbuf> pixbuf =
-			Gdk::Pixbuf::create_from_data((guint8*) current->imageData,
-							Gdk::COLORSPACE_RGB,
-							false,
-							current->depth,
-							current->width,
-							current->height,
-							current->widthStep);
-			window->draw_pixbuf(gc, pixbuf, 0,0,0,0, width, height,
-					Gdk::RGB_DITHER_NONE, 0, 0);
-		} */
 	}
 }
 

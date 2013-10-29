@@ -127,7 +127,7 @@ VideoInput::VideoInput(string resolution, string filename, bool dummy):
 	double tracker_resolution = frame->height;
     
 	// In case the video is 1280/720 and we want to execute 480 (or 1280 -> 720)
-	if(video_resolution != tracker_resolution) {	// TODO RESOLUTION
+	if(video_resolution != tracker_resolution) {
 		IplImage *tempimage = cvCreateImage(cvSize(640, 480), 8, 3);
 		
 		if(video_resolution == 720 && tracker_resolution == 480)
@@ -201,7 +201,7 @@ MainGazeTracker::MainGazeTracker(int argc, char** argv,
 {
     CommandLineArguments args(argc, argv);
 
-	if(argc == 1) {
+	if (args.getoptionvalue("help").compare("") != 0) {
 		cout << endl;
 		cout << "CVC Machine Vision Group Eye-Tracker" << endl;
 		cout << endl << endl;
@@ -262,7 +262,7 @@ MainGazeTracker::MainGazeTracker(int argc, char** argv,
 			videoinput.reset(new VideoInput(args.getoptionvalue("resolution")));
 		} 
 		else {
-			videoinput.reset(new VideoInput());
+			videoinput.reset(new VideoInput("480"));
 		}
 	}
 	
@@ -276,7 +276,17 @@ MainGazeTracker::MainGazeTracker(int argc, char** argv,
 		conversionimage = cvCreateImage(cvSize(640, 480), 8, 3 );
 	}
 	
-	
+	string subject = args.getoptionvalue("subject");
+	string setup = args.getoptionvalue("setup");
+
+	if(subject.compare("") == 0) {
+		subject = "default";
+	}
+
+	if(setup.compare("") == 0) {
+		subject = "std";
+	}
+
 	if (args.getoptionvalue("overlay").compare("1") == 0)
 		videooverlays = true;
 	
@@ -311,7 +321,7 @@ MainGazeTracker::MainGazeTracker(int argc, char** argv,
 		folder_parameter = args.getoptionvalue("outputfolder");
 
 	// --subject parameter
-	base_path = getUniqueFileName(folder_parameter, args.getoptionvalue("subject") + "_" + args.getoptionvalue("setup") + "_" + args.getoptionvalue("resolution"));
+	base_path = getUniqueFileName(folder_parameter, subject + "_" + setup + "_" + args.getoptionvalue("resolution"));
 	
     	// --record parameter
 	if (args.getoptionvalue("record").compare("1") == 0) {
@@ -331,8 +341,8 @@ MainGazeTracker::MainGazeTracker(int argc, char** argv,
 	*outputfile << "--overlay=" << (videooverlays ? "true" : "false") << endl;
 	*outputfile << "--headdistance=" << headdistance << endl;
 	*outputfile << "--resolution=" << args.getoptionvalue("resolution") << endl;
-	*outputfile << "--setup=" << args.getoptionvalue("setup") << endl;
-	*outputfile << "--subject=" << args.getoptionvalue("subject") << endl << endl;
+	*outputfile << "--setup=" << setup << endl;
+	*outputfile << "--subject=" << subject << endl << endl;
 
 	// Finally the screen resolution
     Glib::RefPtr<Gdk::Screen> screen = Gdk::Display::get_default()->get_default_screen();
@@ -347,13 +357,7 @@ MainGazeTracker::MainGazeTracker(int argc, char** argv,
 		commandoutputfile = new ofstream(commandfilename.c_str());
 	}	
 	
-	// --setup parameter
-	if (args.getoptionvalue("setup").compare("") != 0) {
-		directory = args.getoptionvalue("setup");
-	} 
-	else {
-		directory = "std";
-	}
+	directory = setup;
 	
     canvas.reset(cvCreateImage(videoinput->size, 8, 3));
     tracking.reset(new TrackingSystem(videoinput->size));
@@ -416,13 +420,8 @@ void MainGazeTracker::choosepoints() {
 			*commandoutputfile << totalframecount << " SELECT" << endl;
 		}
 		
-		//cvSaveImage((base_path.substr(0, base_path.length() - 4) + "_select.png").c_str(), videoinput->frame);
-		
-		
 		detect_eye_corners(videoinput->frame, videoinput->get_resolution(), eyes);
 		
-		
-		// TODO Try to choose points that are a little below the calculated points
 		
 		CvRect nose_rect = cvRect(eyes[0].x, eyes[0].y, fabs(eyes[0].x-eyes[1].x), fabs(eyes[0].x-eyes[1].x));
 		check_rect_size(videoinput->frame, &nose_rect);
@@ -572,7 +571,7 @@ void MainGazeTracker::doprocessing(void) {
 		// Write the same info to the output text file
 		if(outputfile != NULL) {
 			TrackerOutput output = tracking->gazetracker.output;
-			if(tracker_status == STATUS_TESTING) { // output.outputError && output.actualTarget.y != 0) {        // TODO ONUR UNCOMMENT CONDITION IN EXPERIMENT MODE
+			if(tracker_status == STATUS_TESTING) {
 				if(!tracking->eyex.isBlinking()) {
 					*outputfile << output.frameid + 1 << "\t" 
 							<< output.actualTarget.x << "\t" << output.actualTarget.y << "\t"
@@ -854,7 +853,6 @@ void MainGazeTracker::startTesting() {
     shared_ptr<WindowPointer> 
 	pointer(new WindowPointer(WindowPointer::PointerSpec(30,30,1,0,0.2)));
 	
-	// TODO Onur modifications for experiments on GameWindow
 	game_win->setCalibrationPointer(pointer.get());
 	
 	if(Gdk::Screen::get_default()->get_n_monitors() > 1) {
@@ -1187,61 +1185,9 @@ void detect_eye_corners(IplImage* img, double resolution, Point points[]){
 
 	cvCvtColor(eye_region_image, eye_region_image_gray, CV_RGB2GRAY);
 	
-	// TODO ONUR cvEqualizeHist(eye_region_image_gray, eye_region_image_gray);
 	normalizeGrayScaleImage(eye_region_image_gray);
 
 	CvPoint2D32f* corners = detect_corners_in_grayscale(eye_region_image_gray, corner_count);
-			
-/*
-	CvPoint2D32f left_midpoint;
-	left_midpoint.x = 0;
-	left_midpoint.y = both_eyes->height*0.6;
-	
-	CvPoint2D32f right_midpoint;
-	right_midpoint.x = both_eyes->width;
-	right_midpoint.y = both_eyes->height*0.6;
-	
-	CvPoint2D32f left_eye_corner;
-	left_eye_corner.x = both_eyes->width/2;
-	left_eye_corner.y = both_eyes->height/2;
-	
-	CvPoint2D32f right_eye_corner;
-	right_eye_corner.x = both_eyes->width/2;
-	right_eye_corner.y = both_eyes->height/2;
-	
-	for( int j = 0; j < 100; j++ ) {
-		if(calculateDistance(corners[j], left_midpoint) < calculateDistance(left_eye_corner, left_midpoint)) {
-			left_eye_corner.x = corners[j].x;
-			left_eye_corner.y = corners[j].y;
-		}
-		
-		if(calculateDistance(corners[j], right_midpoint) < calculateDistance(right_eye_corner, right_midpoint)) {
-			right_eye_corner.x = corners[j].x;
-			right_eye_corner.y = corners[j].y;
-		}
-	}
-	
-	int horizontal_shift = 2;
-	int vertical_shift = 3;
-	
-	if(resolution == 720) {
-		horizontal_shift = 4;
-		vertical_shift = 5;
-	}
-	points[0] = Point(left_rect.x + left_eye_corner.x - horizontal_shift, left_rect.y + left_eye_corner.y + vertical_shift);
-	points[1] = Point(left_rect.x + right_eye_corner.x + horizontal_shift, left_rect.y + right_eye_corner.y + vertical_shift);
-*/
-	
-/*
-	int vertical_shift = 3;
-	
-	if(resolution == 720) {
-		vertical_shift = 5;
-	}
-	else if(resolution == 1080) {
-		vertical_shift = 8;
-	}
-*/
 
 	int left_eye_corners_x_sum = 0;
 	int left_eye_corners_y_sum = 0;
@@ -1325,13 +1271,9 @@ void detect_eyebrow_corners(IplImage* img, double resolution, CvRect eyebrow_rec
 	cvResetImageROI(img);
 	
 	//cvSaveImage("eyebrows.png", eyebrow_region_image);
-	//cvSaveImage("eyebrows_2.png", eyebrow_region_image_2);
 
     cvCvtColor(eyebrow_region_image, eyebrow_region_image_gray, CV_RGB2GRAY);
     cvCvtColor(eyebrow_region_image_2, eyebrow_region_image_gray_2, CV_RGB2GRAY);
-    
-	//normalizeGrayScaleImage(eyebrow_region_image);
-	//normalizeGrayScaleImage(eyebrow_region_image_2);
 
 	int corner_count = 1;
 	CvPoint2D32f* corners = detect_corners_in_grayscale(eyebrow_region_image_gray, corner_count);
@@ -1353,10 +1295,8 @@ CvPoint2D32f* detect_corners_in_grayscale(IplImage* eye_region_image_gray, int& 
 	eig_image = cvCreateImage(cvSize(eye_region_image_gray->width, eye_region_image_gray->height), IPL_DEPTH_32F, 1);
 	temp_image = cvCreateImage(cvSize(eye_region_image_gray->width, eye_region_image_gray->height), IPL_DEPTH_32F, 1);
 			
-	//const int MAX_CORNERS = 100;
 	CvPoint2D32f* corners = new CvPoint2D32f[corner_count];
-	//int corner_count = MAX_CORNERS;
-	double quality_level = 0.01; // TODO ONUR 0.01;
+	double quality_level = 0.01;
 	double min_distance = 2;
 	int eig_block_size = 3;
 	int use_harris = false;

@@ -255,26 +255,6 @@ void GazeTracker::printTrainingErrors() {
 	* */
 }
 
-/*void GazeTracker::calculateTrainingErrors() {
-	vector<SharedImage> images = getsubvector(caltargets, &CalTarget::image);
-	vector<SharedImage> images_left = getsubvector(caltargets_left, &CalTarget::image);
-	
-	for(int i=0; i<caltargets.size(); i++) {
-		double x_estimate = (gpx->getmean(images[i]) + gpx_left->getmean(images_left[i])) / 2;
-		double y_estimate = (gpy->getmean(images[i]) + gpy_left->getmean(images_left[i])) / 2;
-		
-		double x_error = fabs(caltargets[i].point.x - x_estimate);
-		double y_error = fabs(caltargets[i].point.y - y_estimate);
-		
-		*output_file << "TARGET: (" << caltargets[i].point.x << "\t, " << caltargets[i].point.y << "\t),\tESTIMATE: ("<< x_estimate << "\t, " << y_estimate <<")" << endl;
-		cout << "TARGET: (" << caltargets[i].point.x << "\t, " << caltargets[i].point.y << "\t),\tESTIMATE: ("<< x_estimate << "\t, " << y_estimate <<")" << endl;
-	}
-	
-	*output_file << endl << endl;
-	cout << endl << endl;
-	
-	output_file->flush();
-}*/
 
 void GazeTracker::clear() {
     caltargets.clear();
@@ -284,13 +264,9 @@ void GazeTracker::clear() {
     gamma_x = -1;
 
 	ANN = fann_create_standard(2, nn_eyewidth * nn_eyeheight, 2);
-	//TODO CHANGE IF NECESSARY fann_set_training_algorithm(ANN, FANN_TRAIN_INCREMENTAL);
-	//fann_set_learning_rate(ANN, 0.3);
 	fann_set_activation_function_output(ANN, FANN_SIGMOID);
 	
 	ANN_left = fann_create_standard(2, nn_eyewidth * nn_eyeheight, 2);
-	//TODO CHANGE IF NECESSARY fann_set_training_algorithm(ANN_left, FANN_TRAIN_INCREMENTAL);
-	//fann_set_learning_rate(ANN_left, 0.3);
 	fann_set_activation_function_output(ANN_left, FANN_SIGMOID);
     // updateGPs()
 }
