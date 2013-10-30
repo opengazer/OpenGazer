@@ -37,14 +37,8 @@ GameArea::GameArea(TrackerOutput* op)
 	output = op;
 	
 	
-	cout << "BEFORE: " << get_events() << endl;
-	
-		add_events(Gdk::BUTTON_PRESS_MASK);
-	cout << "MIDDLE: " << get_events() << endl;
-		add_events(Gdk::BUTTON_RELEASE_MASK);
-		
-	cout << "AFTER: " << get_events() << endl;
-	
+	add_events(Gdk::BUTTON_PRESS_MASK);
+	add_events(Gdk::BUTTON_RELEASE_MASK);
 	
 	Glib::RefPtr<Gdk::Window> window = get_window();
     //this->signal_key_press_event().connect(sigc::mem_fun(*this, &GameArea::on_idle));

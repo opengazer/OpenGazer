@@ -284,8 +284,9 @@ MainGazeTracker::MainGazeTracker(int argc, char** argv,
 	}
 
 	if(setup.compare("") == 0) {
-		subject = "std";
+		setup = "std";
 	}
+		
 
 	if (args.getoptionvalue("overlay").compare("1") == 0)
 		videooverlays = true;
@@ -300,13 +301,13 @@ MainGazeTracker::MainGazeTracker(int argc, char** argv,
 	if (args.getoptionvalue("dwelltime").compare("") != 0)
 		dwelltime_parameter = atoi(args.getoptionvalue("dwelltime").c_str());
 	else
-		dwelltime_parameter = 20;
+		dwelltime_parameter = 30;
 	
 	// --testdwelltime parameter
 	if (args.getoptionvalue("testdwelltime").compare("") != 0)
 		test_dwelltime_parameter = atoi(args.getoptionvalue("testdwelltime").c_str());
 	else
-		test_dwelltime_parameter = dwelltime_parameter;
+		test_dwelltime_parameter = 20;
 	
 	// --sleep parameter
 	if (args.getoptionvalue("sleep").compare("") != 0)
@@ -365,9 +366,7 @@ MainGazeTracker::MainGazeTracker(int argc, char** argv,
 	tracking->gazetracker.output_file = outputfile;
 	isCalibrationOutputWritten = true;
 	
-	if(game_win == NULL) {
-		game_win = new GameWindow (&(tracking->gazetracker.output));
-	}
+	game_win = new GameWindow (&(tracking->gazetracker.output));
 	game_win->show();
 
     if(videoinput.get()->get_resolution() == 720) {
@@ -490,7 +489,6 @@ void MainGazeTracker::clearpoints() {
 
 
 void MainGazeTracker::doprocessing(void) {	
-	
 	totalframecount++;
 	
     framecount++;
@@ -504,7 +502,7 @@ void MainGazeTracker::doprocessing(void) {
 		;
 	}
 	
-    const IplImage *frame = videoinput->frame;
+	const IplImage *frame = videoinput->frame;
 
     canvas->origin = frame->origin;
 	double image_norm = 0.0;
@@ -548,8 +546,6 @@ void MainGazeTracker::doprocessing(void) {
 	else {
         cvCopy( frame, canvas.get(), 0 );	
 	}
-
-	
 
     try {
 	tracking->doprocessing(frame, canvas.get());
@@ -595,7 +591,6 @@ void MainGazeTracker::doprocessing(void) {
 		    outputfile->flush();
 		}
 	}
-	
 	
 // 	if (!tracking->tracker.areallpointsactive())
 // 	    throw TrackingException();
@@ -809,7 +804,7 @@ void MainGazeTracker::startCalibration() {
 	}
 	game_win->show();
 	
-    if (recording) {
+	if (recording) {
 		*commandoutputfile << totalframecount << " CALIBRATE" << endl;
 	}
 	
@@ -867,7 +862,7 @@ void MainGazeTracker::startTesting() {
 	points = Calibrator::loadpoints(calfile);
 	
 	shared_ptr<MovingTarget> 
-	moving(new MovingTarget(framecount, scalebyscreen(points), pointer, dwelltime_parameter));
+	moving(new MovingTarget(framecount, scalebyscreen(points), pointer, test_dwelltime_parameter));
 	
 	target = moving.operator->();
 	
@@ -887,22 +882,6 @@ void MainGazeTracker::startPlaying() {
 	game_win->show();
 }
 void MainGazeTracker::pauseOrRepositionHead() {
-	// Create the repositioning image if necessary
-	if(repositioning_image == NULL){
-		
-		if(videoinput.get()->get_resolution() == 720) {
-			repositioning_image = cvCreateImage(cvSize(1280, 720), 8, 3 );
-		}
-		else if(videoinput.get()->get_resolution() == 1080) {
-			repositioning_image = cvCreateImage(cvSize(1920, 1080), 8, 3 );
-		}
-		else if(videoinput.get()->get_resolution() == 480) {
-			repositioning_image = cvCreateImage(cvSize(640, 480), 8, 3 );
-		}
-		
-		game_win->setRepositioningImage(repositioning_image);
-	}
-	
 	if(tracker_status == STATUS_PAUSED) {
 	    if (recording) {
 			*commandoutputfile << totalframecount << " UNPAUSE" << endl;
