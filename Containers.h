@@ -22,7 +22,7 @@ class  Containee {
 
 template <class ParentType, class ChildType>		
 class BaseContainer {
-    typedef shared_ptr<ChildType> ChildPtr;
+    typedef boost::shared_ptr<ChildType> ChildPtr;
     static bool isFinished(const ChildPtr &object) { 
 	return !(object && object->parent);
     }

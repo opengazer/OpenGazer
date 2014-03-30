@@ -194,7 +194,7 @@ VideoInput::~VideoInput() {
 }
 
 MainGazeTracker::MainGazeTracker(int argc, char** argv, 
-				 const vector<shared_ptr<AbstractStore> > 
+                 const vector<boost::shared_ptr<AbstractStore> >
 				 &stores): 
     framestoreload(-1), stores(stores), autoreload(false), videooverlays(false), totalframecount(0), recording(false), commandindex(-1)
 //     , statemachine(shared_ptr<AlertWindow>(new AlertWindow("start")))
@@ -808,13 +808,13 @@ void MainGazeTracker::startCalibration() {
 		*commandoutputfile << totalframecount << " CALIBRATE" << endl;
 	}
 	
-    shared_ptr<WindowPointer> 
+    boost::shared_ptr<WindowPointer> 
 	pointer(new WindowPointer(WindowPointer::PointerSpec(30,30,1,0,0.2)));
 	
 	game_win->setCalibrationPointer(pointer.get());
 	
 	if(Gdk::Screen::get_default()->get_n_monitors() > 1) {
-	    shared_ptr<WindowPointer> 
+	    boost::shared_ptr<WindowPointer> 
 		mirror(new WindowPointer(WindowPointer::PointerSpec(30,30,1,0,0)));
 	
 		pointer->mirror = mirror;
@@ -822,7 +822,7 @@ void MainGazeTracker::startCalibration() {
 
     ifstream calfile((directory + "/calpoints.txt").c_str());
 
-    shared_ptr<Calibrator> 
+    boost::shared_ptr<Calibrator> 
 	cal(new Calibrator(framecount, tracking, 
 				  scalebyscreen(Calibrator::loadpoints(calfile)),
 				  pointer, dwelltime_parameter));
@@ -845,13 +845,13 @@ void MainGazeTracker::startTesting() {
 	
     vector<Point> points;
 
-    shared_ptr<WindowPointer> 
+    boost::shared_ptr<WindowPointer> 
 	pointer(new WindowPointer(WindowPointer::PointerSpec(30,30,1,0,0.2)));
 	
 	game_win->setCalibrationPointer(pointer.get());
 	
 	if(Gdk::Screen::get_default()->get_n_monitors() > 1) {
-		shared_ptr<WindowPointer> 
+        boost::shared_ptr<WindowPointer>
 		mirror(new WindowPointer(WindowPointer::PointerSpec(30,30,1,0,0)));
 	
 		pointer->mirror = mirror;
@@ -861,7 +861,7 @@ void MainGazeTracker::startTesting() {
     ifstream calfile((directory + "/testpoints.txt").c_str());
 	points = Calibrator::loadpoints(calfile);
 	
-	shared_ptr<MovingTarget> 
+    boost::shared_ptr<MovingTarget>
 	moving(new MovingTarget(framecount, scalebyscreen(points), pointer, test_dwelltime_parameter));
 	
 	target = moving.operator->();

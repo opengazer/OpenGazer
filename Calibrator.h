@@ -26,11 +26,11 @@ class FrameProcessing:
 public ProcessContainer<FrameProcessing,FrameFunction> {};
 
 class MovingTarget: public FrameFunction {
-    shared_ptr<WindowPointer> pointer;
+    boost::shared_ptr<WindowPointer> pointer;
  public:
     MovingTarget(const int &frameno, 
 		 const vector<Point>& points, 
-		 const shared_ptr<WindowPointer> &pointer,
+		 const boost::shared_ptr<WindowPointer> &pointer,
 		 int dwelltime=20);
     virtual ~MovingTarget();
     virtual void process();
@@ -47,16 +47,16 @@ class MovingTarget: public FrameFunction {
 
 class Calibrator: public MovingTarget {
     static const Point defaultpointarr[];
-    shared_ptr<TrackingSystem> trackingsystem;
+    boost::shared_ptr<TrackingSystem> trackingsystem;
     scoped_ptr<FeatureDetector> averageeye;
     scoped_ptr<FeatureDetector> averageeye_left;
 public:
     static vector<Point> defaultpoints;
     static vector<Point> loadpoints(istream& in);
     Calibrator(const int &frameno, 
-	       const shared_ptr<TrackingSystem> &trackingsystem, 
+	       const boost::shared_ptr<TrackingSystem> &trackingsystem, 
 	       const vector<Point>& points, 
-	       const shared_ptr<WindowPointer> &pointer,
+	       const boost::shared_ptr<WindowPointer> &pointer,
 	       int dwelltime=20);
     virtual ~Calibrator();
     virtual void process();

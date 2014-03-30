@@ -14,7 +14,7 @@ FrameFunction::~FrameFunction() {
 
 MovingTarget::MovingTarget(const int &frameno, 
 			   const vector<Point>& points, 
-			   const shared_ptr<WindowPointer> &pointer,
+               const boost::shared_ptr<WindowPointer> &pointer,
 			   int dwelltime):
     FrameFunction(frameno), 
     points(points), dwelltime(dwelltime), pointer(pointer)
@@ -70,9 +70,9 @@ Point MovingTarget::getActivePoint() {
 }
 
 Calibrator::Calibrator(const int &framecount, 
-               const shared_ptr<TrackingSystem> &trackingsystem,
+               const boost::shared_ptr<TrackingSystem> &trackingsystem,
                const vector<Point>& points, 
-               const shared_ptr<WindowPointer> &pointer,
+               const boost::shared_ptr<WindowPointer> &pointer,
                int dwelltime): 
     MovingTarget(framecount, points, pointer, dwelltime),
     trackingsystem(trackingsystem)

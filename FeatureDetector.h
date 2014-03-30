@@ -8,6 +8,6 @@ class FeatureDetector {
 public:
     FeatureDetector(CvSize eyesize);
     void addSample(const IplImage *source);
-    shared_ptr<IplImage> getMean();
-    shared_ptr<IplImage> getVariance();
+    boost::shared_ptr<IplImage> getMean();
+    boost::shared_ptr<IplImage> getVariance();
 };
