@@ -14,7 +14,7 @@ The installation steps for [Mac OS X] (#installation-using-macports-on-mac-os-x-
 
 Installation using MacPorts on Mac OS X systems
 -----------------------------------------------
-This has been tested on a MacBook with with OS X 10.6 and 10.8, both with the built-in 
+This has been tested on a MacBook with OS X 10.6, 10.8 and 10.9, both with the built-in 
 iSight camera and a Logitech webcam.
 
 1. Download and install [Xcode] (https://developer.apple.com/xcode/)
@@ -22,9 +22,11 @@ iSight camera and a Logitech webcam.
 3. Update the port definitions and install the required packages from MacPorts. Note that this
 might take a long time since all these packages have a lot of dependencies:
   - sudo port selfupdate
-  - sudo port install gtkmm cairomm gsl cmake ffmpeg opencv fann boost vxl
-4. Download and install [XQuartz] (http://xquartz.macosforge.org/landing/)
-5. Open a terminal and build the software:
+  - sudo port install gtkmm cairomm gsl cmake ffmpeg opencv fann boost
+4. Install the VXL library (for Mac OS X Mavericks (10.9), use the fixed port definitions from [Christian Frisson] (https://github.com/ChristianFrisson/MacPortsCycles))
+  - sudo port install vxl
+5. Download and install [XQuartz] (http://xquartz.macosforge.org/landing/)
+6. Open a terminal and build the software:
   - cd opengazer
   - make
 
