@@ -3,12 +3,12 @@
 #include <iostream>
 #include "GtkStore.h"
 
-static vector<shared_ptr<AbstractStore> > getStores() {
-    vector<shared_ptr<AbstractStore> > stores;
+static vector<boost::shared_ptr<AbstractStore> > getStores() {
+    vector<boost::shared_ptr<AbstractStore> > stores;
 
-    stores.push_back(shared_ptr<AbstractStore>(new SocketStore()));
-    stores.push_back(shared_ptr<AbstractStore>(new StreamStore(cout)));
-    stores.push_back(shared_ptr<AbstractStore>
+    stores.push_back(boost::shared_ptr<AbstractStore>(new SocketStore()));
+    stores.push_back(boost::shared_ptr<AbstractStore>(new StreamStore(cout)));
+    stores.push_back(boost::shared_ptr<AbstractStore>
       (new WindowStore(WindowPointer::PointerSpec(20, 30, 0, 0, 1),
 			   WindowPointer::PointerSpec(20, 20, 0, 1, 1),
 		       WindowPointer::PointerSpec(30, 30, 1, 0, 1))));

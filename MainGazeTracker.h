@@ -61,7 +61,7 @@ class VideoWriter;
 class MainGazeTracker {
     scoped_ptr<VideoWriter> video;
     int framestoreload;
-    vector<shared_ptr<AbstractStore> > stores;
+    vector<boost::shared_ptr<AbstractStore> > stores;
     int framecount;
     bool autoreload;
 	string directory;
@@ -88,7 +88,7 @@ class MainGazeTracker {
  public:	
 	//bool isTesting;
 	bool isCalibrationOutputWritten;
-    shared_ptr<TrackingSystem> tracking;
+    boost::shared_ptr<TrackingSystem> tracking;
 	MovingTarget* target;
 
     FrameProcessing framefunctions;
@@ -97,7 +97,7 @@ class MainGazeTracker {
 	
 
     MainGazeTracker(int argc, char** argv,
-		    const vector<shared_ptr<AbstractStore> > &stores);
+            const vector<boost::shared_ptr<AbstractStore> > &stores);
     void doprocessing(void);
 	void simulateClicks(void);
     ~MainGazeTracker(void);

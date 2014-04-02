@@ -12,8 +12,8 @@ void releaseImage(IplImage *image) {
     cvReleaseImage(&image);
 }
 
-shared_ptr<IplImage> createImage(const CvSize &size, int depth, int channels) {
-    return shared_ptr<IplImage>(cvCreateImage(size, depth, channels),
+boost::shared_ptr<IplImage> createImage(const CvSize &size, int depth, int channels) {
+    return boost::shared_ptr<IplImage>(cvCreateImage(size, depth, channels),
 				releaseImage);
 }
 

@@ -1,4 +1,5 @@
 #include <vnl/algo/vnl_svd.h>
+#include"PointTracker.h"
 
 template <class T>
 

@@ -3,7 +3,7 @@
 #include <opencv/cv.h>
 
 GazeArea::GazeArea(int argc, char **argv, 
-		   const vector<shared_ptr<AbstractStore> > &stores):
+           const vector<boost::shared_ptr<AbstractStore> > &stores):
     lastPointId(-1), gazetracker(argc, argv, stores)
 {
     set_size_request(gazetracker.canvas->width, gazetracker.canvas->height);

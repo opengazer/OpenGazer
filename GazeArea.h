@@ -10,7 +10,7 @@ class GazeArea: public Gtk::DrawingArea {
     MainGazeTracker gazetracker;
 
     GazeArea(int argc, char **argv,
-	     const vector<shared_ptr<AbstractStore> > &stores);
+         const vector<boost::shared_ptr<AbstractStore> > &stores);
     virtual ~GazeArea();
 
  protected:

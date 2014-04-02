@@ -189,14 +189,14 @@ namespace boost {
 }
 
 void releaseImage(IplImage *image);
-shared_ptr<IplImage> createImage(const CvSize &size, int depth, int channels);
+boost::shared_ptr<IplImage> createImage(const CvSize &size, int depth, int channels);
 void mapToFirstMonitorCoordinates(Point monitor2point, Point& monitor1point);
 void mapToVideoCoordinates(Point monitor2point, double resolution, Point& videoPoint, bool reverse_x = true);
 void mapToNeuralNetworkCoordinates(Point point, Point& nnpoint);
 void mapFromNeuralNetworkToScreenCoordinates(Point nnpoint, Point& point);
 string getUniqueFileName(string directory, string base_file_name);
 
-typedef shared_ptr<const IplImage> SharedImage;
+typedef boost::shared_ptr<const IplImage> SharedImage;
 
 void normalizeGrayScaleImage(IplImage *image, double standard_mean = 127, double standard_std = 50);
 void normalizeGrayScaleImage2(IplImage *image, double standard_mean = 127, double standard_std = 50);

@@ -5,7 +5,7 @@
 /* represents the pointer as a small window and moves that window */
 class WindowPointer {
  public:
-	shared_ptr<WindowPointer> mirror;
+    boost::shared_ptr<WindowPointer> mirror;
     struct PointerSpec {
 	int width, height;
 	double red, green, blue;
