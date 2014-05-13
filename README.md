@@ -23,10 +23,8 @@ iSight camera and a Logitech webcam.
 might take a long time since all these packages have a lot of dependencies:
   - sudo port selfupdate
   - sudo port install gtkmm cairomm gsl cmake ffmpeg opencv fann boost
-4. Install the VXL library (for Mac OS X Mavericks (10.9), use the fixed port definitions from [Christian Frisson] (https://github.com/ChristianFrisson/MacPortsCycles))
-  - sudo port install vxl
-5. Download and install [XQuartz] (http://xquartz.macosforge.org/landing/)
-6. Open a terminal and build the software:
+4. Download and install [XQuartz] (http://xquartz.macosforge.org/landing/)
+5. Open a terminal and build the software:
   - cd opengazer
   - make
 
@@ -42,7 +40,6 @@ that I was using:
   - opencv @2.4.6_0
   - fann @2.2.0_0
   - boost @1.54.0_0+no_single+no_static+python27+universal
-  - vxl @1.17.0_0
 
 Version @2.4.6_1 of OpenCV from MacPorts has a bug which prevents access to the webcam. In such a
 case, the preferred version (@2.4.6_0) can be installed with the following steps (steps from [here] (http://www.codedrop.ca/blog/archives/56)):
@@ -76,20 +73,7 @@ Tested on a clean installation of Ubuntu 12.04 with a Logitech webcam.
   - make
   - make install
 3. [Build and install] (https://trac.ffmpeg.org/wiki/UbuntuCompilationGuide) FFMPEG 0.7.13
-4. Build VXL from source
-  - Download and extract [VXL (1.14.0) source] (http://sourceforge.net/projects/vxl/files/vxl/1.14/vxl-1.14.0.zip/download), create a new directory named "build" under "vxl-1.14.0"
-  - Open terminal, change directory to "build" and run:
-    - ccmake  ..
-  - Set the following options:
-    - "... advanced options? [No]:"    YES
-    - BUILD_SHARED_LIBS=ON
-    - EXAMPLES=OFF
-    - TESTING=OFF
-  - If you receive errors about python, set python directories to empty in the configuration
-  - Build the library:
-    - make
-5. Modify the eye-tracker Makefile and update the VXL directories. 
-6. Build eyetracker
+4. Build eyetracker
   - cd opengazer
   - make
 
