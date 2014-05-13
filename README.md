@@ -11,6 +11,7 @@ This software is the result of [on-going research] (http://mv.cvc.uab.es/project
 
 The installation steps for [Mac OS X] (#installation-using-macports-on-mac-os-x-systems) and [Ubuntu] (#installation-on-ubuntu-1204) systems are below.
 
+**UPDATE:** VXL library is removed from the dependencies and the installation steps are updated to reflect this change.
 
 Installation using MacPorts on Mac OS X systems
 -----------------------------------------------
