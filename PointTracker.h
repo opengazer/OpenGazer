@@ -2,11 +2,9 @@
 
 #include <opencv/cv.h>
 #include <vector>
-#include <vgl/vgl_homg_point_2d.h>
 #include "utils.h"
 
 using namespace std;
-typedef vgl_vector_2d<double> HomPoint;
 
 class TrackingException: public std::exception {};
 
@@ -41,7 +39,7 @@ public:
     void draw(IplImage *canvas);
     void normalizeOriginalGrey();
 
-    vector<HomPoint> 
+    vector<Point> 
 	getpoints(const vector<CvPoint2D32f> PointTracker::*points, 
 		  bool allpoints=true);
 

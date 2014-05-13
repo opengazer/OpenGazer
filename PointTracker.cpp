@@ -244,14 +244,14 @@ int PointTracker::pointcount() {
     return currentpoints.size();
 }
 
-vector<HomPoint> 
+vector<Point> 
 PointTracker::getpoints(const vector<CvPoint2D32f> PointTracker::*points, 
 			bool allpoints) 
 {
-    vector<HomPoint> vec;
+    vector<Point> vec;
     for(int i=0; i<pointcount(); i++)
 	if (allpoints || status[i])
-	    vec.push_back(HomPoint((this->*points)[i].x, 
+	    vec.push_back(Point((this->*points)[i].x, 
 				   (this->*points)[i].y));
     return vec;
 }

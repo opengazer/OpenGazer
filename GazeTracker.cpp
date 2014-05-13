@@ -87,33 +87,39 @@ double GazeTracker::covariancefunction(SharedImage const& im1,
 }
 
 void GazeTracker::updateGPs(void) {
-    Vector xlabels(caltargets.size());
-    Vector ylabels(caltargets.size());
+    vector<double> xlabels;
+    vector<double> ylabels;
 		
     for(int i=0; i<caltargets.size(); i++) {
-	xlabels[i] = caltargets[i].point.x;
-	ylabels[i] = caltargets[i].point.y;
+	    xlabels.push_back(caltargets[i].point.x);
+	    ylabels.push_back(caltargets[i].point.y);
     }
 
     vector<SharedImage> images = 
 	getsubvector(caltargets, &CalTarget::image);
-
+	
+	/*
+cout << "INSIDE updateGPs" << endl;
+cout << "labels size: " << xlabels.size();
+cout << "images size: " << images.size();
+*/
     gpx.reset(new ImProcess(images, xlabels, covariancefunction, 0.01));
     gpy.reset(new ImProcess(images, ylabels, covariancefunction, 0.01));  
     targets.reset(new Targets(getsubvector(caltargets, &CalTarget::point)));
 }
 
 void GazeTracker::updateGPs_left(void) {
-    Vector xlabels(caltargets_left.size());
-	Vector ylabels(caltargets_left.size());
+    vector<double> xlabels;
+	vector<double> ylabels;
 
     for(int i=0; i<caltargets_left.size(); i++) {
-	xlabels[i] = caltargets_left[i].point.x;
-	ylabels[i] = caltargets_left[i].point.y;
+	    xlabels.push_back(caltargets_left[i].point.x);
+	    ylabels.push_back(caltargets_left[i].point.y);
     }
 
     vector<SharedImage> images = 
 	getsubvector(caltargets_left, &CalTarget::image);
+
 
     gpx_left.reset(new ImProcess(images, xlabels, covariancefunction, 0.01));
     gpy_left.reset(new ImProcess(images, ylabels, covariancefunction, 0.01));  

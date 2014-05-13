@@ -7,7 +7,6 @@
 #include <math.h>
 #include <vector>
 #include <iostream>
-#include <vnl/algo/vnl_svd.h>
 #include <gdkmm.h>
 #include <boost/shared_ptr.hpp>
 #include <boost/scoped_ptr.hpp>
@@ -43,6 +42,8 @@ extern CvRect* face_rectangle;
 using namespace std;
 using namespace boost;
 
+using std::vector;
+
 #define xforeach(iter,container) \
     for(typeof(container.begin()) iter = container.begin();	\
 	iter != container.end(); iter++)
@@ -50,10 +51,6 @@ using namespace boost;
 #define xforeachback(iter,container) \
     for(typeof(container.rbegin()) iter = container.rbegin();	\
 	iter != container.rend(); iter++)
-
-typedef vnl_vector<double> Vector;
-typedef vnl_matrix<double> Matrix;
-
 
 struct QuitNow: public std::exception
   {
@@ -201,3 +198,4 @@ typedef boost::shared_ptr<const IplImage> SharedImage;
 void normalizeGrayScaleImage(IplImage *image, double standard_mean = 127, double standard_std = 50);
 void normalizeGrayScaleImage2(IplImage *image, double standard_mean = 127, double standard_std = 50);
 
+void printMat(CvMat* mat);

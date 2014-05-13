@@ -1,14 +1,8 @@
-#include <vnl/algo/vnl_cholesky.h>
 #include "utils.h"
+#include <algorithm>
+#include <functional>
+#include <numeric>
 
-class MultiGaussian {
-public:
-    Vector mean;
-    Matrix covariance;
-
-    MultiGaussian(Vector const& mean, Matrix const& covariance):
-	mean(mean), covariance(covariance) {}
-};
 
 template <class T>
 class GaussianProcess {
@@ -18,64 +12,80 @@ private:
     vector<T> inputs;
     CovarianceFunction covariancefunction;
 private:
-    Matrix L;
-    Vector alpha;
-
-    Matrix getcovariancematrix(vector<T> const& in1, 
+    CvMat* alpha;
+    
+    CvMat* getcovariancematrix(vector<T> const& in1, 
 			       vector<T> const& in2) const
     {
-	Matrix K(in1.size(), in2.size());
+        CvMat* K = cvCreateMat(in1.size(), in2.size(), CV_32FC1);
 	
-	for(int i=0; i<in1.size(); i++)
-	    for(int j=0; j<in2.size(); j++)
-		K(i,j) = covariancefunction(in1[i], in2[j]);
+    	for(int i=0; i<in1.size(); i++)
+    	    for(int j=0; j<in2.size(); j++)
+    	    CV_MAT_ELEM( *K, float, i, j ) = covariancefunction(in1[i], in2[j]);
 
-	return K;
+    	return K;
     }
 
 public:
     GaussianProcess(vector<T> const& inputs, 
-		    Vector const& targets,
+		    vector<double> const& targets,
 		    CovarianceFunction covariancefunction, 
 		    double noise=0.0):
     inputs(inputs), covariancefunction(covariancefunction)
     {
-	Matrix K = getcovariancematrix(inputs, inputs);	
-	for(int i=0; i<inputs.size(); i++)
-	    K[i][i] += noise;
-	// todo: do we need the "verbose" mode in cholesky?
-	vnl_cholesky chol(K);
-	L = chol.lower_triangle();
-	alpha = chol.solve(targets);
+    	CvMat* targets_matrix = cvCreateMat(targets.size(), 1, CV_32FC1);
+    	alpha = cvCreateMat(targets.size(), 1, CV_32FC1);
+	
+    	for(int i=0; i<targets.size(); i++)
+    	    CV_MAT_ELEM( *targets_matrix, float, i, 0 ) = targets[i];
+	
+    	CvMat* K = getcovariancematrix(inputs, inputs);
+    	for(int i=0; i<inputs.size(); i++)
+    	    CV_MAT_ELEM( *K, float, i, i ) += noise;
+    	
+        cvSolve(K, targets_matrix, alpha, CV_CHOLESKY);
     }
 
-    Vector getmeans(vector<T> const &tests) const {
-	Matrix KK = getcovariancematrix(inputs, tests);
-	return KK.transpose() * alpha;
+    CvMat* getmeans(vector<T> const &tests) const {
+    	CvMat* KK = getcovariancematrix(inputs, tests); 
+        CvMat* result = cvCreateMat(KK->cols, alpha->cols, CV_32FC1);
+  
+    	cvGEMM(KK, alpha, 1, NULL, 0, result, CV_GEMM_A_T);
+
+        return result;
     }
 
     double getmean(T const& test) const {
-	return getmeans(vector<T>(1, test))[0];
+        CvMat* means = getmeans(vector<T>(1, test));
+        return CV_MAT_ELEM( *means, float, 0, 0 );
     }
 };
 
 template <class T> 
 class MeanAdjustedGaussianProcess {
     double mean;
-    const GaussianProcess<T> gp;
+    GaussianProcess<T>* gp;
 
 public:
     MeanAdjustedGaussianProcess(vector<T> const& inputs, 
-				Vector const& targets,
+				vector<double> const& targets,
 				typename GaussianProcess<T>::CovarianceFunction 
 				  covariancefunction, 
-				double noise=0.0): 
-	mean(targets.mean()), 
-	gp(GaussianProcess<T>(inputs, targets - mean, 
-			      covariancefunction, noise))
-    {}   
+				double noise=0.0) {
+				    
+	
+        mean = std::accumulate(targets.begin(), targets.end(), 0.0) / targets.size();
+        
+        // Calculate "targets - mean"
+        vector<double> zero_mean_targets;
+        for(int i=0; i<targets.size(); i++) {
+            zero_mean_targets.push_back(targets[i]-mean);
+        }
+        
+        gp = new GaussianProcess<T>(inputs, zero_mean_targets, covariancefunction, noise);
+	}
 
     double getmean(T const& test) const {
-	return gp.getmean(test) + mean;
+	return gp->getmean(test) + mean;
     }
 };

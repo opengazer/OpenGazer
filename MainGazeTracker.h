@@ -112,5 +112,5 @@ class MainGazeTracker {
     void choosepoints();
 	void pauseOrRepositionHead();
     void clearpoints();
-    void extract_face_region_rectangle(IplImage* frame, vector<HomPoint> feature_points);
+    void extract_face_region_rectangle(IplImage* frame, vector<Point> feature_points);
 };

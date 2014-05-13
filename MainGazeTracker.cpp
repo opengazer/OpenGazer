@@ -568,6 +568,7 @@ void MainGazeTracker::doprocessing(void) {
 		if(outputfile != NULL) {
 			TrackerOutput output = tracking->gazetracker.output;
 			if(tracker_status == STATUS_TESTING) {
+                cout << "TESTING, WRITING OUTPUT!!!!!!!!!!!!!!!!!" << endl;
 				if(!tracking->eyex.isBlinking()) {
 					*outputfile << output.frameid + 1 << "\t" 
 							<< output.actualTarget.x << "\t" << output.actualTarget.y << "\t"
@@ -1313,7 +1314,7 @@ void check_rect_size(IplImage* image, CvRect* rect) {
 }
 
 
-void MainGazeTracker::extract_face_region_rectangle(IplImage* frame, vector<HomPoint> feature_points) {
+void MainGazeTracker::extract_face_region_rectangle(IplImage* frame, vector<Point> feature_points) {
 	int min_x = 10000;
 	int max_x = 0;
 	int min_y = 10000;
@@ -1321,10 +1322,10 @@ void MainGazeTracker::extract_face_region_rectangle(IplImage* frame, vector<HomP
 	
 	// Find the boundaries of the feature points
 	for(int i=0; i< (int) feature_points.size(); i++) {
-		min_x = feature_points[i].x() < min_x ? feature_points[i].x() : min_x;
-		min_y = feature_points[i].y() < min_y ? feature_points[i].y() : min_y;
-		max_x = feature_points[i].x() > max_x ? feature_points[i].x() : max_x;
-		max_y = feature_points[i].y() > max_y ? feature_points[i].y() : max_y;
+		min_x = feature_points[i].x < min_x ? feature_points[i].x : min_x;
+		min_y = feature_points[i].y < min_y ? feature_points[i].y : min_y;
+		max_x = feature_points[i].x > max_x ? feature_points[i].x : max_x;
+		max_y = feature_points[i].y > max_y ? feature_points[i].y : max_y;
 	}
 	
 	int dif_x = max_x - min_x;

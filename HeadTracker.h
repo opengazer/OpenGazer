@@ -1,5 +1,4 @@
 #pragma once
-#include <vgl/vgl_homg_point_2d.h>
 #include <opencv/cv.h>
 #include <vector>
 #include "PointTracker.h"
@@ -9,8 +8,8 @@ using namespace std;
 class HeadTracker {
     vector<double> depths;
 
-    vector<bool> detectinliers(vector<HomPoint> const &prev, 
-			       vector<HomPoint> const &now,
+    vector<bool> detectinliers(vector<Point> const &prev, 
+			       vector<Point> const &now,
 			       double radius = 30.0);
 
     void predictpoints(double xx0, double yy0, double xx1, double yy1,

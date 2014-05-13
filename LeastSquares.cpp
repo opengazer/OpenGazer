@@ -1,14 +1,17 @@
 #include "LeastSquares.h"
-#include <vnl/algo/vnl_cholesky.h>
 #include <assert.h>
 
+LeastSquares::LeastSquares(int n): n(n) {
+    X = cvCreateMat(n, n, CV_32FC1);
+    Y = cvCreateMat(n, 1, CV_32FC1);
+}
 void LeastSquares::addSample(double xs[], double y) {
     for(int i=0; i<n; i++)
-	for(int j=0; j<n; j++)
-	    X[i][j] += xs[i]*xs[j];
+	    for(int j=0; j<n; j++)
+	        CV_MAT_ELEM( *X, float, i, j ) += xs[i]*xs[j];
 
     for(int i=0; i<n; i++)
-	Y[i] += xs[i]*y;
+	    CV_MAT_ELEM( *Y, float, i, 0) += xs[i]*y;
 }
 
 void LeastSquares::addSample(double x1, double x2, double y) {
@@ -23,23 +26,20 @@ void LeastSquares::addSample(double x1, double x2, double x3, double y) {
     addSample(xs, y);
 }
 
-Vector LeastSquares::solve(void) {
-    return vnl_cholesky(X).solve(Y);
-}
-
-void LeastSquares::solve(double &a0, double &a1) {
-    assert(n == 2);
-    Vector vec = solve();
-    a0 = vec[0];
-    a1 = vec[1];
+CvMat* LeastSquares::solve(void) {
+    CvMat* result = cvCreateMat(n, 1, CV_32FC1);
+    
+    cvSolve(X, Y, result, CV_CHOLESKY);
+    
+    return result;
 }
 
 void LeastSquares::solve(double &a0, double &a1, double &a2) {
     assert(n == 3);
-    Vector vec = solve();
-    a0 = vec[0];
-    a1 = vec[1];
-    a2 = vec[2];
+    CvMat* vec = solve();
+    a0 = CV_MAT_ELEM( *vec, float, 0, 0);
+    a1 = CV_MAT_ELEM( *vec, float, 1, 0);
+    a2 = CV_MAT_ELEM( *vec, float, 2, 0);
 }
 
 

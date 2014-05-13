@@ -183,4 +183,23 @@ void normalizeGrayScaleImage(IplImage *image, double standard_mean, double stand
     cvConvertScale(image, image, ratio, shift);   // Move the mean from 0 to 127
 }
 
+void printMat(CvMat* mat)
+{
+    printf("(%dx%d)\n",mat->cols,mat->rows);
+    for(int i=0; i<mat->rows; i++)
+    {
+        if(i==0)
+        {
+            for(int j=0; j<mat->cols; j++)  printf("%10d",j+1);
+        }
 
+        printf("\n%4d: ",i+1);
+        for(int j=0; j<mat->cols; j++)
+        {
+
+            printf("%10.2f",cvGet2D(mat,i,j).val[0]);
+        }
+    }
+
+    printf("\n");
+}
