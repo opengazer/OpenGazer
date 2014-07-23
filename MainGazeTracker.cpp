@@ -316,7 +316,7 @@ MainGazeTracker::MainGazeTracker(int argc, char** argv,
 		sleep_parameter = 0;
 		
 	// --folder parameter
-    string folder_parameter = "../outputs";
+    string folder_parameter = "outputs";
     
 	if (args.getoptionvalue("outputfolder").compare("") != 0)
 		folder_parameter = args.getoptionvalue("outputfolder");
