@@ -1,3 +1,5 @@
+#pragma once
+
 #include <gtkmm/button.h>
 #include <gtkmm/window.h>
 #include <gtkmm/drawingarea.h>
@@ -6,16 +8,19 @@
 #include "GazeArea.h"
 
 class GazeTrackerGtk: public Gtk::Window {
- protected:
-  //Member widgets:
-    Gtk::Button calibratebutton, loadbutton, savebutton, clearbutton, choosebutton, pausebutton;
-    Gtk::VBox vbox;
-    Gtk::HBox buttonbar;
-
- public:
-    GazeArea picture;
-    GazeTrackerGtk(int argc, char **argv);
+public:
+	GazeTrackerGtk(int argc, char **argv);
+	virtual ~GazeTrackerGtk();
 	void changePauseButtonText();
-    virtual ~GazeTrackerGtk();
-    
+
+private:
+	GazeArea _picture;
+	Gtk::Button _calibrateButton;
+	Gtk::Button _loadButton;
+	Gtk::Button _saveButton;
+	Gtk::Button _clearButton;
+	Gtk::Button _chooseButton;
+	Gtk::Button _pauseButton;
+	Gtk::VBox _vbox;
+	Gtk::HBox _buttonBar;
 };
