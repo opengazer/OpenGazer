@@ -1,36 +1,44 @@
 #pragma once
+
+#include <netinet/in.h>
+
 #include "utils.h"
 #include "GazeTracker.h"
-#include <netinet/in.h>
 
 class AbstractStore {
 public:
-    virtual void store(const TrackerOutput& output) = 0;
-    virtual ~AbstractStore();
+	virtual ~AbstractStore();
+	virtual void store(const TrackerOutput &output) = 0;
 };
 
 class MmapStore: public AbstractStore {
-    int fd;
-    int *positiontable;
 public:
-    MmapStore(const char *filename="/tmp/gaze-mouse");
-    virtual void store(const TrackerOutput& output);
-    virtual ~MmapStore();
+	MmapStore(const char *filename="/tmp/gaze-mouse");
+	virtual ~MmapStore();
+	virtual void store(const TrackerOutput &output);
+
+private:
+	int _fileDescriptor;
+	int *_positionTable;
 };
- 
+
 class StreamStore: public AbstractStore {
-    ostream &stream;
 public:
-    StreamStore(ostream &stream);
-    virtual void store(const TrackerOutput& output);
-    virtual ~StreamStore();
+	StreamStore(ostream &stream);
+	virtual ~StreamStore();
+	virtual void store(const TrackerOutput &output);
+
+private:
+	ostream &_stream;
 };
 
 class SocketStore: public AbstractStore {
-    int mysocket;
-    struct sockaddr_in destaddr;
 public:
-    SocketStore(int port=20320);
-    virtual void store(const TrackerOutput& output);
-    virtual ~SocketStore();
+	SocketStore(int port=20320);
+	virtual ~SocketStore();
+	virtual void store(const TrackerOutput &output);
+
+private:
+	int _mySocket;
+	struct sockaddr_in _destAddr;
 };
