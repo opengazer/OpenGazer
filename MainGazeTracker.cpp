@@ -825,7 +825,7 @@ void MainGazeTracker::startCalibration() {
 
     boost::shared_ptr<Calibrator> 
 	cal(new Calibrator(framecount, tracking, 
-				  scalebyscreen(Calibrator::loadpoints(calfile)),
+				  scalebyscreen(Calibrator::loadPoints(calfile)),
 				  pointer, dwelltime_parameter));
 				
 	calibrator = cal.operator->();
@@ -833,7 +833,7 @@ void MainGazeTracker::startCalibration() {
 	isCalibrationOutputWritten = false;
     
     framefunctions.clear();
-    framefunctions.addchild(&framefunctions, cal);
+    framefunctions.addChild(&framefunctions, cal);
 
 }
 
@@ -860,7 +860,7 @@ void MainGazeTracker::startTesting() {
 	
 	// ONUR Modified code to read the test points from a text file
     ifstream calfile((directory + "/testpoints.txt").c_str());
-	points = Calibrator::loadpoints(calfile);
+	points = Calibrator::loadPoints(calfile);
 	
     boost::shared_ptr<MovingTarget>
 	moving(new MovingTarget(framecount, scalebyscreen(points), pointer, test_dwelltime_parameter));
@@ -873,7 +873,7 @@ void MainGazeTracker::startTesting() {
 	*outputfile << "TESTING" << endl << endl;
 	
     framefunctions.clear();
-    framefunctions.addchild(&framefunctions, moving);
+    framefunctions.addChild(&framefunctions, moving);
 }
 
 void MainGazeTracker::startPlaying() {

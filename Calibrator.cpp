@@ -1,196 +1,197 @@
 #include "Calibrator.h"
 
-Calibrator::~Calibrator() {
-#ifdef DEBUG
-    cout << "Destroying calibrator" << endl;
-#endif
+FrameFunction::FrameFunction(const int &frameNumber):
+	_frameNumber(frameNumber),
+	_startFrame(frameNumber)
+{
 }
 
 FrameFunction::~FrameFunction() {
 #ifdef DEBUG
-    cout << "Destroying framefunction" << endl;
+	cout << "Destroying framefunction" << endl;
 #endif
 }
 
-MovingTarget::MovingTarget(const int &frameno, 
-			   const vector<Point>& points, 
-               const boost::shared_ptr<WindowPointer> &pointer,
-			   int dwelltime):
-    FrameFunction(frameno), 
-    points(points), dwelltime(dwelltime), pointer(pointer)
-{    
-};
+int FrameFunction::getFrame() {
+	return _frameNumber - _startFrame;
+}
+
+MovingTarget::MovingTarget(const int &frameNumber, const vector<Point> &points, const boost::shared_ptr<WindowPointer> &windowPointer, int dwellTime):
+	FrameFunction(frameNumber),
+	_points(points),
+	_dwellTime(dwellTime),
+	_windowPointer(windowPointer)
+{
+}
 
 MovingTarget::~MovingTarget() {
-    int id = getFrame() / dwelltime;
+	int id = getFrame() / _dwellTime;
 }
 
 void MovingTarget::process() {
-    if (getPointNo() != points.size() && active()) {
-        int id = getPointNo();
-        
-        if (getPointFrame() == 1) 
-            pointer->setPosition((int)points[id].x, (int)points[id].y); 
-    }
-    else {
-        if(getPointNo() == points.size() && tracker_status == STATUS_TESTING) {
-            tracker_status = STATUS_CALIBRATED;
-        }
-        detach();
-    }
+	if (getPointNumber() != _points.size() && isActive()) {
+		int id = getPointNumber();
+
+		if (getPointFrame() == 1) {
+			_windowPointer->setPosition((int)_points[id].x, (int)_points[id].y);
+		}
+	} else {
+		if (getPointNumber() == _points.size() && tracker_status == STATUS_TESTING) {
+			tracker_status = STATUS_CALIBRATED;
+		}
+		detach();
+	}
 }
 
-bool MovingTarget::active() {
-    if(parent == NULL) 
-        return false;
-    
-    return getPointNo() < (int) points.size();
+bool MovingTarget::isActive() {
+	if (parent == NULL) {
+		return false;
+	}
+
+	return getPointNumber() < (int)_points.size();
 }
 
 bool MovingTarget::isLast() {
-    return getPointNo() == ((int) points.size()) - 1;
+	return getPointNumber() == ((int)_points.size()) - 1;
 }
 
-int MovingTarget::getPointNo() {
-    return getFrame() / dwelltime;
+int MovingTarget::getPointNumber() {
+	return getFrame() / _dwellTime;
 }
 
 int MovingTarget::getPointFrame() {
-    return getFrame() % dwelltime;
+	return getFrame() % _dwellTime;
 }
 
 int MovingTarget::getDwellTime() {
-    return dwelltime;
+	return _dwellTime;
 }
 
 Point MovingTarget::getActivePoint() {
-    int id = getPointNo();
-    
-    return points[id];
+	return _points[getPointNumber()];
 }
 
-Calibrator::Calibrator(const int &framecount, 
-               const boost::shared_ptr<TrackingSystem> &trackingsystem,
-               const vector<Point>& points, 
-               const boost::shared_ptr<WindowPointer> &pointer,
-               int dwelltime): 
-    MovingTarget(framecount, points, pointer, dwelltime),
-    trackingsystem(trackingsystem)
+const Point Calibrator::_defaultPointArray[] = { Point(0.5, 0.5),
+												Point(0.1, 0.5),
+												Point(0.9, 0.5),
+												Point(0.5, 0.1),
+												Point(0.5, 0.9),
+												Point(0.1, 0.1),
+												Point(0.1, 0.9),
+												Point(0.9, 0.9),
+												Point(0.9, 0.1),
+												Point(0.3, 0.3),
+												Point(0.3, 0.7),
+												Point(0.7, 0.7),
+												Point(0.7, 0.3) };
+
+vector<Point> Calibrator::defaultPoints(_defaultPointArray, _defaultPointArray + (sizeof(_defaultPointArray) / sizeof(_defaultPointArray[0])));
+
+Calibrator::Calibrator(const int &frameNumber, const boost::shared_ptr<TrackingSystem> &trackingSystem, const vector<Point> &points,  const boost::shared_ptr<WindowPointer> &windowPointer, int dwellTime):
+	MovingTarget(frameNumber, points, windowPointer, dwellTime),
+	_trackingSystem(trackingSystem)
 {
-    trackingsystem->gazetracker.clear();
-    // todo: remove all calibration points
+	_trackingSystem->gazetracker.clear();
+	// todo: remove all calibration points
 }
 
+Calibrator::~Calibrator() {
+#ifdef DEBUG
+	cout << "Destroying calibrator" << endl;
+#endif
+}
 
 void Calibrator::process() {
-    static int dummy = 0;
-    
-    if (active()) {
-        int id = getPointNo();
-        int frame = getPointFrame();
-        if (frame == 1) {// start
-            averageeye.reset(new FeatureDetector(EyeExtractor::eyesize));
-            averageeye_left.reset(new FeatureDetector(EyeExtractor::eyesize));
-        }
-        if (frame >= 11) { // middle    ONUR dwelltime/2 changed to 11
-            if(!trackingsystem->eyex.isBlinking()) {
-                averageeye->addSample(trackingsystem->eyex.eyefloat.get());
-                averageeye_left->addSample(trackingsystem->eyex.eyefloat_left.get());
-                
-                // Neural network 
-                //if(dummy % 8 == 0) {  // Only add samples on the 11-19-27-35 frames
-                //for(int i=0; i<1000; i++) {   // Train 100 times with each frame
-                    trackingsystem->gazetracker.
-                    addSampleToNN(points[id], trackingsystem->eyex.eyefloat.get(), trackingsystem->eyex.eyegrey.get());
-                    trackingsystem->gazetracker.
-                    addSampleToNN_left(points[id], trackingsystem->eyex.eyefloat_left.get(), trackingsystem->eyex.eyegrey_left.get());
-                    
-                    dummy++;
-                //}
-            }
-            else {
-                cout << "Skipped adding sample!!!!" << endl;
-            }
-        }
-    
-        if (frame == dwelltime-1) { // end
-            trackingsystem->gazetracker.
-            addExemplar(points[id], averageeye->getMean().get(),
-                    trackingsystem->eyex.eyegrey.get());
-            // ONUR DUPLICATED CODE
-            trackingsystem->gazetracker.
-            addExemplar_left(points[id], averageeye_left->getMean().get(),
-                    trackingsystem->eyex.eyegrey_left.get());
-                
-            if(id == points.size()-1) {
-                tracker_status = STATUS_CALIBRATED;
-                is_tracker_calibrated = true;
-                
-                //trackingsystem->gazetracker.trainNN();
-                //trackingsystem->gazetracker.calculateTrainingErrors();
-            }
-        
-            // If we have processed the last target
-            // Calculate training error and output on screen
-            //if(isLast()) {
-            //  trackingsystem->gazetracker.calculateTrainingErrors();
-            //}
-        }
-    }
-    MovingTarget::process();
+	static int dummy = 0;
+
+	if (isActive()) {
+		int id = getPointNumber();
+		int frame = getPointFrame();
+
+		if (frame == 1) { // start
+			_averageEye.reset(new FeatureDetector(EyeExtractor::eyesize));
+			_averageEyeLeft.reset(new FeatureDetector(EyeExtractor::eyesize));
+		}
+
+		if (frame >= 11) { // middle	ONUR _dwellTime/2 changed to 11
+			if (!_trackingSystem->eyex.isBlinking()) {
+				_averageEye->addSample(_trackingSystem->eyex.eyefloat.get());
+				_averageEyeLeft->addSample(_trackingSystem->eyex.eyefloat_left.get());
+
+				// Neural network
+				//if(dummy % 8 == 0) {  // Only add samples on the 11-19-27-35 frames
+				//for(int i=0; i<1000; i++) {   // Train 100 times with each frame
+					_trackingSystem->gazetracker.addSampleToNN(_points[id], _trackingSystem->eyex.eyefloat.get(), _trackingSystem->eyex.eyegrey.get());
+					_trackingSystem->gazetracker.addSampleToNN_left(_points[id], _trackingSystem->eyex.eyefloat_left.get(), _trackingSystem->eyex.eyegrey_left.get());
+
+					dummy++;
+				//}
+			} else {
+				cout << "Skipped adding sample!!!!" << endl;
+			}
+		}
+
+		if (frame == _dwellTime - 1) { // end
+			_trackingSystem->gazetracker.addExemplar(_points[id], _averageEye->getMean().get(), _trackingSystem->eyex.eyegrey.get());
+			// ONUR DUPLICATED CODE
+			_trackingSystem->gazetracker.addExemplar_left(_points[id], _averageEyeLeft->getMean().get(), _trackingSystem->eyex.eyegrey_left.get());
+
+			if(id == _points.size() - 1) {
+				tracker_status = STATUS_CALIBRATED;
+				is_tracker_calibrated = true;
+
+				//_trackingSystem->gazetracker.trainNN();
+				//_trackingSystem->gazetracker.calculateTrainingErrors();
+			}
+
+			// If we have processed the last target
+			// Calculate training error and output on screen
+			//if (isLast()) {
+			//	_trackingSystem->gazetracker.calculateTrainingErrors();
+			//}
+		}
+	}
+	MovingTarget::process();
 }
 
-const Point Calibrator::defaultpointarr[] = {Point(0.5, 0.5), 
-					     Point(0.1, 0.5), Point(0.9, 0.5),
-					     Point(0.5, 0.1), Point(0.5, 0.9), 
-					     Point(0.1, 0.1), Point(0.1, 0.9), 
-					     Point(0.9, 0.9), Point(0.9, 0.1), 
-					     Point(0.3, 0.3), Point(0.3, 0.7), 
-					     Point(0.7, 0.7), Point(0.7, 0.3)};
+vector<Point> Calibrator::loadPoints(istream &in) {
+	vector<Point> result;
 
-vector<Point> 
-Calibrator::defaultpoints(Calibrator::defaultpointarr, 
-			  Calibrator::defaultpointarr+
-			  (sizeof(Calibrator::defaultpointarr) / 
-			   sizeof(Calibrator::defaultpointarr[0])));
+	for(;;) {
+		double x, y;
+		in >> x >> y;
+		if (in.rdstate()) {
+			// break if any error
+			break;
+		}
+		result.push_back(Point(x, y));
+	}
 
-vector<Point> Calibrator::loadpoints(istream& in) {
-    vector<Point> result;
-
-    for(;;) {
-	double x, y;
-	in >> x >> y;
-	if (in.rdstate()) break; // break if any error
-	result.push_back(Point(x, y));
-    }
-
-    return result;
+	return result;
 }
 
-vector<Point> Calibrator::scaled(const vector<Point> &points,
-				      double x, double y) 
-{
-//     double dx = x > y ? (x-y)/2 : 0.0;
-//     double dy = y > x ? (y-x)/2 : 0.0;
-//     double scale = x > y ? y : x;
+vector<Point> Calibrator::scaled(const vector<Point> &points, double x, double y) {
+	//double dx = x > y ? (x-y)/2 : 0.0;
+	//double dy = y > x ? (y-x)/2 : 0.0;
+	//double scale = x > y ? y : x;
 
-    vector<Point> result;
+	vector<Point> result;
 
-    xforeach(iter, points)
-	result.push_back(Point(iter->x * x, iter->y * y));
-// 	result.push_back(Point(iter->x * scale + dx, iter->y * scale + dy));
+	xforeach(iter, points) {
+		result.push_back(Point(iter->x * x, iter->y * y));
+		//result.push_back(Point(iter->x * scale + dx, iter->y * scale + dy));
+	}
 
-    return result;
+	return result;
 }
 
-vector<Point> Calibrator::scaled(const vector<Point> &points,
-                          int x, int y, double width, double height) 
-{
-    vector<Point> result;
+vector<Point> Calibrator::scaled(const vector<Point> &points, int x, int y, double width, double height) {
+	vector<Point> result;
 
-    xforeach(iter, points) {
-    result.push_back(Point(iter->x * width + x, iter->y * height + y));
-        //cout << "ADDED POINT (" << iter->x * width + x << ", " << iter->y * height + y << ")" << endl;
-    }
-    return result;
+	xforeach(iter, points) {
+		result.push_back(Point(iter->x * width + x, iter->y * height + y));
+		//cout << "ADDED POINT (" << iter->x * width + x << ", " << iter->y * height + y << ")" << endl;
+	}
+
+	return result;
 }
