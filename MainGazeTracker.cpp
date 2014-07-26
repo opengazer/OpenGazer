@@ -363,10 +363,10 @@ MainGazeTracker::MainGazeTracker(int argc, char** argv,
     canvas.reset(cvCreateImage(videoinput->size, 8, 3));
     tracking.reset(new TrackingSystem(videoinput->size));
 	
-	tracking->gazetracker.output_file = outputfile;
+	tracking->gazeTracker.output_file = outputfile;
 	isCalibrationOutputWritten = true;
 	
-	game_win = new GameWindow (&(tracking->gazetracker.output));
+	game_win = new GameWindow (&(tracking->gazeTracker.output));
 	game_win->show();
 
     if(videoinput.get()->get_resolution() == 720) {
@@ -384,12 +384,12 @@ MainGazeTracker::MainGazeTracker(int argc, char** argv,
 }
 
 void MainGazeTracker::addTracker(Point point) {
-    tracking->tracker.addtracker(point);
+    tracking->pointTracker.addtracker(point);
 }
 
 void MainGazeTracker::savepoints() {
     try {
-	tracking->tracker.save("tracker", "points.txt", videoinput->frame);
+	tracking->pointTracker.save("pointTracker", "points.txt", videoinput->frame);
 	autoreload = true;
     }
     catch (ios_base::failure &e) {
@@ -399,7 +399,7 @@ void MainGazeTracker::savepoints() {
 
 void MainGazeTracker::loadpoints() {
     try {
-	tracking->tracker.load("tracker", "points.txt", videoinput->frame);
+	tracking->pointTracker.load("pointTracker", "points.txt", videoinput->frame);
 	autoreload = true;
     }
     catch (ios_base::failure &e) {
@@ -443,18 +443,18 @@ void MainGazeTracker::choosepoints() {
 		check_rect_size(videoinput->frame, &eyebrow_rect);
 		detect_eyebrow_corners(videoinput->frame, videoinput->get_resolution(), eyebrow_rect, eyebrows);
 		
-		tracking->tracker.cleartrackers();
+		tracking->pointTracker.cleartrackers();
 	    autoreload = false;
 	
-		tracking->tracker.addtracker(eyes[0]);
-		tracking->tracker.addtracker(eyes[1]);
+		tracking->pointTracker.addtracker(eyes[0]);
+		tracking->pointTracker.addtracker(eyes[1]);
 		
-		tracking->tracker.addtracker(nose[0]);
-		tracking->tracker.addtracker(nose[1]);
-		tracking->tracker.addtracker(mouth[0]);
-		tracking->tracker.addtracker(mouth[1]);
-		tracking->tracker.addtracker(eyebrows[0]);
-		tracking->tracker.addtracker(eyebrows[1]);
+		tracking->pointTracker.addtracker(nose[0]);
+		tracking->pointTracker.addtracker(nose[1]);
+		tracking->pointTracker.addtracker(mouth[0]);
+		tracking->pointTracker.addtracker(mouth[1]);
+		tracking->pointTracker.addtracker(eyebrows[0]);
+		tracking->pointTracker.addtracker(eyebrows[1]);
 		
 			
 		cout << "EYES: " << eyes[0] << " + " << eyes[1] << endl;
@@ -464,11 +464,11 @@ void MainGazeTracker::choosepoints() {
 		
 
 		// Save point selection image 
-		tracking->tracker.save_image();
+		tracking->pointTracker.save_image();
 
 		// Calculate the area containing the face
-		extract_face_region_rectangle(videoinput->frame, tracking->tracker.getpoints(&PointTracker::lastpoints, true));
-		tracking->tracker.normalizeOriginalGrey();
+		extract_face_region_rectangle(videoinput->frame, tracking->pointTracker.getpoints(&PointTracker::lastpoints, true));
+		tracking->pointTracker.normalizeOriginalGrey();
     }
     catch (ios_base::failure &e) {
 	cout << e.what() << endl;
@@ -483,7 +483,7 @@ void MainGazeTracker::clearpoints() {
 		*commandoutputfile << totalframecount << " CLEAR" << endl;
 	}
 	
-    tracking->tracker.cleartrackers();
+    tracking->pointTracker.cleartrackers();
     autoreload = false;
 }
 
@@ -548,28 +548,28 @@ void MainGazeTracker::doprocessing(void) {
 	}
 
     try {
-	tracking->doprocessing(frame, canvas.get());
-	if (tracking->gazetracker.isActive()) {
+	tracking->process(frame, canvas.get());
+	if (tracking->gazeTracker.isActive()) {
 		if(tracker_status != STATUS_TESTING) {
-			tracking->gazetracker.output.setActualTarget(Point(0, 0));
-			tracking->gazetracker.output.setFrameId(0);
+			tracking->gazeTracker.output.setActualTarget(Point(0, 0));
+			tracking->gazeTracker.output.setFrameId(0);
 		}
 		else {
-			tracking->gazetracker.output.setActualTarget(Point(target->getActivePoint().x, target->getActivePoint().y));
-			tracking->gazetracker.output.setFrameId(target->getPointFrame());
+			tracking->gazeTracker.output.setActualTarget(Point(target->getActivePoint().x, target->getActivePoint().y));
+			tracking->gazeTracker.output.setFrameId(target->getPointFrame());
 	    }
 	
-		//tracking->gazetracker.output.setErrorOutput(tracker_status == STATUS_TESTING);	// No longer necessary, TODO REMOVE
+		//tracking->gazeTracker.output.setErrorOutput(tracker_status == STATUS_TESTING);	// No longer necessary, TODO REMOVE
 		
 		xforeach(iter, stores)
-		(*iter)->store(tracking->gazetracker.output);
+		(*iter)->store(tracking->gazeTracker.output);
 		
 		// Write the same info to the output text file
 		if(outputfile != NULL) {
-			TrackerOutput output = tracking->gazetracker.output;
+			TrackerOutput output = tracking->gazeTracker.output;
 			if(tracker_status == STATUS_TESTING) {
                 cout << "TESTING, WRITING OUTPUT!!!!!!!!!!!!!!!!!" << endl;
-				if(!tracking->eyex.isBlinking()) {
+				if(!tracking->eyeExtractor.isBlinking()) {
 					*outputfile << output.frameid + 1 << "\t" 
 							<< output.actualTarget.x << "\t" << output.actualTarget.y << "\t"
 							<< output.gazepoint.x << "\t" << output.gazepoint.y << "\t"
@@ -636,7 +636,7 @@ void MainGazeTracker::doprocessing(void) {
     if (recording) {
 		if(videooverlays) {
 			//cout << "VIDEO EXISTS" << endl;
-			TrackerOutput output = tracking->gazetracker.output;
+			TrackerOutput output = tracking->gazeTracker.output;
 		
 			Point actualtarget(0, 0);
 			Point estimation(0, 0);
@@ -651,7 +651,7 @@ void MainGazeTracker::doprocessing(void) {
 				cvCircle((CvArr*) conversionimage, cvPoint(actualtarget.x, actualtarget.y), 8, cvScalar(0, 0, 255), -1, 8, 0);
 			
 				// If not blinking, show the estimation in video
-				if(!tracking->eyex.isBlinking()) {
+				if(!tracking->eyeExtractor.isBlinking()) {
 					mapToVideoCoordinates(output.gazepoint, videoinput->get_resolution(), estimation);
 					cvCircle((CvArr*) conversionimage, cvPoint(estimation.x, estimation.y), 8, cvScalar(0, 255, 0), -1, 8, 0);
 					
@@ -693,7 +693,7 @@ void MainGazeTracker::doprocessing(void) {
 	
 	// Show the current target & estimation points on the main window
 	if(tracker_status == STATUS_CALIBRATING || tracker_status == STATUS_TESTING || tracker_status == STATUS_CALIBRATED) {
-		TrackerOutput output = tracking->gazetracker.output;
+		TrackerOutput output = tracking->gazeTracker.output;
 		Point actualtarget(0, 0);
 		Point estimation(0, 0);
 		
@@ -707,7 +707,7 @@ void MainGazeTracker::doprocessing(void) {
 		}
 		
 		// If not blinking, show the estimation in video
-		if(!tracking->eyex.isBlinking()) {
+		if(!tracking->eyeExtractor.isBlinking()) {
 			mapToVideoCoordinates(output.gazepoint, videoinput->get_resolution(), estimation, false);
 			cvCircle((CvArr*) canvas.get(), cvPoint(estimation.x, estimation.y), 8, cvScalar(0, 255, 0), -1, 8, 0);
 			
@@ -771,13 +771,13 @@ void MainGazeTracker::addExemplar(Point exemplar) {
 	exemplar.x + EyeExtractor::eyedx < videoinput->size.width &&
 	exemplar.y >= EyeExtractor::eyedy && 
 	exemplar.y + EyeExtractor::eyedy < videoinput->size.height) {
-		tracking->gazetracker.addExemplar(exemplar, 
-						  tracking->eyex.eyefloat.get(), 
-						  tracking->eyex.eyegrey.get());
+		tracking->gazeTracker.addExemplar(exemplar, 
+						  tracking->eyeExtractor.eyefloat.get(), 
+						  tracking->eyeExtractor.eyegrey.get());
 						
-		tracking->gazetracker.addExemplar_left(exemplar, 
-						  tracking->eyex.eyefloat_left.get(), 
-						  tracking->eyex.eyegrey_left.get());
+		tracking->gazeTracker.addExemplar_left(exemplar, 
+						  tracking->eyeExtractor.eyefloat_left.get(), 
+						  tracking->eyeExtractor.eyegrey_left.get());
 	}
 }
 
@@ -801,7 +801,7 @@ void MainGazeTracker::startCalibration() {
 	tracker_status = STATUS_CALIBRATING;
 	
 	if(game_win == NULL) {
-		game_win = new GameWindow (&(tracking->gazetracker.output));
+		game_win = new GameWindow (&(tracking->gazeTracker.output));
 	}
 	game_win->show();
 	
@@ -878,7 +878,7 @@ void MainGazeTracker::startTesting() {
 
 void MainGazeTracker::startPlaying() {
 	if(game_win == NULL) {
-		game_win = new GameWindow (&(tracking->gazetracker.output));
+		game_win = new GameWindow (&(tracking->gazeTracker.output));
 	}
 	game_win->show();
 }
@@ -894,7 +894,7 @@ void MainGazeTracker::pauseOrRepositionHead() {
 		else {
 			tracker_status = STATUS_IDLE;
 		}
-		tracking->tracker.retrack(videoinput->frame, 2);
+		tracking->pointTracker.retrack(videoinput->frame, 2);
 		//choosepoints();
 	}
 	else {

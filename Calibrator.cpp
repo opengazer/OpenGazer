@@ -91,7 +91,7 @@ Calibrator::Calibrator(const int &frameNumber, const boost::shared_ptr<TrackingS
 	MovingTarget(frameNumber, points, windowPointer, dwellTime),
 	_trackingSystem(trackingSystem)
 {
-	_trackingSystem->gazetracker.clear();
+	_trackingSystem->gazeTracker.clear();
 	// todo: remove all calibration points
 }
 
@@ -114,15 +114,15 @@ void Calibrator::process() {
 		}
 
 		if (frame >= 11) { // middle	ONUR _dwellTime/2 changed to 11
-			if (!_trackingSystem->eyex.isBlinking()) {
-				_averageEye->addSample(_trackingSystem->eyex.eyefloat.get());
-				_averageEyeLeft->addSample(_trackingSystem->eyex.eyefloat_left.get());
+			if (!_trackingSystem->eyeExtractor.isBlinking()) {
+				_averageEye->addSample(_trackingSystem->eyeExtractor.eyefloat.get());
+				_averageEyeLeft->addSample(_trackingSystem->eyeExtractor.eyefloat_left.get());
 
 				// Neural network
-				//if(dummy % 8 == 0) {  // Only add samples on the 11-19-27-35 frames
-				//for(int i=0; i<1000; i++) {   // Train 100 times with each frame
-					_trackingSystem->gazetracker.addSampleToNN(_points[id], _trackingSystem->eyex.eyefloat.get(), _trackingSystem->eyex.eyegrey.get());
-					_trackingSystem->gazetracker.addSampleToNN_left(_points[id], _trackingSystem->eyex.eyefloat_left.get(), _trackingSystem->eyex.eyegrey_left.get());
+				//if (dummy % 8 == 0) {  // Only add samples on the 11-19-27-35 frames
+				//	for (int i = 0; i < 1000; i++) {   // Train 100 times with each frame
+					_trackingSystem->gazeTracker.addSampleToNN(_points[id], _trackingSystem->eyeExtractor.eyefloat.get(), _trackingSystem->eyeExtractor.eyegrey.get());
+					_trackingSystem->gazeTracker.addSampleToNN_left(_points[id], _trackingSystem->eyeExtractor.eyefloat_left.get(), _trackingSystem->eyeExtractor.eyegrey_left.get());
 
 					dummy++;
 				//}
@@ -132,22 +132,22 @@ void Calibrator::process() {
 		}
 
 		if (frame == _dwellTime - 1) { // end
-			_trackingSystem->gazetracker.addExemplar(_points[id], _averageEye->getMean().get(), _trackingSystem->eyex.eyegrey.get());
+			_trackingSystem->gazeTracker.addExemplar(_points[id], _averageEye->getMean().get(), _trackingSystem->eyeExtractor.eyegrey.get());
 			// ONUR DUPLICATED CODE
-			_trackingSystem->gazetracker.addExemplar_left(_points[id], _averageEyeLeft->getMean().get(), _trackingSystem->eyex.eyegrey_left.get());
+			_trackingSystem->gazeTracker.addExemplar_left(_points[id], _averageEyeLeft->getMean().get(), _trackingSystem->eyeExtractor.eyegrey_left.get());
 
 			if(id == _points.size() - 1) {
 				tracker_status = STATUS_CALIBRATED;
 				is_tracker_calibrated = true;
 
-				//_trackingSystem->gazetracker.trainNN();
-				//_trackingSystem->gazetracker.calculateTrainingErrors();
+				//_trackingSystem->gazeTracker.trainNN();
+				//_trackingSystem->gazeTracker.calculateTrainingErrors();
 			}
 
 			// If we have processed the last target
 			// Calculate training error and output on screen
 			//if (isLast()) {
-			//	_trackingSystem->gazetracker.calculateTrainingErrors();
+			//	_trackingSystem->gazeTracker.calculateTrainingErrors();
 			//}
 		}
 	}
