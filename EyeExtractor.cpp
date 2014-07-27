@@ -41,10 +41,10 @@ CvMat EyeExtractor::pointMatrix() throw (TrackingException) {
 	//	throw TrackingException();
 	//}
 
-	double x0 = _pointTracker.currentpoints[_pointTracker.eyepoint1].x;
-	double y0 = _pointTracker.currentpoints[_pointTracker.eyepoint1].y;
-	double x1 = _pointTracker.currentpoints[_pointTracker.eyepoint2].x;
-	double y1 = _pointTracker.currentpoints[_pointTracker.eyepoint2].y;
+	double x0 = _pointTracker.currentPoints[_pointTracker.eyePoint1].x;
+	double y0 = _pointTracker.currentPoints[_pointTracker.eyePoint1].y;
+	double x1 = _pointTracker.currentPoints[_pointTracker.eyePoint2].x;
+	double y1 = _pointTracker.currentPoints[_pointTracker.eyePoint2].y;
 	double factor = 0.17;
 	double xFactor = 0.05;
 	double yFactor = 0.20 * (x0 < x1 ? -1 : 1);

@@ -384,7 +384,7 @@ MainGazeTracker::MainGazeTracker(int argc, char** argv,
 }
 
 void MainGazeTracker::addTracker(Point point) {
-    tracking->pointTracker.addtracker(point);
+    tracking->pointTracker.addTracker(point);
 }
 
 void MainGazeTracker::savepoints() {
@@ -443,18 +443,18 @@ void MainGazeTracker::choosepoints() {
 		check_rect_size(videoinput->frame, &eyebrow_rect);
 		detect_eyebrow_corners(videoinput->frame, videoinput->get_resolution(), eyebrow_rect, eyebrows);
 		
-		tracking->pointTracker.cleartrackers();
+		tracking->pointTracker.clearTrackers();
 	    autoreload = false;
 	
-		tracking->pointTracker.addtracker(eyes[0]);
-		tracking->pointTracker.addtracker(eyes[1]);
+		tracking->pointTracker.addTracker(eyes[0]);
+		tracking->pointTracker.addTracker(eyes[1]);
 		
-		tracking->pointTracker.addtracker(nose[0]);
-		tracking->pointTracker.addtracker(nose[1]);
-		tracking->pointTracker.addtracker(mouth[0]);
-		tracking->pointTracker.addtracker(mouth[1]);
-		tracking->pointTracker.addtracker(eyebrows[0]);
-		tracking->pointTracker.addtracker(eyebrows[1]);
+		tracking->pointTracker.addTracker(nose[0]);
+		tracking->pointTracker.addTracker(nose[1]);
+		tracking->pointTracker.addTracker(mouth[0]);
+		tracking->pointTracker.addTracker(mouth[1]);
+		tracking->pointTracker.addTracker(eyebrows[0]);
+		tracking->pointTracker.addTracker(eyebrows[1]);
 		
 			
 		cout << "EYES: " << eyes[0] << " + " << eyes[1] << endl;
@@ -464,10 +464,10 @@ void MainGazeTracker::choosepoints() {
 		
 
 		// Save point selection image 
-		tracking->pointTracker.save_image();
+		tracking->pointTracker.saveImage();
 
 		// Calculate the area containing the face
-		extract_face_region_rectangle(videoinput->frame, tracking->pointTracker.getpoints(&PointTracker::lastpoints, true));
+		extract_face_region_rectangle(videoinput->frame, tracking->pointTracker.getPoints(&PointTracker::lastPoints, true));
 		tracking->pointTracker.normalizeOriginalGrey();
     }
     catch (ios_base::failure &e) {
@@ -483,7 +483,7 @@ void MainGazeTracker::clearpoints() {
 		*commandoutputfile << totalframecount << " CLEAR" << endl;
 	}
 	
-    tracking->pointTracker.cleartrackers();
+    tracking->pointTracker.clearTrackers();
     autoreload = false;
 }
 

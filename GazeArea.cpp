@@ -5,9 +5,9 @@
 
 GazeArea::GazeArea(int argc, char **argv, const vector<boost::shared_ptr<AbstractStore> > &stores):
 	_lastPointId(-1),
-	gazetracker(argc, argv, stores)
+	gazeTracker(argc, argv, stores)
 {
-	set_size_request(gazetracker.canvas->width, gazetracker.canvas->height);
+	set_size_request(gazeTracker.canvas->width, gazeTracker.canvas->height);
 	Glib::signal_idle().connect(sigc::mem_fun(*this, &GazeArea::onIdle));
 	add_events(Gdk::BUTTON_PRESS_MASK);
 	add_events(Gdk::BUTTON_RELEASE_MASK);
@@ -23,7 +23,7 @@ bool GazeArea::onExposeEvent(GdkEventExpose *event) {
 		const int height = allocation.get_height();
 
 		Glib::RefPtr<Gdk::GC> gc = Gdk::GC::create(window);
-		const IplImage *image = gazetracker.canvas.get();
+		const IplImage *image = gazeTracker.canvas.get();
 		Glib::RefPtr<Gdk::Pixbuf> pixbuf = Gdk::Pixbuf::create_from_data((guint8*) image->imageData, Gdk::COLORSPACE_RGB, false, image->depth, image->width, image->height, image->widthStep);
 
 		window->draw_pixbuf(gc, pixbuf, 0, 0, 0, 0, width, height, Gdk::RGB_DITHER_NONE, 0, 0);
@@ -49,11 +49,11 @@ bool GazeArea::onButtonPressEvent(GdkEventButton *event) {
 		}
 
 		if (event->type == GDK_BUTTON_PRESS) {
-			PointTracker &tracker = gazetracker.tracking->pointTracker;
+			PointTracker &pointTracker = gazeTracker.tracking->pointTracker;
 			Point point(event->x, event->y);
 
-			int closest = tracker.getClosestTracker(point);
-			if (closest >= 0 && point.distance(tracker.currentpoints[closest]) <= 25) {
+			int closest = pointTracker.getClosestTracker(point);
+			if (closest >= 0 && point.distance(pointTracker.currentPoints[closest]) <= 25) {
 				_lastPointId = closest;
 			} else {
 				_lastPointId = -1;
@@ -68,22 +68,22 @@ bool GazeArea::onButtonPressEvent(GdkEventButton *event) {
 
 bool GazeArea::onButtonReleaseEvent(GdkEventButton *event) {
 	if (event->button == 1) {
-		PointTracker &tracker = gazetracker.tracking->pointTracker;
+		PointTracker &pointTracker = gazeTracker.tracking->pointTracker;
 		Point point(event->x, event->y);
 
 		if (_lastPointId >= 0) {
 			switch(_clickCount) {
 			case 1:
-				tracker.updatetracker(_lastPointId, point);
+				pointTracker.updateTracker(_lastPointId, point);
 				break;
 			case 2:
-				tracker.removetracker(_lastPointId);
+				pointTracker.removeTracker(_lastPointId);
 				break;
 			default:
 				break;
 			}
 		} else {
-			tracker.addtracker(point);
+			pointTracker.addTracker(point);
 		}
 
 		return true;
@@ -94,12 +94,12 @@ bool GazeArea::onButtonReleaseEvent(GdkEventButton *event) {
 
 bool GazeArea::onIdle() {
 	try {
-		gazetracker.doprocessing();
+		gazeTracker.doprocessing();
 		queue_draw();
-		gazetracker.simulateClicks();
+		gazeTracker.simulateClicks();
 	}
 	catch (QuitNow) {
-		gazetracker.cleanUp();
+		gazeTracker.cleanUp();
 		exit(0);
 	}
 

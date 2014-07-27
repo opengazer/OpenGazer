@@ -41,7 +41,7 @@ void TrackingSystem::process(const IplImage *frame, IplImage *image) {
 	if (tracker_status != STATUS_PAUSED) {
 		pointTracker.track(frame, 2);
 
-		if (pointTracker.countactivepoints() < 4) {
+		if (pointTracker.countActivePoints() < 4) {
 			pointTracker.draw(image);
 			throw TrackingException();
 		}

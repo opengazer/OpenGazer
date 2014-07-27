@@ -51,12 +51,20 @@ void HeadTracker::draw(IplImage *image) {
 
 	cvLine(image, cvPoint(320, 240), cvPoint(320 + int(atX * 50), 240 + int(atY * 50)), CV_RGB(255,255,255));
 
-	//for (int i = 0; i < pointTracker.pointcount; i++) {
-	// 	cvLine(image, cvPoint(pointTracker.currentpoints[i].x, pointTracker.currentpoints[i].y), cvPoint(pointTracker.origpoints[i].x - xx0 + xx1, pointTracker.origpoints[i].y - yy0 + yy1), CV_RGB(255,0,0));
+	//for (int i = 0; i < pointTracker.pointCount; i++) {
+	// 	cvLine(
+	//		image,
+	//		cvPoint(pointTracker.currentPoints[i].x, pointTracker.currentPoints[i].y),
+	//		cvPoint(pointTracker.origPoints[i].x - xx0 + xx1, pointTracker.origPoints[i].y - yy0 + yy1),
+	//		CV_RGB(255,0,0));
 	//}
 
-	for (int i = 0; i < pointTracker.pointcount(); i++) {
-		cvLine(image, cvPoint((int)pointTracker.currentpoints[i].x, (int)pointTracker.currentpoints[i].y), cvPoint((int)pointTracker.currentpoints[i].x, int(pointTracker.currentpoints[i].y + _depths[i] * 100)), CV_RGB(0,0,255));
+	for (int i = 0; i < pointTracker.pointCount(); i++) {
+		cvLine(
+			image,
+			cvPoint((int)pointTracker.currentPoints[i].x, (int)pointTracker.currentPoints[i].y),
+			cvPoint((int)pointTracker.currentPoints[i].x, int(pointTracker.currentPoints[i].y + _depths[i] * 100)),
+			CV_RGB(0,0,255));
 	}
 
 	double scale = 10;
@@ -65,11 +73,11 @@ void HeadTracker::draw(IplImage *image) {
 
 void HeadTracker::updateTracker() {
 	try {
-		_depths.resize(pointTracker.pointcount());
-		detectInliers(pointTracker.getpoints(&PointTracker::origpoints, true), pointTracker.getpoints(&PointTracker::currentpoints, true));
+		_depths.resize(pointTracker.pointCount());
+		detectInliers(pointTracker.getPoints(&PointTracker::origPoints, true), pointTracker.getPoints(&PointTracker::currentPoints, true));
 
-		vector<Point> origPoints = pointTracker.getpoints(&PointTracker::origpoints, false);
-		vector<Point> currentPoints = pointTracker.getpoints(&PointTracker::currentpoints, false);
+		vector<Point> origPoints = pointTracker.getPoints(&PointTracker::origPoints, false);
+		vector<Point> currentPoints = pointTracker.getPoints(&PointTracker::currentPoints, false);
 
 		double xx0 = mean(origPoints, &Point::x);
 		double yy0 = mean(origPoints, &Point::y);
@@ -90,17 +98,17 @@ void HeadTracker::updateTracker() {
 		double e = (*fmatrix)[4];
 
 		// compute the change
-		vector<double> offsets(pointTracker.pointcount());
+		vector<double> offsets(pointTracker.pointCount());
 
 		double depthSum = 0.0001;
 		double offsetSum = 0.0001;
 
-		for (int i = 0; i < pointTracker.pointcount(); i++) {
+		for (int i = 0; i < pointTracker.pointCount(); i++) {
 			if (pointTracker.status[i]) {
-				double xOrig = pointTracker.origpoints[i].x - xx0;
-				double yOrig = pointTracker.origpoints[i].y - yy0;
-				double xNew = pointTracker.currentpoints[i].x - xx1;
-				double yNew = pointTracker.currentpoints[i].y - yy1;
+				double xOrig = pointTracker.origPoints[i].x - xx0;
+				double yOrig = pointTracker.origPoints[i].y - yy0;
+				double xNew = pointTracker.currentPoints[i].x - xx1;
+				double yNew = pointTracker.currentPoints[i].y - yy1;
 				double x0 = b * xOrig - a * yOrig;
 				double x1 = -d * xNew + c * yNew;
 				offsets[i] = x0 - x1;
@@ -109,7 +117,7 @@ void HeadTracker::updateTracker() {
 			}
 		}
 
-		if (pointTracker.areallpointsactive()) {
+		if (pointTracker.areAllPointsActive()) {
 			//cout << endl;
 			depthSum = 1.0;
 		}
@@ -123,9 +131,9 @@ void HeadTracker::updateTracker() {
 		atY = -(a * d - c * b) / (c * c + d * d); // at = AmpliTwist
 
 		// depths
-		vector<double> newDepths(pointTracker.pointcount());
+		vector<double> newDepths(pointTracker.pointCount());
 
-		for (int i = 0; i < pointTracker.pointcount(); i++) {
+		for (int i = 0; i < pointTracker.pointCount(); i++) {
 			if (pointTracker.status[i]) {
 				newDepths[i] = offsets[i] / depthScale;
 			}
@@ -134,11 +142,11 @@ void HeadTracker::updateTracker() {
 		if (newDepths[1] > newDepths[2]) {
 			rotX = -rotX;
 			rotY = -rotY;
-			for (int i = 0; i < pointTracker.pointcount(); i++) {
+			for (int i = 0; i < pointTracker.pointCount(); i++) {
 				_depths[i] = -newDepths[i];
 			}
 		} else {
-			for (int i = 0; i < pointTracker.pointcount(); i++) {
+			for (int i = 0; i < pointTracker.pointCount(); i++) {
 				_depths[i] = newDepths[i];
 			}
 		}
@@ -147,14 +155,14 @@ void HeadTracker::updateTracker() {
 		//	distance
 		//double distance1 = 0.0;
 		//double distance2 = 0.0;
-		//for (int i = 0; i < pointTracker.pointcount; i++) {
+		//for (int i = 0; i < pointTracker.pointCount; i++) {
 		//	if (pointTracker.status[i]) {
 		//		distance1 += square(_depths[i] - newDepths[i]);
 		//		distance2 += square(_depths[i] + newDepths[i]);
 		//	}
 		//}
 
-		//for (int i = 0; i < pointTracker.pointcount; i++) {
+		//for (int i = 0; i < pointTracker.pointCount; i++) {
 		//	if (pointTracker.status[i]) {
 		//		if (distance1 > distance2) {
 		//			rotx = -rotx;
@@ -215,11 +223,11 @@ vector<bool> HeadTracker::detectInliers(vector<Point> const &prev, vector<Point>
 		if (!inliers[i]) {
 			pointTracker.status[i] = false;
 
-			pointTracker.currentpoints[i].x = 0.3 * (pointTracker.origpoints[i].x + transitions[maxIndex].x) + 0.7 * pointTracker.currentpoints[i].x;
-			//pointTracker.origpoints[i].x + transitions[maxindex].x;
+			pointTracker.currentPoints[i].x = 0.3 * (pointTracker.origPoints[i].x + transitions[maxIndex].x) + 0.7 * pointTracker.currentPoints[i].x;
+			//pointTracker.origPoints[i].x + transitions[maxindex].x;
 
-			pointTracker.currentpoints[i].y = 0.3 * (pointTracker.origpoints[i].y + transitions[maxIndex].y)+ 0.7 * pointTracker.currentpoints[i].y;
-			//pointTracker.origpoints[i].y + transitions[maxindex].y;
+			pointTracker.currentPoints[i].y = 0.3 * (pointTracker.origPoints[i].y + transitions[maxIndex].y)+ 0.7 * pointTracker.currentPoints[i].y;
+			//pointTracker.origPoints[i].y + transitions[maxindex].y;
 		}
 	}
 
@@ -231,15 +239,15 @@ void HeadTracker::predictPoints(double xx0, double yy0, double xx1, double yy1, 
 	double maxDiff = 0.0;
 	int diffIndex = -1;
 
-	vector<Point> points = pointTracker.getpoints(&PointTracker::origpoints, true);
+	vector<Point> points = pointTracker.getPoints(&PointTracker::origPoints, true);
 
 	for (int i = 0; i < points.size(); i++) {
 		Point p(points[i].x - xx0, points[i].y - yy0);
 		Point p1 = predictPoint(p, _depths[i], xx1, yy1, rotX, rotY, atX, atY);
 		Point p2 = predictPoint(p, -_depths[i], xx1, yy1, rotX, rotY, atX, atY);
 
-		double diff1 = fabs(p1.x - pointTracker.currentpoints[i].x) + fabs(p1.y - pointTracker.currentpoints[i].y);
-		double diff2 = fabs(p2.x - pointTracker.currentpoints[i].x) + fabs(p2.y - pointTracker.currentpoints[i].y);
+		double diff1 = fabs(p1.x - pointTracker.currentPoints[i].x) + fabs(p1.y - pointTracker.currentPoints[i].y);
+		double diff2 = fabs(p2.x - pointTracker.currentPoints[i].x) + fabs(p2.y - pointTracker.currentPoints[i].y);
 		double diff = diff1 > diff2 ? diff2 : diff1;
 
 		// dubious code, I'm not sure about it
@@ -249,12 +257,12 @@ void HeadTracker::predictPoints(double xx0, double yy0, double xx1, double yy1, 
 			//cout << "DIFFS: " << diff1 << ", " << diff2 << endl;
 
 			if (diff == diff1) {
-				pointTracker.currentpoints[i].x = 0 * pointTracker.currentpoints[i].x + 1 * p1.x;
-				pointTracker.currentpoints[i].y = 0 * pointTracker.currentpoints[i].y + 1 * p1.y;
+				pointTracker.currentPoints[i].x = 0 * pointTracker.currentPoints[i].x + 1 * p1.x;
+				pointTracker.currentPoints[i].y = 0 * pointTracker.currentPoints[i].y + 1 * p1.y;
 				//cout << "UPDATED WITH P1 POSITION" << endl;
 			} else {
-				pointTracker.currentpoints[i].x = 0 * pointTracker.currentpoints[i].x + 1 * p2.x;
-				pointTracker.currentpoints[i].y = 0 * pointTracker.currentpoints[i].y + 1 * p2.y;
+				pointTracker.currentPoints[i].x = 0 * pointTracker.currentPoints[i].x + 1 * p2.x;
+				pointTracker.currentPoints[i].y = 0 * pointTracker.currentPoints[i].y + 1 * p2.y;
 				//cout << "UPDATED WITH P2 POSITION" << endl;
 			}
 		}
