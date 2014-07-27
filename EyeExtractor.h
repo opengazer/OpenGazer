@@ -10,8 +10,8 @@ public:
 	static const int eyeDY;
 	static const CvSize eyeSize;
 
-	scoped_ptr<IplImage> eyeGrey, eyeFloat, eyeImage;
-	scoped_ptr<IplImage> eyeGreyLeft, eyeFloatLeft, eyeImageLeft;
+	boost::scoped_ptr<IplImage> eyeGrey, eyeFloat, eyeImage;
+	boost::scoped_ptr<IplImage> eyeGreyLeft, eyeFloatLeft, eyeImageLeft;
 
 	EyeExtractor(const PointTracker &pointTracker);
 	~EyeExtractor();
@@ -20,8 +20,8 @@ public:
 
 private:
 	const PointTracker &_pointTracker; /* dangerous */
-	scoped_ptr<IplImage> _eyeFloat2;
-	scoped_ptr<IplImage> _eyeFloat2Left;
+	boost::scoped_ptr<IplImage> _eyeFloat2;
+	boost::scoped_ptr<IplImage> _eyeFloat2Left;
 	BlinkDetector _blinkDetector;
 	BlinkDetector _blinkDetectorLeft;
 	bool _isBlinking;

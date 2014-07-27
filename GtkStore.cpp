@@ -22,14 +22,14 @@ void WindowStore::store(const TrackerOutput &output) {
 		Point gazepoint1, gazepoint2, targetpoint;
 
 		// Show Gaussian process outputs
-		mapToFirstMonitorCoordinates(output.gazepoint, gazepoint1);
-		mapToFirstMonitorCoordinates(output.gazepoint_left, gazepoint2);
+		Utils::mapToFirstMonitorCoordinates(output.gazepoint, gazepoint1);
+		Utils::mapToFirstMonitorCoordinates(output.gazepoint_left, gazepoint2);
 
 		// Show neural network results
-		//mapToFirstMonitorCoordinates(output.nn_gazepoint, gazepoint1);
-		//mapToFirstMonitorCoordinates(output.nn_gazepoint_left, gazepoint2);
+		//Utils::mapToFirstMonitorCoordinates(output.nn_gazepoint, gazepoint1);
+		//Utils::mapToFirstMonitorCoordinates(output.nn_gazepoint_left, gazepoint2);
 
-		mapToFirstMonitorCoordinates(output.target, targetpoint);
+		Utils::mapToFirstMonitorCoordinates(output.target, targetpoint);
 
 		_pointer.setPosition((int)gazepoint1.x, (int)gazepoint1.y);
 		_pointerLeft.setPosition((int)gazepoint2.x, (int)gazepoint2.y);

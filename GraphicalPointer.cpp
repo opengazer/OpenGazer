@@ -28,7 +28,7 @@ void WindowPointer::setPosition(int x, int y) {
 	if (numMonitors > 1 && mirror != NULL) {
 		Point pt(x, y);
 		Point pt2;
-		mapToFirstMonitorCoordinates(pt, pt2);
+		Utils::mapToFirstMonitorCoordinates(pt, pt2);
 		mirror->setPosition(pt2.x, pt2.y);
 	}
 

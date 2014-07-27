@@ -41,11 +41,11 @@ private:
 class BlinkDetector {
  public:
 	BlinkDetector();
-	void update(const scoped_ptr<IplImage> &image);
+	void update(const boost::scoped_ptr<IplImage> &image);
 	int getState();
 
 private:
-	scoped_ptr<IplImage> _averageEye;
+	boost::scoped_ptr<IplImage> _averageEye;
 	LambdaAccumulator _accumulator;
 	LinearStateSystem _states;
 	bool _initialized;

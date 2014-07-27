@@ -11,6 +11,6 @@ public:
 
 private:
 	CvSize _eyeSize;
-	scoped_ptr<IplImage> _sumImage, _sum2Image, _temp;
+	boost::scoped_ptr<IplImage> _sumImage, _sum2Image, _temp;
 	int _samples;
 };

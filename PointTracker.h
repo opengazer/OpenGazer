@@ -36,8 +36,8 @@ public:
 private:
 	static const int _winSize = 11;
 	int _flags;
-	scoped_ptr<IplImage> _grey, _origGrey, _lastGrey;
-	scoped_ptr<IplImage> _pyramid, _origPyramid, _lastPyramid;
+	boost::scoped_ptr<IplImage> _grey, _origGrey, _lastGrey;
+	boost::scoped_ptr<IplImage> _pyramid, _origPyramid, _lastPyramid;
 
 	void synchronizePoints();
 };

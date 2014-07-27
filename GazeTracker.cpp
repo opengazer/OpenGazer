@@ -29,8 +29,8 @@ CalTarget::CalTarget() {}
 CalTarget::CalTarget(Point point, 
 		     const IplImage* image, const IplImage* origimage):
     point(point), 
-    image(cvCloneImage(image), releaseImage), 
-    origimage(cvCloneImage(origimage), releaseImage) 
+    image(cvCloneImage(image), Utils::releaseImage), 
+    origimage(cvCloneImage(origimage), Utils::releaseImage) 
 {
 }
 
@@ -78,8 +78,8 @@ double GazeTracker::imagedistance(const IplImage *im1, const IplImage *im2) {
     return norm*norm;
 }
 
-double GazeTracker::covariancefunction(SharedImage const& im1, 
-				       SharedImage const& im2)
+double GazeTracker::covariancefunction(Utils::SharedImage const& im1, 
+				       Utils::SharedImage const& im2)
 {
     const double sigma = 1.0;
     const double lscale = 500.0;
@@ -95,7 +95,7 @@ void GazeTracker::updateGPs(void) {
 	    ylabels.push_back(caltargets[i].point.y);
     }
 
-    vector<SharedImage> images = 
+    vector<Utils::SharedImage> images = 
 	getsubvector(caltargets, &CalTarget::image);
 	
 	/*
@@ -117,7 +117,7 @@ void GazeTracker::updateGPs_left(void) {
 	    ylabels.push_back(caltargets_left[i].point.y);
     }
 
-    vector<SharedImage> images = 
+    vector<Utils::SharedImage> images = 
 	getsubvector(caltargets_left, &CalTarget::image);
 
 
@@ -149,8 +149,8 @@ void GazeTracker::calculateTrainingErrors() {
 		//cout << points[i].x << ", " << points[i].y << " x " << all_output_coords[j][0] << ", " << all_output_coords[j][1] << endl;
 		
 		while(j < input_count && points[i].x == all_output_coords[j][0] && points[i].y == all_output_coords[j][1]) {
-			double x_estimate = (gpx->getmean(SharedImage(all_images[j], &ignore)) + gpx_left->getmean(SharedImage(all_images_left[j], &ignore))) / 2;
-			double y_estimate = (gpy->getmean(SharedImage(all_images[j], &ignore)) + gpy_left->getmean(SharedImage(all_images_left[j], &ignore))) / 2;
+			double x_estimate = (gpx->getmean(Utils::SharedImage(all_images[j], &ignore)) + gpx_left->getmean(Utils::SharedImage(all_images_left[j], &ignore))) / 2;
+			double y_estimate = (gpy->getmean(Utils::SharedImage(all_images[j], &ignore)) + gpy_left->getmean(Utils::SharedImage(all_images_left[j], &ignore))) / 2;
 			
 			//cout << "i, j = (" << i << ", " << j << "), est: " << x_estimate << "("<< gpx->getmean(SharedImage(all_images[j], &ignore)) << ","<< gpx_left->getmean(SharedImage(all_images_left[j], &ignore)) << ")" << ", " << y_estimate << "("<< gpy->getmean(SharedImage(all_images[j], &ignore)) <<","<< gpy_left->getmean(SharedImage(all_images_left[j], &ignore)) << ")"<< endl;
 			
@@ -325,7 +325,7 @@ void GazeTracker::addSampleToNN(Point point,
 	
 	// Convert coordinates to interval [0, 1]
 	Point nnpoint;
-	mapToNeuralNetworkCoordinates(point, nnpoint);
+	Utils::mapToNeuralNetworkCoordinates(point, nnpoint);
 	
 	fann_type* outputs = new fann_type[2];
 	outputs[0] = nnpoint.x;
@@ -368,7 +368,7 @@ void GazeTracker::addSampleToNN_left(Point point,
 	
 	// Convert coordinates to interval [0, 1]
 	Point nnpoint;
-	mapToNeuralNetworkCoordinates(point, nnpoint);
+	Utils::mapToNeuralNetworkCoordinates(point, nnpoint);
 	
 	fann_type* outputs = new fann_type[2];
 	outputs[0] = nnpoint.x;
@@ -468,7 +468,7 @@ void GazeTracker::save(void) {
 
 void GazeTracker::save(CvFileStorage *out, const char *name) {
     cvStartWriteStruct(out, name, CV_NODE_MAP);
-    savevector(out, "caltargets", caltargets);
+	Utils::saveVector(out, "caltargets", caltargets);
     cvEndWriteStruct(out);
 }
 
@@ -483,14 +483,14 @@ void GazeTracker::load(void) {
 }
 
 void GazeTracker::load(CvFileStorage *in, CvFileNode *node) {
-    caltargets = loadvector<CalTarget>(in, cvGetFileNodeByName(in, node, 
+    caltargets = Utils::loadVector<CalTarget>(in, cvGetFileNodeByName(in, node, 
 							       "caltargets"));
 }
 
 void GazeTracker::update(const IplImage *image, const IplImage *eyegrey) {
     if (isActive()) {
-		output.gazepoint = Point(gpx->getmean(SharedImage(image, &ignore)), 
-					 gpy->getmean(SharedImage(image, &ignore)));
+		output.gazepoint = Point(gpx->getmean(Utils::SharedImage(image, &ignore)), 
+					 gpy->getmean(Utils::SharedImage(image, &ignore)));
 		output.targetid = getTargetId(output.gazepoint);
 		output.target = getTarget(output.targetid);
 	
@@ -506,14 +506,14 @@ void GazeTracker::update(const IplImage *image, const IplImage *eyegrey) {
 		}
 	
 		fann_type* outputs = fann_run(ANN, inputs);
-		mapFromNeuralNetworkToScreenCoordinates(Point(outputs[0], outputs[1]), output.nn_gazepoint); 
+		Utils::mapFromNeuralNetworkToScreenCoordinates(Point(outputs[0], outputs[1]), output.nn_gazepoint); 
     }
 }
 
 void GazeTracker::update_left(const IplImage *image, const IplImage *eyegrey) {
     if (isActive()) {
-		output.gazepoint_left = Point(gpx_left->getmean(SharedImage(image, &ignore)), 
-					 gpy_left->getmean(SharedImage(image, &ignore)));
+		output.gazepoint_left = Point(gpx_left->getmean(Utils::SharedImage(image, &ignore)), 
+					 gpy_left->getmean(Utils::SharedImage(image, &ignore)));
 
 		// Neural network
 		// Resize image to 16x8
@@ -527,7 +527,7 @@ void GazeTracker::update_left(const IplImage *image, const IplImage *eyegrey) {
 		}
 
 		fann_type* outputs = fann_run(ANN_left, inputs);
-		mapFromNeuralNetworkToScreenCoordinates(Point(outputs[0], outputs[1]), output.nn_gazepoint_left);
+		Utils::mapFromNeuralNetworkToScreenCoordinates(Point(outputs[0], outputs[1]), output.nn_gazepoint_left);
 		
 		if(gamma_x != 0) {
 			// Overwrite the NN output with the GP output with calibration errors removed

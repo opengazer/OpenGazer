@@ -2,8 +2,7 @@
 #include "utils.h"
 #include "GaussianProcess.cpp"
 
-typedef MeanAdjustedGaussianProcess<SharedImage> ImProcess;
-
+typedef MeanAdjustedGaussianProcess<Utils::SharedImage> ImProcess;
 
 const int nn_eyewidth = 16;
 const int nn_eyeheight = 8;
@@ -18,7 +17,7 @@ struct Targets {
 
 struct CalTarget {
     Point point;
-    SharedImage image, origimage;
+	Utils::SharedImage image, origimage;
 
     CalTarget();
     CalTarget(Point point, const IplImage* image, const IplImage* origimage);
@@ -46,14 +45,14 @@ struct TrackerOutput {
 };
 
 class GazeTracker {
-    scoped_ptr<ImProcess> gpx, gpy;
+    boost::scoped_ptr<ImProcess> gpx, gpy;
     vector<CalTarget> caltargets;
-    scoped_ptr<Targets> targets;
+	boost::scoped_ptr<Targets> targets;
 
 	// ONUR DUPLICATED CODE FOR LEFT EYE
-    scoped_ptr<ImProcess> gpx_left, gpy_left;
+	boost::scoped_ptr<ImProcess> gpx_left, gpy_left;
     vector<CalTarget> caltargets_left;
-    //scoped_ptr<Targets> targets_left;
+    //boost::scoped_ptr<Targets> targets_left;
     
 	// Neural network
 	struct fann *ANN, *ANN_left;
@@ -66,8 +65,8 @@ class GazeTracker {
 	IplImage *nn_eye;
 	
     static double imagedistance(const IplImage *im1, const IplImage *im2);
-    static double covariancefunction(const SharedImage& im1, 
-				     const SharedImage& im2);
+    static double covariancefunction(const Utils::SharedImage& im1, 
+				     const Utils::SharedImage& im2);
 
     void updateGPs(void);
 	void updateGPs_left(void);

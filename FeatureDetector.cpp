@@ -19,13 +19,13 @@ void FeatureDetector::addSample(const IplImage *source) {
 }
 
 boost::shared_ptr<IplImage> FeatureDetector::getMean() {
-	boost::shared_ptr<IplImage> mean(createImage(_eyeSize, IPL_DEPTH_32F, 1));
+	boost::shared_ptr<IplImage> mean(Utils::createImage(_eyeSize, IPL_DEPTH_32F, 1));
 	cvConvertScale(_sumImage.get(), mean.get(), 1.0 / _samples);
 	return mean;
 }
 
 boost::shared_ptr<IplImage> FeatureDetector::getVariance() {
-	boost::shared_ptr<IplImage> variance(createImage(_eyeSize, IPL_DEPTH_32F, 1));
+	boost::shared_ptr<IplImage> variance(Utils::createImage(_eyeSize, IPL_DEPTH_32F, 1));
 	cvMul(_sumImage.get(), _sumImage.get(), _temp.get(), -1.0 / _samples);
 	cvAdd(_temp.get(), _sum2Image.get(), _temp.get());
 	cvScale(_temp.get(), variance.get(), 1.0 / _samples);

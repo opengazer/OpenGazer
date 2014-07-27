@@ -41,14 +41,14 @@ GazeTrackerGtk::GazeTrackerGtk(int argc, char **argv):
 		_buttonBar.pack_start(_loadButton);
 
 		_calibrateButton.signal_clicked().
-		connect(sigc::mem_fun(&_picture.gazetracker, &MainGazeTracker::startCalibration));
-		testButton->signal_clicked().connect(sigc::mem_fun(&_picture.gazetracker, &MainGazeTracker::startTesting));
-		_saveButton.signal_clicked().connect(sigc::mem_fun(&_picture.gazetracker, &MainGazeTracker::savepoints));
-		_loadButton.signal_clicked().connect(sigc::mem_fun(&_picture.gazetracker, &MainGazeTracker::loadpoints));
-		_chooseButton.signal_clicked().connect(sigc::mem_fun(&_picture.gazetracker, &MainGazeTracker::choosepoints));
-		_pauseButton.signal_clicked().connect(sigc::mem_fun(&_picture.gazetracker, &MainGazeTracker::pauseOrRepositionHead));
+		connect(sigc::mem_fun(&_picture.gazeTracker, &MainGazeTracker::startCalibration));
+		testButton->signal_clicked().connect(sigc::mem_fun(&_picture.gazeTracker, &MainGazeTracker::startTesting));
+		_saveButton.signal_clicked().connect(sigc::mem_fun(&_picture.gazeTracker, &MainGazeTracker::savepoints));
+		_loadButton.signal_clicked().connect(sigc::mem_fun(&_picture.gazeTracker, &MainGazeTracker::loadpoints));
+		_chooseButton.signal_clicked().connect(sigc::mem_fun(&_picture.gazeTracker, &MainGazeTracker::choosepoints));
+		_pauseButton.signal_clicked().connect(sigc::mem_fun(&_picture.gazeTracker, &MainGazeTracker::pauseOrRepositionHead));
 		_pauseButton.signal_clicked().connect(sigc::mem_fun(this, &GazeTrackerGtk::changePauseButtonText));
-		_clearButton.signal_clicked().connect(sigc::mem_fun(&_picture.gazetracker, &MainGazeTracker::clearpoints));
+		_clearButton.signal_clicked().connect(sigc::mem_fun(&_picture.gazeTracker, &MainGazeTracker::clearpoints));
 
 		_picture.show();
 		testButton->show();
@@ -61,7 +61,7 @@ GazeTrackerGtk::GazeTrackerGtk(int argc, char **argv):
 		_buttonBar.show();
 		_vbox.show();
 	}
-	catch (QuitNow) {
+	catch (Utils::QuitNow) {
 		cout << "Caught it!\n";
 	}
 }

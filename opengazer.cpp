@@ -1,3 +1,8 @@
+#define BOOST_FILESYSTEM_VERSION 3
+
+//#define EXPERIMENT_MODE
+//#define DEBUG
+
 #include <gtkmm.h>
 #include <iostream>
 
@@ -19,7 +24,7 @@ int main(int argc, char **argv) {
 
 		Gtk::Main::run(helloworld);
 	}
-	catch (QuitNow) {
+	catch (Utils::QuitNow) {
 		cout << "Caught it!\n";
 	}
 

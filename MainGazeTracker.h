@@ -59,7 +59,7 @@ class VideoWriter;
 /* class FileInput; */
 
 class MainGazeTracker {
-    scoped_ptr<VideoWriter> video;
+	boost::scoped_ptr<VideoWriter> video;
     int framestoreload;
     vector<boost::shared_ptr<AbstractStore> > stores;
     int framecount;
@@ -92,8 +92,8 @@ class MainGazeTracker {
 	MovingTarget* target;
 
     FrameProcessing framefunctions;
-    scoped_ptr<IplImage> canvas;
-    scoped_ptr<VideoInput> videoinput;
+	boost::scoped_ptr<IplImage> canvas;
+	boost::scoped_ptr<VideoInput> videoinput;
 	
 
     MainGazeTracker(int argc, char** argv,

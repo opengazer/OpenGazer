@@ -73,22 +73,22 @@ void EyeExtractor::extractEye(const IplImage *originalImage, IplImage *eyeGrey, 
 }
 
 void EyeExtractor::processEyes() {
-	normalizeGrayScaleImage(eyeGrey.get(), 127, 50);
+	Utils::normalizeGrayScaleImage(eyeGrey.get(), 127, 50);
 	cvConvertScale(eyeGrey.get(), _eyeFloat2.get());
 	// todo: equalize it somehow first!
 	cvSmooth(_eyeFloat2.get(), eyeFloat.get(), CV_GAUSSIAN, 3);
 	cvEqualizeHist(eyeGrey.get(), eyeGrey.get());
 
 	// ONUR DUPLICATED CODE FOR LEFT EYE
-	normalizeGrayScaleImage(eyeGreyLeft.get(), 127, 50);
+	Utils::normalizeGrayScaleImage(eyeGreyLeft.get(), 127, 50);
 	cvConvertScale(eyeGreyLeft.get(), _eyeFloat2Left.get());
 	// todo: equalize it somehow first!
 	cvSmooth(_eyeFloat2Left.get(), eyeFloatLeft.get(), CV_GAUSSIAN, 3);
 	cvEqualizeHist(eyeGreyLeft.get(), eyeGreyLeft.get());
 
 	// Blink detection trials
-	scoped_ptr<IplImage> temp(cvCreateImage(eyeSize, IPL_DEPTH_32F, 1));
-	scoped_ptr<IplImage> temp2(cvCreateImage(eyeSize, IPL_DEPTH_32F, 1));
+	boost::scoped_ptr<IplImage> temp(cvCreateImage(eyeSize, IPL_DEPTH_32F, 1));
+	boost::scoped_ptr<IplImage> temp2(cvCreateImage(eyeSize, IPL_DEPTH_32F, 1));
 
 	cvConvertScale(eyeGrey.get(), temp.get());
 	_blinkDetector.update(eyeFloat);

@@ -1,4 +1,5 @@
 #include "Calibrator.h"
+#include "Application.h"
 
 FrameFunction::FrameFunction(const int &frameNumber):
 	_frameNumber(frameNumber),
@@ -36,8 +37,8 @@ void MovingTarget::process() {
 			_windowPointer->setPosition((int)_points[id].x, (int)_points[id].y);
 		}
 	} else {
-		if (getPointNumber() == _points.size() && tracker_status == STATUS_TESTING) {
-			tracker_status = STATUS_CALIBRATED;
+		if (getPointNumber() == _points.size() && Application::status == Application::STATUS_TESTING) {
+			Application::status = Application::STATUS_CALIBRATED;
 		}
 		detach();
 	}
@@ -139,8 +140,8 @@ void Calibrator::process() {
 			_trackingSystem->gazeTracker.addExemplar_left(_points[id], _averageEyeLeft->getMean().get(), _trackingSystem->eyeExtractor.eyeGreyLeft.get());
 
 			if(id == _points.size() - 1) {
-				tracker_status = STATUS_CALIBRATED;
-				is_tracker_calibrated = true;
+				Application::status = Application::STATUS_CALIBRATED;
+				Application::isTrackerCalibrated = true;
 
 				//_trackingSystem->gazeTracker.trainNN();
 				//_trackingSystem->gazeTracker.calculateTrainingErrors();
@@ -179,7 +180,7 @@ vector<Point> Calibrator::scaled(const vector<Point> &points, double x, double y
 
 	vector<Point> result;
 
-	xforeach(iter, points) {
+	xForEach(iter, points) {
 		result.push_back(Point(iter->x * x, iter->y * y));
 		//result.push_back(Point(iter->x * scale + dx, iter->y * scale + dy));
 	}
@@ -190,7 +191,7 @@ vector<Point> Calibrator::scaled(const vector<Point> &points, double x, double y
 vector<Point> Calibrator::scaled(const vector<Point> &points, int x, int y, double width, double height) {
 	vector<Point> result;
 
-	xforeach(iter, points) {
+	xForEach(iter, points) {
 		result.push_back(Point(iter->x * width + x, iter->y * height + y));
 		//cout << "ADDED POINT (" << iter->x * width + x << ", " << iter->y * height + y << ")" << endl;
 	}

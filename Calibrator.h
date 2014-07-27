@@ -63,8 +63,8 @@ public:
 private:
 	static const Point _defaultPointArray[];
 	boost::shared_ptr<TrackingSystem> _trackingSystem;
-	scoped_ptr<FeatureDetector> _averageEye;
-	scoped_ptr<FeatureDetector> _averageEyeLeft;
+	boost::scoped_ptr<FeatureDetector> _averageEye;
+	boost::scoped_ptr<FeatureDetector> _averageEyeLeft;
 };
 
 

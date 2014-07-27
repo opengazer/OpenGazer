@@ -75,7 +75,7 @@ BlinkDetector::BlinkDetector():
 {
 }
 
-void BlinkDetector::update(const scoped_ptr<IplImage> &eyeFloat) {
+void BlinkDetector::update(const boost::scoped_ptr<IplImage> &eyeFloat) {
 	if (!_initialized) {
 		cvCopy(eyeFloat.get(), _averageEye.get());
 		_initialized = true;

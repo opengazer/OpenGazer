@@ -1,10 +1,11 @@
-#include "GameWindow.h"
 #include <gtkmm.h>
 #include <iostream>
-
-#include "OutputMethods.h"
 #include <stdlib.h>
 #include <opencv2/opencv.hpp>
+
+#include "OutputMethods.h"
+#include "GameWindow.h"
+#include "Application.h"
 
 CvScalar background_color2;
 
@@ -183,7 +184,7 @@ void GameArea::showContents() {
 	Glib::RefPtr<Gdk::Window> window = get_window();
 	if (window) {
 
-		if(tracker_status == STATUS_PAUSED) {
+		if(Application::status == Application::STATUS_PAUSED) {
 			cout << "PAUSED, DRAWING HERE" << endl;
 			Glib::RefPtr<Gdk::GC> gc = Gdk::GC::create(window);
 			IplImage* repimg = repositioningImage;
@@ -208,7 +209,7 @@ void GameArea::showContents() {
 #ifdef EXPERIMENT_MODE
 		else if(false) {		// For the experiment mode, never show the game
 #else
-		else if(tracker_status == STATUS_CALIBRATED) {
+		else if(Application::status == Application::STATUS_CALIBRATED) {
 #endif
 		
 			//Gtk::Allocation allocation = get_allocation();
@@ -393,7 +394,7 @@ void GameArea::showContents() {
 			
 			Point calibrationPoint = calibrationPointer->getPosition();
 			
-			//if(tracker_status == STATUS_TESTING) {
+			//if(Application::status == Application::STATUS_TESTING) {
 			//	cout << "EXPECTED OUTPUT: ("<< calibrationPoint.x << ", " << calibrationPoint.y << ")" << endl << endl;
 			//}
 			
@@ -504,7 +505,7 @@ GameWindow::GameWindow(TrackerOutput* op) :
 		//gtk_window_present((GtkWindow*) this);
 		//gtk_window_fullscreen((GtkWindow*) this);
 	}
-	catch (QuitNow)
+	catch (Utils::QuitNow)
 	{
 		cout << "Caught it!\n";
 	}

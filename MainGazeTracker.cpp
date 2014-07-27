@@ -1,4 +1,3 @@
-#include "utils.h"
 #include <fstream>
 #include <stdlib.h>
 #include "MainGazeTracker.h"
@@ -6,6 +5,9 @@
 #include <boost/lexical_cast.hpp>
 #include <sys/types.h>
 #include <unistd.h>
+
+#include "Application.h"
+#include "utils.h"
 
 class VideoWriter {
     CvVideoWriter *video;
@@ -41,7 +43,7 @@ CommandLineArguments::~CommandLineArguments() {
 }
 
 bool CommandLineArguments::isoption(string option) {
-    xforeach(iter, options)
+    xForEach(iter, options)
 	if (iter->compare(option) == 0)
 	    return true;
     return false;
@@ -299,21 +301,21 @@ MainGazeTracker::MainGazeTracker(int argc, char** argv,
 	
 	// --dwelltime parameter
 	if (args.getoptionvalue("dwelltime").compare("") != 0)
-		dwelltime_parameter = atoi(args.getoptionvalue("dwelltime").c_str());
+		Application::dwelltimeParameter = atoi(args.getoptionvalue("dwelltime").c_str());
 	else
-		dwelltime_parameter = 30;
+		Application::dwelltimeParameter = 30;
 	
 	// --testdwelltime parameter
 	if (args.getoptionvalue("testdwelltime").compare("") != 0)
-		test_dwelltime_parameter = atoi(args.getoptionvalue("testdwelltime").c_str());
+		Application::testDwelltimeParameter = atoi(args.getoptionvalue("testdwelltime").c_str());
 	else
-		test_dwelltime_parameter = 20;
+		Application::testDwelltimeParameter = 20;
 	
 	// --sleep parameter
 	if (args.getoptionvalue("sleep").compare("") != 0)
-		sleep_parameter = atoi(args.getoptionvalue("sleep").c_str());
+		Application::sleepParameter = atoi(args.getoptionvalue("sleep").c_str());
 	else
-		sleep_parameter = 0;
+		Application::sleepParameter = 0;
 		
 	// --folder parameter
     string folder_parameter = "outputs";
@@ -322,7 +324,7 @@ MainGazeTracker::MainGazeTracker(int argc, char** argv,
 		folder_parameter = args.getoptionvalue("outputfolder");
 
 	// --subject parameter
-	base_path = getUniqueFileName(folder_parameter, subject + "_" + setup + "_" + args.getoptionvalue("resolution"));
+	base_path = Utils::getUniqueFileName(folder_parameter, subject + "_" + setup + "_" + args.getoptionvalue("resolution"));
 	
     	// --record parameter
 	if (args.getoptionvalue("record").compare("1") == 0) {
@@ -380,7 +382,7 @@ MainGazeTracker::MainGazeTracker(int argc, char** argv,
     }
     
     game_win->setRepositioningImage(repositioning_image);
-    face_rectangle = NULL;
+    Application::faceRectangle = NULL;
 }
 
 void MainGazeTracker::addTracker(Point point) {
@@ -495,8 +497,8 @@ void MainGazeTracker::doprocessing(void) {
     videoinput->updateFrame();
 	
 	// Wait a little so that the marker stays on the screen for a longer time
-	if((tracker_status == STATUS_CALIBRATING || tracker_status == STATUS_TESTING) && !videoinput->capture_from_video) {
-		usleep(sleep_parameter);
+	if((Application::status == Application::STATUS_CALIBRATING || Application::status == Application::STATUS_TESTING) && !videoinput->capture_from_video) {
+		usleep(Application::sleepParameter);
 	}
 	else {
 		;
@@ -507,7 +509,7 @@ void MainGazeTracker::doprocessing(void) {
     canvas->origin = frame->origin;
 	double image_norm = 0.0;
 	
-	if(tracker_status == STATUS_PAUSED) {
+	if(Application::status == Application::STATUS_PAUSED) {
 		cvAddWeighted(frame, 0.5, overlayimage, 0.5, 0.0, canvas.get());
 		
 		// Only calculate norm in the area containing the face
@@ -550,7 +552,7 @@ void MainGazeTracker::doprocessing(void) {
     try {
 	tracking->process(frame, canvas.get());
 	if (tracking->gazeTracker.isActive()) {
-		if(tracker_status != STATUS_TESTING) {
+		if(Application::status != Application::STATUS_TESTING) {
 			tracking->gazeTracker.output.setActualTarget(Point(0, 0));
 			tracking->gazeTracker.output.setFrameId(0);
 		}
@@ -559,15 +561,15 @@ void MainGazeTracker::doprocessing(void) {
 			tracking->gazeTracker.output.setFrameId(target->getPointFrame());
 	    }
 	
-		//tracking->gazeTracker.output.setErrorOutput(tracker_status == STATUS_TESTING);	// No longer necessary, TODO REMOVE
+		//tracking->gazeTracker.output.setErrorOutput(Application::status == Application::STATUS_TESTING);	// No longer necessary, TODO REMOVE
 		
-		xforeach(iter, stores)
+		xForEach(iter, stores)
 		(*iter)->store(tracking->gazeTracker.output);
 		
 		// Write the same info to the output text file
 		if(outputfile != NULL) {
 			TrackerOutput output = tracking->gazeTracker.output;
-			if(tracker_status == STATUS_TESTING) {
+			if(Application::status == Application::STATUS_TESTING) {
                 cout << "TESTING, WRITING OUTPUT!!!!!!!!!!!!!!!!!" << endl;
 				if(!tracking->eyeExtractor.isBlinking()) {
 					*outputfile << output.frameid + 1 << "\t" 
@@ -601,7 +603,7 @@ void MainGazeTracker::doprocessing(void) {
 	framestoreload--;
     }	
 
-	if(tracker_status == STATUS_PAUSED) {
+	if(Application::status == Application::STATUS_PAUSED) {
 		int rectangle_thickness = 15;
 		CvScalar color;
 		
@@ -643,24 +645,24 @@ void MainGazeTracker::doprocessing(void) {
 
 			cvCopy(canvas.get(), conversionimage);
 			
-			if(tracker_status == STATUS_TESTING) {
+			if(Application::status == Application::STATUS_TESTING) {
 				//cout << "TARGET: " << output.actualTarget.x << ", " << output.actualTarget.y << endl;
-				mapToVideoCoordinates(output.actualTarget, videoinput->get_resolution(), actualtarget);
+				Utils::mapToVideoCoordinates(output.actualTarget, videoinput->get_resolution(), actualtarget);
 				//cout << "MAPPING: " << actualtarget.x << ", " << actualtarget.y << endl << endl;
 
 				cvCircle((CvArr*) conversionimage, cvPoint(actualtarget.x, actualtarget.y), 8, cvScalar(0, 0, 255), -1, 8, 0);
 			
 				// If not blinking, show the estimation in video
 				if(!tracking->eyeExtractor.isBlinking()) {
-					mapToVideoCoordinates(output.gazepoint, videoinput->get_resolution(), estimation);
+					Utils::mapToVideoCoordinates(output.gazepoint, videoinput->get_resolution(), estimation);
 					cvCircle((CvArr*) conversionimage, cvPoint(estimation.x, estimation.y), 8, cvScalar(0, 255, 0), -1, 8, 0);
 					
-					mapToVideoCoordinates(output.gazepoint_left, videoinput->get_resolution(), estimation);
+					Utils::mapToVideoCoordinates(output.gazepoint_left, videoinput->get_resolution(), estimation);
 					cvCircle((CvArr*) conversionimage, cvPoint(estimation.x, estimation.y), 8, cvScalar(255, 0, 0), -1, 8, 0);
 				}
 			}
 
-            if(tracker_status == STATUS_PAUSED) {
+            if(Application::status == Application::STATUS_PAUSED) {
                 int rectangle_thickness = 15;
                 CvScalar color;
                 
@@ -692,32 +694,32 @@ void MainGazeTracker::doprocessing(void) {
 	}
 	
 	// Show the current target & estimation points on the main window
-	if(tracker_status == STATUS_CALIBRATING || tracker_status == STATUS_TESTING || tracker_status == STATUS_CALIBRATED) {
+	if(Application::status == Application::STATUS_CALIBRATING || Application::status == Application::STATUS_TESTING || Application::status == Application::STATUS_CALIBRATED) {
 		TrackerOutput output = tracking->gazeTracker.output;
 		Point actualtarget(0, 0);
 		Point estimation(0, 0);
 		
-		if(tracker_status == STATUS_TESTING) {
-			mapToVideoCoordinates(target->getActivePoint(), videoinput->get_resolution(), actualtarget, false);
+		if(Application::status == Application::STATUS_TESTING) {
+			Utils::mapToVideoCoordinates(target->getActivePoint(), videoinput->get_resolution(), actualtarget, false);
 			cvCircle((CvArr*) canvas.get(), cvPoint(actualtarget.x, actualtarget.y), 8, cvScalar(0, 0, 255), -1, 8, 0);
 		}
-		else if(tracker_status == STATUS_CALIBRATING) {
-			mapToVideoCoordinates(calibrator->getActivePoint(), videoinput->get_resolution(), actualtarget, false);
+		else if(Application::status == Application::STATUS_CALIBRATING) {
+			Utils::mapToVideoCoordinates(calibrator->getActivePoint(), videoinput->get_resolution(), actualtarget, false);
 			cvCircle((CvArr*) canvas.get(), cvPoint(actualtarget.x, actualtarget.y), 8, cvScalar(0, 0, 255), -1, 8, 0);
 		}
 		
 		// If not blinking, show the estimation in video
 		if(!tracking->eyeExtractor.isBlinking()) {
-			mapToVideoCoordinates(output.gazepoint, videoinput->get_resolution(), estimation, false);
+			Utils::mapToVideoCoordinates(output.gazepoint, videoinput->get_resolution(), estimation, false);
 			cvCircle((CvArr*) canvas.get(), cvPoint(estimation.x, estimation.y), 8, cvScalar(0, 255, 0), -1, 8, 0);
 			
-			mapToVideoCoordinates(output.gazepoint_left, videoinput->get_resolution(), estimation, false);
+			Utils::mapToVideoCoordinates(output.gazepoint_left, videoinput->get_resolution(), estimation, false);
 			cvCircle((CvArr*) canvas.get(), cvPoint(estimation.x, estimation.y), 8, cvScalar(255, 0, 0), -1, 8, 0);
 		}
 	}
 //     statemachine.handleEvent(EVENT_TICK);
 
-    if (autoreload && framestoreload <= 0 && tracker_status != STATUS_PAUSED) 
+    if (autoreload && framestoreload <= 0 && Application::status != Application::STATUS_PAUSED) 
  		loadpoints();	
 }
 
@@ -749,8 +751,8 @@ void MainGazeTracker::simulateClicks(void) {
 		commandindex++;
 	}
 	
-		if(commandindex == commands.size() && (tracker_status == STATUS_IDLE || tracker_status == STATUS_CALIBRATED)) {
-			throw QuitNow();	
+		if(commandindex == commands.size() && (Application::status == Application::STATUS_IDLE || Application::status == Application::STATUS_CALIBRATED)) {
+			throw Utils::QuitNow();
 		}
 }
 }
@@ -798,7 +800,7 @@ static vector<Point> scalebyscreen(const vector<Point> &points) {
 }
 
 void MainGazeTracker::startCalibration() {
-	tracker_status = STATUS_CALIBRATING;
+	Application::status = Application::STATUS_CALIBRATING;
 	
 	if(game_win == NULL) {
 		game_win = new GameWindow (&(tracking->gazeTracker.output));
@@ -826,7 +828,7 @@ void MainGazeTracker::startCalibration() {
     boost::shared_ptr<Calibrator> 
 	cal(new Calibrator(framecount, tracking, 
 				  scalebyscreen(Calibrator::loadPoints(calfile)),
-				  pointer, dwelltime_parameter));
+				  pointer, Application::dwelltimeParameter));
 				
 	calibrator = cal.operator->();
 	
@@ -838,7 +840,7 @@ void MainGazeTracker::startCalibration() {
 }
 
 void MainGazeTracker::startTesting() {
-	tracker_status = STATUS_TESTING;
+	Application::status = Application::STATUS_TESTING;
 
     if (recording) {
 		*commandoutputfile << totalframecount << " TEST" << endl;
@@ -863,7 +865,7 @@ void MainGazeTracker::startTesting() {
 	points = Calibrator::loadPoints(calfile);
 	
     boost::shared_ptr<MovingTarget>
-	moving(new MovingTarget(framecount, scalebyscreen(points), pointer, test_dwelltime_parameter));
+	moving(new MovingTarget(framecount, scalebyscreen(points), pointer, Application::testDwelltimeParameter));
 	
 	target = moving.operator->();
 	
@@ -883,16 +885,16 @@ void MainGazeTracker::startPlaying() {
 	game_win->show();
 }
 void MainGazeTracker::pauseOrRepositionHead() {
-	if(tracker_status == STATUS_PAUSED) {
+	if(Application::status == Application::STATUS_PAUSED) {
 	    if (recording) {
 			*commandoutputfile << totalframecount << " UNPAUSE" << endl;
 		}
 		
-		if(is_tracker_calibrated) {
-			tracker_status = STATUS_CALIBRATED;
+		if(Application::isTrackerCalibrated) {
+			Application::status = Application::STATUS_CALIBRATED;
 		}
 		else {
-			tracker_status = STATUS_IDLE;
+			Application::status = Application::STATUS_IDLE;
 		}
 		tracking->pointTracker.retrack(videoinput->frame, 2);
 		//choosepoints();
@@ -902,7 +904,7 @@ void MainGazeTracker::pauseOrRepositionHead() {
 			*commandoutputfile << totalframecount << " PAUSE" << endl;
 		}
 		
-		tracker_status = STATUS_PAUSED;
+		Application::status = Application::STATUS_PAUSED;
 		
 		overlayimage = cvLoadImage("point-selection-frame.png", CV_LOAD_IMAGE_COLOR);
 	    faces = FaceDetector::faceDetector.detect(overlayimage);
@@ -1165,7 +1167,7 @@ void detect_eye_corners(IplImage* img, double resolution, Point points[]){
 
 	cvCvtColor(eye_region_image, eye_region_image_gray, CV_RGB2GRAY);
 	
-	normalizeGrayScaleImage(eye_region_image_gray);
+	Utils::normalizeGrayScaleImage(eye_region_image_gray);
 
 	CvPoint2D32f* corners = detect_corners_in_grayscale(eye_region_image_gray, corner_count);
 
@@ -1336,9 +1338,9 @@ void MainGazeTracker::extract_face_region_rectangle(IplImage* frame, vector<Poin
 	min_y -= 0.5 * dif_y;
 	max_y += 0.5 * dif_y;
 	
-	face_rectangle = new CvRect();
-	face_rectangle->x = min_x;
-	face_rectangle->y = min_y;
-	face_rectangle->width = max_x - min_x;
-	face_rectangle->height = max_y - min_y;
+	Application::faceRectangle = new CvRect();
+	Application::faceRectangle->x = min_x;
+	Application::faceRectangle->y = min_y;
+	Application::faceRectangle->width = max_x - min_x;
+	Application::faceRectangle->height = max_y - min_y;
 }

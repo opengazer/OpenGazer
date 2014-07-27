@@ -13,9 +13,8 @@ bool issamesign(int a, int b) {
 }
 
 static double squareNorm(Point point) {
-	return square(point.x) + square(point.y);
+	return Utils::square(point.x) + Utils::square(point.y);
 }
-
 
 static double mean(vector<Point> const &vec, double (Point::*prop)) {
 	double sum = 0.0;
@@ -25,7 +24,6 @@ static double mean(vector<Point> const &vec, double (Point::*prop)) {
 
 	return sum / vec.size();
 }
-
 
 static void predict(double xOrig, double yOrig, double a, double b, double c, double d, double depth, double &xNew, double &yNew) {
 	double A = -a * xOrig - b * yOrig;
@@ -206,7 +204,7 @@ vector<bool> HeadTracker::detectInliers(vector<Point> const &prev, vector<Point>
 	for (int i = 0; i < transitions.size(); i++) {
 		closePoints[i] = 0;
 		for (int j = 0; j < transitions.size(); j++) {
-			if (squareNorm(transitions[i] - transitions[j]) <= square(radius)) {
+			if (squareNorm(transitions[i] - transitions[j]) <= Utils::square(radius)) {
 				closePoints[i]++;
 			}
 		}
@@ -216,7 +214,7 @@ vector<bool> HeadTracker::detectInliers(vector<Point> const &prev, vector<Point>
 
 	vector<bool> inliers(transitions.size());
 	for (int i = 0; i < transitions.size(); i++) {
-		inliers[i] = squareNorm(transitions[i] - transitions[maxIndex]) <= square(radius);
+		inliers[i] = squareNorm(transitions[i] - transitions[maxIndex]) <= Utils::square(radius);
 	}
 
 	for (int i = 0; i < inliers.size(); i++) {
@@ -233,7 +231,6 @@ vector<bool> HeadTracker::detectInliers(vector<Point> const &prev, vector<Point>
 
 	return inliers;
 }
-
 
 void HeadTracker::predictPoints(double xx0, double yy0, double xx1, double yy1, double rotX, double rotY, double atX, double atY) {
 	double maxDiff = 0.0;

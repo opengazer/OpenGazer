@@ -1,8 +1,13 @@
 #include <opencv/highgui.h>
 #include <fstream>
 
+#include "Application.h"
 #include "PointTracker.h"
 #include "FaceDetector.h"
+#include "utils.h"
+
+using Utils::operator<<;
+using Utils::operator>>;
 
 static Point pointBetweenRects(const Point &point, CvRect source, CvRect dest) {
 	return Point((point.x - source.x) * (double(dest.width) / source.width) + dest.x, (point.y - source.y) * (double(dest.height) / source.height) + dest.y);
@@ -12,7 +17,7 @@ static vector<Point> pointBetweenRects(const vector<Point> &points, CvRect sourc
 	vector<Point> result;
 
 	result.reserve(points.size());
-	xforeach(iter, points)
+	xForEach(iter, points)
 	result.push_back(pointBetweenRects(*iter, source, dest));
 
 	return result;
@@ -55,7 +60,7 @@ void PointTracker::removeTracker(int id) {
 
 int PointTracker::getClosestTracker(const Point &point) {
 	vector<Point> points;
-	convert(currentPoints, points);
+	Utils::convert(currentPoints, points);
 	return point.closestPoint(points);
 }
 
@@ -66,9 +71,9 @@ void PointTracker::track(const IplImage *frame, int pyramidDepth) {
 		status.resize(currentPoints.size());
 		cvCvtColor(frame, _grey.get(), CV_BGR2GRAY );
 
-		if (face_rectangle != NULL) {
-			cvSetImageROI(_grey.get(), *face_rectangle);
-			normalizeGrayScaleImage2(_grey.get(), 90, 160);
+		if (Application::faceRectangle != NULL) {
+			cvSetImageROI(_grey.get(), *Application::faceRectangle);
+			Utils::normalizeGrayScaleImage2(_grey.get(), 90, 160);
 			cvResetImageROI(_grey.get());
 		}
 
@@ -181,8 +186,8 @@ void PointTracker::draw(IplImage *canvas) {
 }
 
 void PointTracker::normalizeOriginalGrey() {
-	cvSetImageROI(_origGrey.get(), *face_rectangle);
-	normalizeGrayScaleImage2(_origGrey.get(), 90, 160);
+	cvSetImageROI(_origGrey.get(), *Application::faceRectangle);
+	Utils::normalizeGrayScaleImage2(_origGrey.get(), 90, 160);
 	cvResetImageROI(_origGrey.get());
 }
 
@@ -198,7 +203,7 @@ void PointTracker::save(string filename, string newname, const IplImage *frame) 
 		CvRect face = faces[0];
 		ofstream facefile(newname.c_str());
 		vector<Point> tempPoints;
-		convert(currentPoints, tempPoints);
+		Utils::convert(currentPoints, tempPoints);
 		facefile << pointBetweenRects(tempPoints, face, cvRect(0, 0, 1, 1));
 	} else {
 		throw ios_base::failure("No face found in the image");
@@ -221,11 +226,11 @@ void PointTracker::load(string filename, string newname, const IplImage *frame) 
 
 		vector<Point> tempPoints;
 		origFile >> tempPoints;
-		convert(tempPoints, origPoints);
+		Utils::convert(tempPoints, origPoints);
 
 		faceFile >> tempPoints;
 		tempPoints = pointBetweenRects(tempPoints, cvRect(0,0,1,1), faces[0]);
-		convert(tempPoints, currentPoints);
+		Utils::convert(tempPoints, currentPoints);
 		lastPoints = currentPoints;
 	} else {
 		throw ios_base::failure("No face found in the image");

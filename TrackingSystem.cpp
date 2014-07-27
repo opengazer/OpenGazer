@@ -1,6 +1,7 @@
 #include "TrackingSystem.h"
 #include "FeatureDetector.h"
 #include "BlinkDetector.h"
+#include "Application.h"
 
 static double quadraticMinimum(double xm1, double x0, double xp1) {
 	//cout << "values:" << xm1 << " " << x0 << " " << xp1 << endl;
@@ -38,7 +39,7 @@ TrackingSystem::TrackingSystem(CvSize size):
 
 
 void TrackingSystem::process(const IplImage *frame, IplImage *image) {
-	if (tracker_status != STATUS_PAUSED) {
+	if (Application::status != Application::STATUS_PAUSED) {
 		pointTracker.track(frame, 2);
 
 		if (pointTracker.countActivePoints() < 4) {
