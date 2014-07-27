@@ -30,9 +30,9 @@ static Point subpixelMinimum(const IplImage *values) {
 
 TrackingSystem::TrackingSystem(CvSize size):
 	pointTracker(size),
-	eyeExtractor(pointTracker)
+	eyeExtractor(pointTracker),
 	_headTracker(pointTracker),
-	_headCompensation(_headTracker),
+	_headCompensation(_headTracker)
 {
 }
 
@@ -47,9 +47,9 @@ void TrackingSystem::process(const IplImage *frame, IplImage *image) {
 		}
 
 		_headTracker.updatetracker();
-		eyeExtractor.extractEye(frame);	// throws Tracking Exception
-		gazeTracker.update(eyeExtractor.eyefloat.get(), eyeExtractor.eyegrey.get());
-		gazeTracker.update_left(eyeExtractor.eyefloat_left.get(), eyeExtractor.eyegrey_left.get());
+		eyeExtractor.extractEyes(frame);	// throws Tracking Exception
+		gazeTracker.update(eyeExtractor.eyeFloat.get(), eyeExtractor.eyeGrey.get());
+		gazeTracker.update_left(eyeExtractor.eyeFloatLeft.get(), eyeExtractor.eyeGreyLeft.get());
 
 		displayEye(image, 0, 0, 0, 2);
 		pointTracker.draw(image);
@@ -58,15 +58,15 @@ void TrackingSystem::process(const IplImage *frame, IplImage *image) {
 }
 
 void TrackingSystem::displayEye(IplImage *image, int baseX, int baseY, int stepX, int stepY) {
-	CvSize eyeSize = EyeExtractor::eyesize;
-	int eyeDX = EyeExtractor::eyedx;
-	int eyeDY = EyeExtractor::eyedy;
+	CvSize eyeSize = EyeExtractor::eyeSize;
+	int eyeDX = EyeExtractor::eyeDX;
+	int eyeDY = EyeExtractor::eyeDY;
 
 	static IplImage *eyeGreyTemp = cvCreateImage(eyeSize, 8, 1);
-	static FeatureDetector features(EyeExtractor::eyesize);
-	static FeatureDetector features_left(EyeExtractor::eyesize);
+	static FeatureDetector features(EyeExtractor::eyeSize);
+	static FeatureDetector features_left(EyeExtractor::eyeSize);
 
-	features.addSample(eyeExtractor.eyegrey.get());
+	features.addSample(eyeExtractor.eyeGrey.get());
 
 	baseX *= 2 * eyeDX;
 	baseY *= 2 * eyeDY;
@@ -76,23 +76,23 @@ void TrackingSystem::displayEye(IplImage *image, int baseX, int baseY, int stepX
 	gazeTracker.draw(image, eyeDX, eyeDY);
 
 	cvSetImageROI(image, cvRect(baseX, baseY, eyeDX * 2, eyeDY * 2));
-	cvCvtColor(eyeExtractor.eyegrey.get(), image, CV_GRAY2RGB);
+	cvCvtColor(eyeExtractor.eyeGrey.get(), image, CV_GRAY2RGB);
 
 	cvSetImageROI(image, cvRect(baseX + stepX * 1, baseY + stepY * 1, eyeDX * 2, eyeDY * 2));
-	cvCvtColor(eyeExtractor.eyegrey.get(), image, CV_GRAY2RGB);
+	cvCvtColor(eyeExtractor.eyeGrey.get(), image, CV_GRAY2RGB);
 
 	cvConvertScale(features.getMean().get(), eyeGreyTemp);
 	cvSetImageROI(image, cvRect(baseX, baseY, eyeDX * 2, eyeDY * 2));
 	cvCvtColor(eyeGreyTemp, image, CV_GRAY2RGB);
 
 	// ONUR DUPLICATED CODE FOR LEFT EYE
-	features_left.addSample(eyeExtractor.eyegrey_left.get());
+	features_left.addSample(eyeExtractor.eyeGreyLeft.get());
 
 	cvSetImageROI(image, cvRect(baseX + 100, baseY, eyeDX * 2, eyeDY * 2));
-	cvCvtColor(eyeExtractor.eyegrey_left.get(), image, CV_GRAY2RGB);
+	cvCvtColor(eyeExtractor.eyeGreyLeft.get(), image, CV_GRAY2RGB);
 
 	cvSetImageROI(image, cvRect(baseX + 100, baseY + stepY * 1, eyeDX * 2, eyeDY * 2));
-	cvCvtColor(eyeExtractor.eyegrey_left.get(), image, CV_GRAY2RGB);
+	cvCvtColor(eyeExtractor.eyeGreyLeft.get(), image, CV_GRAY2RGB);
 
 	cvConvertScale(features_left.getMean().get(), eyeGreyTemp);
 	cvSetImageROI(image, cvRect(baseX + 100, baseY, eyeDX * 2, eyeDY * 2));

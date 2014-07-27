@@ -1,127 +1,105 @@
 #include "utils.h"
 #include "EyeExtractor.h"
 
-const int EyeExtractor::eyedx = 32;
-const int EyeExtractor::eyedy = 16;
-const CvSize EyeExtractor::eyesize = cvSize(eyedx*2, eyedy*2);
+const int EyeExtractor::eyeDX = 32;
+const int EyeExtractor::eyeDY = 16;
+const CvSize EyeExtractor::eyeSize = cvSize(eyeDX * 2, eyeDY * 2);
 
-void EyeExtractor::processEye(void) {
+EyeExtractor::EyeExtractor(const PointTracker &pointTracker):
+	_pointTracker(pointTracker),
 
-    normalizeGrayScaleImage(eyegrey.get(), 127, 50);
-    cvConvertScale(eyegrey.get(), eyefloat2.get());
-    // todo: equalize it somehow first!
-    cvSmooth(eyefloat2.get(), eyefloat.get(), CV_GAUSSIAN, 3);
-    cvEqualizeHist(eyegrey.get(), eyegrey.get());
+	_eyeFloat2(cvCreateImage(eyeSize, IPL_DEPTH_32F, 1)),
+	eyeGrey(cvCreateImage(eyeSize, 8, 1)),
+	eyeFloat(cvCreateImage(eyeSize, IPL_DEPTH_32F, 1)),
+	eyeImage(cvCreateImage(eyeSize, 8, 3)),
 
-	// ONUR DUPLICATED CODE FOR LEFT EYE
+ 	// ONUR DUPLICATED CODE FOR LEFT EYE
+	_eyeFloat2Left(cvCreateImage(eyeSize, IPL_DEPTH_32F, 1)),
+	eyeGreyLeft(cvCreateImage(eyeSize, 8, 1)),
+	eyeFloatLeft(cvCreateImage(eyeSize, IPL_DEPTH_32F, 1)),
+	eyeImageLeft(cvCreateImage(eyeSize, 8, 3)),
 
-    normalizeGrayScaleImage(eyegrey_left.get(), 127, 50);
+	_isBlinking(false)
+{
+}
 
-    cvConvertScale(eyegrey_left.get(), eyefloat2_left.get());
-    // todo: equalize it somehow first!
-    cvSmooth(eyefloat2_left.get(), eyefloat_left.get(), CV_GAUSSIAN, 3);
-    cvEqualizeHist(eyegrey_left.get(), eyegrey_left.get());
+EyeExtractor::~EyeExtractor() {}
 
-	// Blink detection trials
-	scoped_ptr<IplImage> temp(cvCreateImage(eyesize, IPL_DEPTH_32F, 1));
-	scoped_ptr<IplImage> temp2(cvCreateImage(eyesize, IPL_DEPTH_32F, 1));
-	cvConvertScale(eyegrey.get(), temp.get());
-	blinkdet.update(eyefloat);
-	
-	cvConvertScale(eyegrey_left.get(), temp2.get());
-	blinkdet_left.update(eyefloat_left);
-	
-	if(blinkdet.getState() >= 2 && blinkdet_left.getState() >= 2) {
-		blink = true;
-		//cout << "BLINK!! RIGHT EYE STATE: " << blinkdet.getState() << "LEFT EYE STATE: " << blinkdet_left.getState() <<endl;
-	}
-	else {
-		blink = false;
-	}
+void EyeExtractor::extractEyes(const IplImage *originalImage) {
+	extractEye(originalImage, eyeGrey.get(), eyeImage.get());
+	extractEye(originalImage, eyeGreyLeft.get(), eyeImageLeft.get());
+
+	processEyes();
 }
 
 bool EyeExtractor::isBlinking() {
-	return blink;
+	return _isBlinking;
+}
+
+CvMat EyeExtractor::pointMatrix() throw (TrackingException) {
+	//if (!_pointTracker.status[_pointTracker.eyepoint1]) {
+	//	throw TrackingException();
+	//}
+
+	double x0 = _pointTracker.currentpoints[_pointTracker.eyepoint1].x;
+	double y0 = _pointTracker.currentpoints[_pointTracker.eyepoint1].y;
+	double x1 = _pointTracker.currentpoints[_pointTracker.eyepoint2].x;
+	double y1 = _pointTracker.currentpoints[_pointTracker.eyepoint2].y;
+	double factor = 0.17;
+	double xFactor = 0.05;
+	double yFactor = 0.20 * (x0 < x1 ? -1 : 1);
+	double L = factor / eyeDX;
+	double LL = x0 < x1? L : -L;
+	float matrix[6] = {
+		LL * (x1 - x0),
+		LL * (y0 - y1),
+		x0 + factor * ((1 - xFactor) * (x1 - x0) + yFactor * (y0 - y1)),
+		LL * (y1 - y0),
+		LL * (x1 - x0),
+		y0 + factor * ((1 - xFactor) * (y1 - y0) + yFactor * (x1 - x0))
+	};
+
+	CvMat M = cvMat(2, 3, CV_32F, matrix);
+
+	return M;
 }
 
 
-EyeExtractor::EyeExtractor(const PointTracker &tracker):
-    tracker(tracker), 
-    eyefloat2(cvCreateImage( eyesize, IPL_DEPTH_32F, 1 )),
-    eyegrey(cvCreateImage( eyesize, 8, 1 )),
-    eyefloat(cvCreateImage( eyesize, IPL_DEPTH_32F, 1 )),
-    eyeimage(cvCreateImage( eyesize, 8, 3 )),
- 	// ONUR DUPLICATED CODE FOR LEFT EYE
-    eyefloat2_left(cvCreateImage( eyesize, IPL_DEPTH_32F, 1 )),
-    eyegrey_left(cvCreateImage( eyesize, 8, 1 )),
-    eyefloat_left(cvCreateImage( eyesize, IPL_DEPTH_32F, 1 )),
-    eyeimage_left(cvCreateImage( eyesize, 8, 3 )),
-	blink(false)
-{
+void EyeExtractor::extractEye(const IplImage *originalImage, IplImage *eyeGrey, IplImage *eyeImage) {
+	CvMat M = pointMatrix();
+
+	cvGetQuadrangleSubPix(originalImage, eyeImage, &M);
+	cvCvtColor(eyeImage, eyeGrey, CV_RGB2GRAY);
 }
 
-void EyeExtractor::extractEye(const IplImage *origimage) 
-    throw (TrackingException) 
-{
-    //if (!tracker.status[tracker.eyepoint1])
-	//throw TrackingException();
+void EyeExtractor::processEyes() {
+	normalizeGrayScaleImage(eyeGrey.get(), 127, 50);
+	cvConvertScale(eyeGrey.get(), _eyeFloat2.get());
+	// todo: equalize it somehow first!
+	cvSmooth(_eyeFloat2.get(), eyeFloat.get(), CV_GAUSSIAN, 3);
+	cvEqualizeHist(eyeGrey.get(), eyeGrey.get());
 
-    double x0 = tracker.currentpoints[tracker.eyepoint1].x;
-    double y0 = tracker.currentpoints[tracker.eyepoint1].y;
-    double x1 = tracker.currentpoints[tracker.eyepoint2].x;
-    double y1 = tracker.currentpoints[tracker.eyepoint2].y;
-    double factor = 0.17;
-    double xfactor = 0.05;
-    double yfactor = 0.20 * (x0 < x1 ? -1 : 1);
-    double L = factor / eyedx;
-    double LL = x0 < x1? L : -L;
-    float matrix[6] = 
-	{LL*(x1-x0), LL*(y0-y1), 
-	 x0 + factor * ((1-xfactor)*(x1-x0) + yfactor * (y0-y1)),
-	 LL*(y1-y0), LL*(x1-x0), 
-	 y0 + factor * ((1-xfactor)*(y1-y0) + yfactor * (x1-x0))};
-    CvMat M = cvMat( 2, 3, CV_32F, matrix );
+	// ONUR DUPLICATED CODE FOR LEFT EYE
+	normalizeGrayScaleImage(eyeGreyLeft.get(), 127, 50);
+	cvConvertScale(eyeGreyLeft.get(), _eyeFloat2Left.get());
+	// todo: equalize it somehow first!
+	cvSmooth(_eyeFloat2Left.get(), eyeFloatLeft.get(), CV_GAUSSIAN, 3);
+	cvEqualizeHist(eyeGreyLeft.get(), eyeGreyLeft.get());
 
-    cvGetQuadrangleSubPix( origimage, eyeimage.get(), &M);
-    cvCvtColor(eyeimage.get(), eyegrey.get(), CV_RGB2GRAY);
+	// Blink detection trials
+	scoped_ptr<IplImage> temp(cvCreateImage(eyeSize, IPL_DEPTH_32F, 1));
+	scoped_ptr<IplImage> temp2(cvCreateImage(eyeSize, IPL_DEPTH_32F, 1));
 
-	extractLeftEye(origimage);
-	
-    processEye();
+	cvConvertScale(eyeGrey.get(), temp.get());
+	_blinkDetector.update(eyeFloat);
+	cvConvertScale(eyeGreyLeft.get(), temp2.get());
+	_blinkDetectorLeft.update(eyeFloatLeft);
+
+	if (_blinkDetector.getState() >= 2 && _blinkDetectorLeft.getState() >= 2) {
+		_isBlinking = true;
+		//cout << "BLINK!! RIGHT EYE STATE: " << _blinkDetector.getState() << "LEFT EYE STATE: " << _blinkDetectorLeft.getState() <<endl;
+	} else {
+		_isBlinking = false;
+	}
 }
-
-void EyeExtractor::extractLeftEye(const IplImage *origimage) 
-    throw (TrackingException) 
-{
-    //if (!tracker.status[tracker.eyepoint1])
-	//throw TrackingException();
-
-    double x0 = tracker.currentpoints[tracker.eyepoint2].x;
-    double y0 = tracker.currentpoints[tracker.eyepoint2].y;
-    double x1 = tracker.currentpoints[tracker.eyepoint1].x;
-    double y1 = tracker.currentpoints[tracker.eyepoint1].y;
-    double factor = 0.17;
-    double xfactor = 0.05;
-    double yfactor = 0.20 * (x0 < x1 ? -1 : 1);
-    double L = factor / eyedx;
-    double LL = x0 < x1? L : -L;
-    float matrix[6] = 
-	{LL*(x1-x0), LL*(y0-y1), 
-	 x0 + factor * ((1-xfactor)*(x1-x0) + yfactor * (y0-y1)),
-	 LL*(y1-y0), LL*(x1-x0), 
-	 y0 + factor * ((1-xfactor)*(y1-y0) + yfactor * (x1-x0))};
-    CvMat M = cvMat( 2, 3, CV_32F, matrix );
-
-	float matrix2[6] = 
-	{LL*(x1-x0), LL*(y0-y1), 
-	 x0 + 64 + factor * ((1-xfactor)*(x1-x0) + yfactor * (y0-y1)),
-	 LL*(y1-y0), LL*(x1-x0), 
-	 y0 + factor * ((1-xfactor)*(y1-y0) + yfactor * (x1-x0))};
-    
-    cvGetQuadrangleSubPix( origimage, eyeimage_left.get(), &M);
-    cvCvtColor(eyeimage_left.get(), eyegrey_left.get(), CV_RGB2GRAY);
-}
-EyeExtractor::~EyeExtractor(void) {
-}
-
 

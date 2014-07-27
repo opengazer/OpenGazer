@@ -68,7 +68,7 @@ double LambdaAccumulator::getValue() {
 }
 
 BlinkDetector::BlinkDetector():
-    averageEye(cvCreateImage(EyeExtractor::eyesize, IPL_DEPTH_32F, 1)),
+    averageEye(cvCreateImage(EyeExtractor::eyeSize, IPL_DEPTH_32F, 1)),
     acc(0.1, 1000.0), 
     states(constructStates()),
 	initialized(false)

@@ -71,19 +71,21 @@ Point MovingTarget::getActivePoint() {
 	return _points[getPointNumber()];
 }
 
-const Point Calibrator::_defaultPointArray[] = { Point(0.5, 0.5),
-												Point(0.1, 0.5),
-												Point(0.9, 0.5),
-												Point(0.5, 0.1),
-												Point(0.5, 0.9),
-												Point(0.1, 0.1),
-												Point(0.1, 0.9),
-												Point(0.9, 0.9),
-												Point(0.9, 0.1),
-												Point(0.3, 0.3),
-												Point(0.3, 0.7),
-												Point(0.7, 0.7),
-												Point(0.7, 0.3) };
+const Point Calibrator::_defaultPointArray[] = {
+	Point(0.5, 0.5),
+	Point(0.1, 0.5),
+	Point(0.9, 0.5),
+	Point(0.5, 0.1),
+	Point(0.5, 0.9),
+	Point(0.1, 0.1),
+	Point(0.1, 0.9),
+	Point(0.9, 0.9),
+	Point(0.9, 0.1),
+	Point(0.3, 0.3),
+	Point(0.3, 0.7),
+	Point(0.7, 0.7),
+	Point(0.7, 0.3)
+};
 
 vector<Point> Calibrator::defaultPoints(_defaultPointArray, _defaultPointArray + (sizeof(_defaultPointArray) / sizeof(_defaultPointArray[0])));
 
@@ -109,20 +111,20 @@ void Calibrator::process() {
 		int frame = getPointFrame();
 
 		if (frame == 1) { // start
-			_averageEye.reset(new FeatureDetector(EyeExtractor::eyesize));
-			_averageEyeLeft.reset(new FeatureDetector(EyeExtractor::eyesize));
+			_averageEye.reset(new FeatureDetector(EyeExtractor::eyeSize));
+			_averageEyeLeft.reset(new FeatureDetector(EyeExtractor::eyeSize));
 		}
 
 		if (frame >= 11) { // middle	ONUR _dwellTime/2 changed to 11
 			if (!_trackingSystem->eyeExtractor.isBlinking()) {
-				_averageEye->addSample(_trackingSystem->eyeExtractor.eyefloat.get());
-				_averageEyeLeft->addSample(_trackingSystem->eyeExtractor.eyefloat_left.get());
+				_averageEye->addSample(_trackingSystem->eyeExtractor.eyeFloat.get());
+				_averageEyeLeft->addSample(_trackingSystem->eyeExtractor.eyeFloatLeft.get());
 
 				// Neural network
 				//if (dummy % 8 == 0) {  // Only add samples on the 11-19-27-35 frames
 				//	for (int i = 0; i < 1000; i++) {   // Train 100 times with each frame
-					_trackingSystem->gazeTracker.addSampleToNN(_points[id], _trackingSystem->eyeExtractor.eyefloat.get(), _trackingSystem->eyeExtractor.eyegrey.get());
-					_trackingSystem->gazeTracker.addSampleToNN_left(_points[id], _trackingSystem->eyeExtractor.eyefloat_left.get(), _trackingSystem->eyeExtractor.eyegrey_left.get());
+					_trackingSystem->gazeTracker.addSampleToNN(_points[id], _trackingSystem->eyeExtractor.eyeFloat.get(), _trackingSystem->eyeExtractor.eyeGrey.get());
+					_trackingSystem->gazeTracker.addSampleToNN_left(_points[id], _trackingSystem->eyeExtractor.eyeFloatLeft.get(), _trackingSystem->eyeExtractor.eyeGreyLeft.get());
 
 					dummy++;
 				//}
@@ -132,9 +134,9 @@ void Calibrator::process() {
 		}
 
 		if (frame == _dwellTime - 1) { // end
-			_trackingSystem->gazeTracker.addExemplar(_points[id], _averageEye->getMean().get(), _trackingSystem->eyeExtractor.eyegrey.get());
+			_trackingSystem->gazeTracker.addExemplar(_points[id], _averageEye->getMean().get(), _trackingSystem->eyeExtractor.eyeGrey.get());
 			// ONUR DUPLICATED CODE
-			_trackingSystem->gazeTracker.addExemplar_left(_points[id], _averageEyeLeft->getMean().get(), _trackingSystem->eyeExtractor.eyegrey_left.get());
+			_trackingSystem->gazeTracker.addExemplar_left(_points[id], _averageEyeLeft->getMean().get(), _trackingSystem->eyeExtractor.eyeGreyLeft.get());
 
 			if(id == _points.size() - 1) {
 				tracker_status = STATUS_CALIBRATED;

@@ -767,17 +767,17 @@ void MainGazeTracker::cleanUp(void) {
 
 
 void MainGazeTracker::addExemplar(Point exemplar) {
-    if (exemplar.x >= EyeExtractor::eyedx && 
-	exemplar.x + EyeExtractor::eyedx < videoinput->size.width &&
-	exemplar.y >= EyeExtractor::eyedy && 
-	exemplar.y + EyeExtractor::eyedy < videoinput->size.height) {
+    if (exemplar.x >= EyeExtractor::eyeDX && 
+	exemplar.x + EyeExtractor::eyeDX < videoinput->size.width &&
+	exemplar.y >= EyeExtractor::eyeDY && 
+	exemplar.y + EyeExtractor::eyeDY < videoinput->size.height) {
 		tracking->gazeTracker.addExemplar(exemplar, 
-						  tracking->eyeExtractor.eyefloat.get(), 
-						  tracking->eyeExtractor.eyegrey.get());
+						  tracking->eyeExtractor.eyeFloat.get(), 
+						  tracking->eyeExtractor.eyeGrey.get());
 						
 		tracking->gazeTracker.addExemplar_left(exemplar, 
-						  tracking->eyeExtractor.eyefloat_left.get(), 
-						  tracking->eyeExtractor.eyegrey_left.get());
+						  tracking->eyeExtractor.eyeFloatLeft.get(), 
+						  tracking->eyeExtractor.eyeGreyLeft.get());
 	}
 }
 
