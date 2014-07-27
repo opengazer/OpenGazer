@@ -36,7 +36,7 @@ static vector<Point> pointbetweenrects(const vector<Point> &points,
 void PointTracker::save(string filename, string newpoints, 
 			const IplImage *frame) 
 {
-    vector<CvRect> faces = FaceDetector::facedetector.detect(frame);
+    vector<CvRect> faces = FaceDetector::faceDetector.detect(frame);
     if (faces.size() == 1) {
 	cvSaveImage((filename + "-orig-grey.png").c_str(), orig_grey.get());
 	cvSaveImage((filename + "-orig-pyramid.png").c_str(), orig_pyramid.get());
@@ -64,7 +64,7 @@ void PointTracker::save_image()
 void PointTracker::load(string filename, string newpoints, 
 			const IplImage *frame) 
 {
-    vector<CvRect> faces = FaceDetector::facedetector.detect(frame);
+    vector<CvRect> faces = FaceDetector::faceDetector.detect(frame);
 
     if (faces.size() == 1) {
 	ifstream origfile((filename + "-orig-points.txt").c_str());

@@ -1,5 +1,3 @@
-#include "FaceDetector.h"
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -10,93 +8,80 @@
 #include <time.h>
 #include <ctype.h>
 
-FaceDetector FaceDetector::facedetector;
+#include "FaceDetector.h"
 
-FaceDetector::FaceDetector(char *cascadename):
-    cascade((CvHaarClassifierCascade*)cvLoad(cascadename, 0, 0, 0)),
-    storage(cvCreateMemStorage(0))
-{}
+FaceDetector FaceDetector::faceDetector;
+
+FaceDetector::FaceDetector(char *cascadeName):
+	_cascade((CvHaarClassifierCascade *)cvLoad(cascadeName, 0, 0, 0)),
+	_storage(cvCreateMemStorage(0))
+{
+}
 
 
 FaceDetector::~FaceDetector() {
-    cvReleaseMemStorage(&storage);
-    // fixme: release the cascade somehow
+	cvReleaseMemStorage(&_storage);
+	// fixme: release the cascade somehow
 }
 
 vector<CvRect> FaceDetector::detect(const IplImage *img) {
 	vector<CvRect> result;
+
 	try {
-	   double scale = 1.3;
-	   IplImage* gray = cvCreateImage( cvSize(img->width,img->height), 8, 1 );
-	   IplImage* small_img = 
-	cvCreateImage( cvSize( cvRound (img->width/scale),
-			       cvRound (img->height/scale)), 8, 1 );
-    int i;
+		double scale = 1.3;
+		IplImage *grayImage = cvCreateImage(cvSize(img->width, img->height), 8, 1 );
+		IplImage *smallImage = cvCreateImage(cvSize(cvRound(img->width / scale), cvRound(img->height / scale)), 8, 1 );
 
-    cvCvtColor( img, gray, CV_BGR2GRAY );
-    cvResize( gray, small_img, CV_INTER_LINEAR );
-    cvEqualizeHist( small_img, small_img );
-    cvClearMemStorage( storage );
+		cvCvtColor(img, grayImage, CV_BGR2GRAY);
+		cvResize(grayImage, smallImage, CV_INTER_LINEAR);
+		cvEqualizeHist(smallImage, smallImage);
+		cvClearMemStorage(_storage);
 
-    CvSeq* faces = 
-	cvHaarDetectObjects( small_img, cascade, storage,
-			     1.1, 2, 0/*CV_HAAR_DO_CANNY_PRUNING*/,
-			     cvSize(30, 30) );
+		CvSeq *faces = cvHaarDetectObjects(smallImage, _cascade, _storage, 1.1, 2, 0 /*CV_HAAR_DO_CANNY_PRUNING*/, cvSize(30, 30));
 
-    for( i = 0; i < (faces ? faces->total : 0); i++ ) {
-	CvRect *rect = (CvRect*)cvGetSeqElem( faces, i );
-	result.push_back(cvRect((int)(rect->x * scale),
-				(int)(rect->y * scale),
-				(int)(rect->width * scale),
-				(int)(rect->height * scale)));
-    }
+		for (int i = 0; i < (faces ? faces->total : 0); i++) {
+			CvRect *rect = (CvRect *)cvGetSeqElem(faces, i);
+			result.push_back(cvRect((int)(rect->x * scale), (int)(rect->y * scale), (int)(rect->width * scale), (int)(rect->height * scale)));
+		}
 
-    cvReleaseImage(&gray);
-    cvReleaseImage(&small_img);
-//     cvReleaseSeq(&faces);
-
-	   return result;
+		cvReleaseImage(&grayImage);
+		cvReleaseImage(&smallImage);
+		//cvReleaseSeq(&faces);
 	}
-   catch (std::exception &ex) {
+	catch (std::exception &ex) {
 		cout << ex.what() << endl;
 		return result;
-   }
+	}
+
+	return result;
 }
 
-vector<CvRect> FaceDetector::detect_in_grayscale(const IplImage *gray) {
+vector<CvRect> FaceDetector::detectInGrayscale(const IplImage *grayImage) {
 	vector<CvRect> result;
+
 	try {
-	   double scale = 1.3;
-	   IplImage* small_img = 
-	cvCreateImage( cvSize( cvRound (gray->width/scale),
-			       cvRound (gray->height/scale)), 8, 1 );
-	   int i;
+		double scale = 1.3;
+		IplImage *smallImage = cvCreateImage(cvSize(cvRound(grayImage->width / scale), cvRound(grayImage->height / scale)), 8, 1);
 
-	   cvResize( gray, small_img, CV_INTER_LINEAR );
-	   cvEqualizeHist( small_img, small_img );
-	   cvClearMemStorage( storage );
+		cvResize(grayImage, smallImage, CV_INTER_LINEAR);
+		cvEqualizeHist(smallImage, smallImage);
+		cvClearMemStorage(_storage);
 
-	   CvSeq* faces = 
-	cvHaarDetectObjects( small_img, cascade, storage,
-			     1.1, 2, 0/*CV_HAAR_DO_CANNY_PRUNING*/,
-			     cvSize(30, 30) );
+		CvSeq *faces = cvHaarDetectObjects(smallImage, _cascade, _storage, 1.1, 2, 0 /*CV_HAAR_DO_CANNY_PRUNING*/, cvSize(30, 30));
 
-	   for( i = 0; i < (faces ? faces->total : 0); i++ ) {
-	CvRect *rect = (CvRect*)cvGetSeqElem( faces, i );
-	result.push_back(cvRect((int)(rect->x * scale),
-				(int)(rect->y * scale),
-				(int)(rect->width * scale),
-				(int)(rect->height * scale)));
-	   }
+		for (int i = 0; i < (faces ? faces->total : 0); i++) {
+			CvRect *rect = (CvRect *)cvGetSeqElem(faces, i);
+			result.push_back(cvRect((int)(rect->x * scale), (int)(rect->y * scale), (int)(rect->width * scale), (int)(rect->height * scale)));
+		}
 
-	   cvReleaseImage(&small_img);
-	//     cvReleaseSeq(&faces);
-
-	   return result;
+		cvReleaseImage(&smallImage);
+		//cvReleaseSeq(&faces);
 	}
-   catch (std::exception &ex) {
+	catch (std::exception &ex) {
 		cout << ex.what() << endl;
 		return result;
-   }
+	}
+
+	return result;
 }
 

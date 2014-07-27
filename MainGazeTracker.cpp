@@ -905,7 +905,7 @@ void MainGazeTracker::pauseOrRepositionHead() {
 		tracker_status = STATUS_PAUSED;
 		
 		overlayimage = cvLoadImage("point-selection-frame.png", CV_LOAD_IMAGE_COLOR);
-	    faces = FaceDetector::facedetector.detect(overlayimage);
+	    faces = FaceDetector::faceDetector.detect(overlayimage);
 	}
 }
 
