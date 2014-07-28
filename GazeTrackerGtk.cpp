@@ -1,14 +1,11 @@
-#include <gtkmm.h>
-#include <iostream>
-
 #include "GazeTrackerGtk.h"
 #include "GtkStore.h"
 
-static vector<boost::shared_ptr<AbstractStore> > getStores() {
-	vector<boost::shared_ptr<AbstractStore> > stores;
+static std::vector<boost::shared_ptr<AbstractStore> > getStores() {
+	std::vector<boost::shared_ptr<AbstractStore> > stores;
 
 	stores.push_back(boost::shared_ptr<AbstractStore>(new SocketStore()));
-	stores.push_back(boost::shared_ptr<AbstractStore>(new StreamStore(cout)));
+	stores.push_back(boost::shared_ptr<AbstractStore>(new StreamStore(std::cout)));
 	stores.push_back(boost::shared_ptr<AbstractStore>(new WindowStore(WindowPointer::PointerSpec(20, 30, 0, 0, 1), WindowPointer::PointerSpec(20, 20, 0, 1, 1), WindowPointer::PointerSpec(30, 30, 1, 0, 1))));
 
 	return stores;
@@ -62,7 +59,7 @@ GazeTrackerGtk::GazeTrackerGtk(int argc, char **argv):
 		_vbox.show();
 	}
 	catch (Utils::QuitNow) {
-		cout << "Caught it!\n";
+		std::cout << "Caught it!\n";
 	}
 }
 

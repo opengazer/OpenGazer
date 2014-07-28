@@ -3,6 +3,8 @@
 #include <gtkmm.h>
 
 #include "Containers.h"
+#include "Point.h"
+#include "utils.h"
 
 /* represents the pointer as a small window and moves that window */
 class WindowPointer {

@@ -1,5 +1,8 @@
+#include <gdkmm.h>
+#include <fann.h>
+
 #include "GazeTracker.h"
-#include "EyeExtractor.h"
+#include "Point.h"
 #include "mir.h"
 
 fann_type *all_inputs[1000], *all_outputs[1000];
@@ -11,7 +14,7 @@ double all_output_coords[1000][2];
 static void ignore(const IplImage *) {}
 
 int Targets::getCurrentTarget(Point point) {
-    vector<double> distances(targets.size());
+	std::vector<double> distances(targets.size());
     //    debugtee(targets);
     transform(targets.begin(), targets.end(), distances.begin(),
 	      sigc::mem_fun(point, &Point::distance));
@@ -66,8 +69,8 @@ void TrackerOutput::setFrameId(int id) {
 }
  
 template <class T, class S>
-vector<S> getsubvector(vector<T> const& input, S T::*ptr) {
-    vector<S> output(input.size());
+std::vector<S> getsubvector(std::vector<T> const& input, S T::*ptr) {
+	std::vector<S> output(input.size());
     for(int i=0; i<input.size(); i++)
 	output[i] = input[i].*ptr;
     return output;
@@ -87,21 +90,21 @@ double GazeTracker::covariancefunction(Utils::SharedImage const& im1,
 }
 
 void GazeTracker::updateGPs(void) {
-    vector<double> xlabels;
-    vector<double> ylabels;
+	std::vector<double> xlabels;
+	std::vector<double> ylabels;
 		
     for(int i=0; i<caltargets.size(); i++) {
 	    xlabels.push_back(caltargets[i].point.x);
 	    ylabels.push_back(caltargets[i].point.y);
     }
 
-    vector<Utils::SharedImage> images = 
+	std::vector<Utils::SharedImage> images = 
 	getsubvector(caltargets, &CalTarget::image);
 	
 	/*
-cout << "INSIDE updateGPs" << endl;
-cout << "labels size: " << xlabels.size();
-cout << "images size: " << images.size();
+std::cout << "INSIDE updateGPs" << std::endl;
+std::cout << "labels size: " << xlabels.size();
+std::cout << "images size: " << images.size();
 */
     gpx.reset(new ImProcess(images, xlabels, covariancefunction, 0.01));
     gpy.reset(new ImProcess(images, ylabels, covariancefunction, 0.01));  
@@ -109,15 +112,15 @@ cout << "images size: " << images.size();
 }
 
 void GazeTracker::updateGPs_left(void) {
-    vector<double> xlabels;
-	vector<double> ylabels;
+	std::vector<double> xlabels;
+	std::vector<double> ylabels;
 
     for(int i=0; i<caltargets_left.size(); i++) {
 	    xlabels.push_back(caltargets_left[i].point.x);
 	    ylabels.push_back(caltargets_left[i].point.y);
     }
 
-    vector<Utils::SharedImage> images = 
+	std::vector<Utils::SharedImage> images = 
 	getsubvector(caltargets_left, &CalTarget::image);
 
 
@@ -134,25 +137,25 @@ void GazeTracker::calculateTrainingErrors() {
 	// Geometry of main monitor
 	screen->get_monitor_geometry(num_of_monitors - 1, monitorgeometry);
 	
-	vector<Point> points = getsubvector(caltargets, &CalTarget::point);
+	std::vector<Point> points = getsubvector(caltargets, &CalTarget::point);
 	
 	int j = 0;
 	
-	//cout << "Input count: " << input_count;
-	//cout << ", Target size: " << caltargets.size() << endl;
+	//std::cout << "Input count: " << input_count;
+	//std::cout << ", Target size: " << caltargets.size() << std::endl;
 	
 	for(int i=0; i<caltargets.size(); i++) {
 		double x_total = 0;
 		double y_total = 0;
 		double sample_count = 0;
 		
-		//cout << points[i].x << ", " << points[i].y << " x " << all_output_coords[j][0] << ", " << all_output_coords[j][1] << endl;
+		//std::cout << points[i].x << ", " << points[i].y << " x " << all_output_coords[j][0] << ", " << all_output_coords[j][1] << std::endl;
 		
 		while(j < input_count && points[i].x == all_output_coords[j][0] && points[i].y == all_output_coords[j][1]) {
 			double x_estimate = (gpx->getmean(Utils::SharedImage(all_images[j], &ignore)) + gpx_left->getmean(Utils::SharedImage(all_images_left[j], &ignore))) / 2;
 			double y_estimate = (gpy->getmean(Utils::SharedImage(all_images[j], &ignore)) + gpy_left->getmean(Utils::SharedImage(all_images_left[j], &ignore))) / 2;
 			
-			//cout << "i, j = (" << i << ", " << j << "), est: " << x_estimate << "("<< gpx->getmean(SharedImage(all_images[j], &ignore)) << ","<< gpx_left->getmean(SharedImage(all_images_left[j], &ignore)) << ")" << ", " << y_estimate << "("<< gpy->getmean(SharedImage(all_images[j], &ignore)) <<","<< gpy_left->getmean(SharedImage(all_images_left[j], &ignore)) << ")"<< endl;
+			//std::cout << "i, j = (" << i << ", " << j << "), est: " << x_estimate << "("<< gpx->getmean(SharedImage(all_images[j], &ignore)) << ","<< gpx_left->getmean(SharedImage(all_images_left[j], &ignore)) << ")" << ", " << y_estimate << "("<< gpy->getmean(SharedImage(all_images[j], &ignore)) <<","<< gpy_left->getmean(SharedImage(all_images_left[j], &ignore)) << ")"<< std::endl;
 			
 			x_total += x_estimate;
 			y_total += y_estimate;
@@ -163,8 +166,8 @@ void GazeTracker::calculateTrainingErrors() {
 		x_total /= sample_count;
 		y_total /= sample_count;
 	
-		*output_file << "TARGET: (" << caltargets[i].point.x << "\t, " << caltargets[i].point.y << "\t),\tESTIMATE: ("<< x_total << "\t, " << y_total <<")" << endl;
-		//cout << "TARGET: (" << caltargets[i].point.x << "\t, " << caltargets[i].point.y << "\t),\tESTIMATE: ("<< x_total << "\t, " << y_total <<"),\tDIFF: ("<< fabs(caltargets[i].point.x- x_total) << "\t, " << fabs(caltargets[i].point.y - y_total) <<")" << endl;
+		*output_file << "TARGET: (" << caltargets[i].point.x << "\t, " << caltargets[i].point.y << "\t),\tESTIMATE: ("<< x_total << "\t, " << y_total <<")" << std::endl;
+		//std::cout << "TARGET: (" << caltargets[i].point.x << "\t, " << caltargets[i].point.y << "\t),\tESTIMATE: ("<< x_total << "\t, " << y_total <<"),\tDIFF: ("<< fabs(caltargets[i].point.x- x_total) << "\t, " << fabs(caltargets[i].point.y - y_total) <<")" << std::endl;
 		
 		// Calibration error removal
 		xv[i][0] = x_total;		// Source
@@ -178,7 +181,7 @@ void GazeTracker::calculateTrainingErrors() {
 		int targetId = getTargetId(Point(x_total, y_total));
 		
 		if(targetId != i) {
-			cout << "Target id is not the expected one!! (Expected: "<< i<< ", Current: "<< targetId << ")" << endl;
+			std::cout << "Target id is not the expected one!! (Expected: "<< i<< ", Current: "<< targetId << ")" << std::endl;
 		}
 		
 	}
@@ -214,15 +217,15 @@ void GazeTracker::calculateTrainingErrors() {
     mirBetaGamma(1, 2, point_count, (double*)xv, fv_y, sigv, 0, NULL, NULL, NULL,
                  N, 2, 50.0, &beta_y, &gamma_y);
 	
-	*output_file << endl << endl;
-	cout << endl << endl;
+	*output_file << std::endl << std::endl;
+	std::cout << std::endl << std::endl;
 	
 	output_file->flush();
 	
 	
-	cout << "ERROR CALCULATION FINISHED. BETA = " << beta_x << ", " << beta_y << ", GAMMA IS " << gamma_x << ", " << gamma_y << endl;
+	std::cout << "ERROR CALCULATION FINISHED. BETA = " << beta_x << ", " << beta_y << ", GAMMA IS " << gamma_x << ", " << gamma_y << std::endl;
 	for(int j=0; j<point_count; j++) {
-			cout << xv[j][0] << ", " << xv[j][1] << endl;
+			std::cout << xv[j][0] << ", " << xv[j][1] << std::endl;
 	}
 	
 
@@ -241,17 +244,17 @@ void GazeTracker::printTrainingErrors() {
 
 	screen->get_monitor_geometry(num_of_monitors - 1, monitorgeometry);
 	
-	vector<Point> points = getsubvector(caltargets, &CalTarget::point);
+	std::vector<Point> points = getsubvector(caltargets, &CalTarget::point);
 	
 	int j = 0;
 	
 	/*
-	cout << "PRINTING TRAINING ESTIMATIONS: " << endl;
+	std::cout << "PRINTING TRAINING ESTIMATIONS: " << std::endl;
 	for(int i=0; i<15; i++) {
 		int image_index = 0;
 		
 		while(j < input_count && points[i].x == all_output_coords[j][0] && points[i].y == all_output_coords[j][1]) {
-			cout << "X, Y: '" << gpx->getmean(SharedImage(all_images[j], &ignore)) << ", " << gpy->getmean(SharedImage(all_images[j], &ignore)) << "' and '" << gpx_left->getmean(SharedImage(all_images_left[j], &ignore)) << ", " << gpy_left->getmean(SharedImage(all_images_left[j], &ignore)) << "' "<< endl;
+			std::cout << "X, Y: '" << gpx->getmean(SharedImage(all_images[j], &ignore)) << ", " << gpy->getmean(SharedImage(all_images[j], &ignore)) << "' and '" << gpx_left->getmean(SharedImage(all_images_left[j], &ignore)) << ", " << gpy_left->getmean(SharedImage(all_images_left[j], &ignore)) << "' "<< std::endl;
 			
 			image_index++;
 			j++;
@@ -317,10 +320,10 @@ void GazeTracker::addSampleToNN(Point point,
 		inputs[i] = (float)(nn_eye->imageData[i] + 129) / 257.0f;
 		
 		if(inputs[i] <0 || inputs[i] > 1) {
-			cout << "IMPOSSIBLE INPUT!" << endl;
+			std::cout << "IMPOSSIBLE INPUT!" << std::endl;
 		}
 //		if(((int) eyegrey->imageData[i] >= 127) || ((int) eyegrey->imageData[i] <= -127))
-//			cout << "INPUT[" << i << "] = " << inputs[i] << ", image data = " << (int) eyegrey->imageData[i] << endl;
+//			std::cout << "INPUT[" << i << "] = " << inputs[i] << ", image data = " << (int) eyegrey->imageData[i] << std::endl;
 	}
 	
 	// Convert coordinates to interval [0, 1]
@@ -335,7 +338,7 @@ void GazeTracker::addSampleToNN(Point point,
 	all_inputs[input_count] = &(inputs[0]);
 	input_count++;
 	
-	//cout << "Added sample # " << input_count << endl;
+	//std::cout << "Added sample # " << input_count << std::endl;
 	//for(int j=0; j<100; j++)
 	//fann_train(ANN, inputs, outputs);	// Moved training to batch
 }
@@ -362,7 +365,7 @@ void GazeTracker::addSampleToNN_left(Point point,
 		inputs[i] = (float)(nn_eye->imageData[i] + 129) / 257.0f;
 		
 		if(inputs[i] <0 || inputs[i] > 1) {
-			cout << "IMPOSSIBLE INPUT!" << endl;
+			std::cout << "IMPOSSIBLE INPUT!" << std::endl;
 		}
 	}
 	
@@ -378,14 +381,14 @@ void GazeTracker::addSampleToNN_left(Point point,
 	all_inputs_left[input_count_left] = inputs;
 	input_count_left++;
 	
-	//cout << "(Left) Added sample # " << input_count_left << endl;
+	//std::cout << "(Left) Added sample # " << input_count_left << std::endl;
 	//for(int j=0; j<100; j++)
 	//fann_train(ANN_left, inputs, outputs);	// Moved training to batch
 }
 
 void FANN_API getTrainingData(unsigned int row, unsigned int input_size, unsigned int output_size, fann_type* input, fann_type* output)
 {
-	//cout << "GTD: row=" << row << ", inp. size=" << input_size << ", op. size=" << output_size << endl;
+	//std::cout << "GTD: row=" << row << ", inp. size=" << input_size << ", op. size=" << output_size << std::endl;
 	int i;
 	for(i=0; i<input_size; i++)
 		input[i] = all_inputs[row][i];
@@ -399,7 +402,7 @@ void FANN_API getTrainingData(unsigned int row, unsigned int input_size, unsigne
 
 void FANN_API getTrainingData_left(unsigned int row, unsigned int input_size, unsigned int output_size, fann_type* input, fann_type* output)
 {
-	//cout << "GTD: row=" << row << ", inp. size=" << input_size << ", op. size=" << output_size << endl;
+	//std::cout << "GTD: row=" << row << ", inp. size=" << input_size << ", op. size=" << output_size << std::endl;
 	int i;
 	for(i=0; i<input_size; i++)
 		input[i] = all_inputs_left[row][i];
@@ -412,11 +415,11 @@ void FANN_API getTrainingData_left(unsigned int row, unsigned int input_size, un
 
 void GazeTracker::trainNN()
 {
-	cout << "Getting data" << endl;
+	std::cout << "Getting data" << std::endl;
 	struct fann_train_data* data = fann_create_train_from_callback(input_count, nn_eyewidth * nn_eyeheight, 2, getTrainingData);
 	//fann_save_train(data, "data.txt");
 
-	cout << "Getting left data" << endl;
+	std::cout << "Getting left data" << std::endl;
 	struct fann_train_data* data_left = fann_create_train_from_callback(input_count, nn_eyewidth * nn_eyeheight, 2, getTrainingData_left);
 	//fann_save_train(data_left, "data_left.txt");
 
@@ -425,16 +428,16 @@ void GazeTracker::trainNN()
 	fann_set_training_algorithm(ANN_left, FANN_TRAIN_RPROP);
 	fann_set_learning_rate(ANN_left, 0.75);
 	
-	cout << "Training" << endl;
+	std::cout << "Training" << std::endl;
 	fann_train_on_data(ANN, data, 200, 20, 0.01);
 
-	cout << "Training left" << endl;
+	std::cout << "Training left" << std::endl;
 	fann_train_on_data(ANN_left, data_left, 200, 20, 0.01);
 	
 	double mse = fann_get_MSE(ANN);
 	double mse_left = fann_get_MSE(ANN_left);
 	
-	cout << "MSE: " << mse << ", MSE left: " << mse_left << endl;
+	std::cout << "MSE: " << mse << ", MSE left: " << mse_left << std::endl;
 }
 
 // void GazeTracker::updateExemplar(int id, 
@@ -554,15 +557,15 @@ void GazeTracker::removeCalibrationError(Point& estimate) {
 	x[0][0] = estimate.x;
 	x[0][1] = estimate.y;
 	/*
-	cout << "INSIDE CAL ERR REM. BETA = " << beta_x << ", " << beta_y << ", GAMMA IS " << gamma_x << ", " << gamma_y << endl;
+	std::cout << "INSIDE CAL ERR REM. BETA = " << beta_x << ", " << beta_y << ", GAMMA IS " << gamma_x << ", " << gamma_y << std::endl;
 	for(int j=0; j<point_count; j++) {
-			cout << xv[j][0] << ", " << xv[j][1] << endl;
+			std::cout << xv[j][0] << ", " << xv[j][1] << std::endl;
 	}
 	*/
     int N = point_count;
     N = binomialInv(N, 2) - 1;
     
-    //cout << "CALIB. ERROR REMOVAL. Target size: " << point_count << ", " << N << endl; 
+    //std::cout << "CALIB. ERROR REMOVAL. Target size: " << point_count << ", " << N << std::endl; 
 	
     mirEvaluate(1, 2, 1, (double*)x, point_count, (double*)xv, fv_x, sigv,
                 0, NULL, NULL, NULL, beta_x, gamma_x, N, 2, output, sigma);
@@ -577,11 +580,11 @@ void GazeTracker::removeCalibrationError(Point& estimate) {
     if(output[0] >= -100)
         estimate.y = output[0];
 	
-	//cout << "Estimation corrected from: ("<< x[0][0] << ", " << x[0][1] << ") to ("<< estimate.x << ", " << estimate.y << ")" << endl;
+	//std::cout << "Estimation corrected from: ("<< x[0][0] << ", " << x[0][1] << ") to ("<< estimate.x << ", " << estimate.y << ")" << std::endl;
 	
 	boundToScreenCoordinates(estimate);
 	
-	//cout << "Estimation corrected from: ("<< x[0][0] << ", " << x[0][1] << ") to ("<< estimate.x << ", " << estimate.y << ")" << endl;
+	//std::cout << "Estimation corrected from: ("<< x[0][0] << ", " << x[0][1] << ") to ("<< estimate.x << ", " << estimate.y << ")" << std::endl;
 }
 
 void GazeTracker::boundToScreenCoordinates(Point& estimate) {

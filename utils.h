@@ -1,19 +1,8 @@
 #pragma once
 
 #include <opencv/cv.h>
-#include <opencv/highgui.h>
-#include <math.h>
 #include <vector>
-#include <iostream>
-#include <gdkmm.h>
 #include <boost/shared_ptr.hpp>
-#include <boost/scoped_ptr.hpp>
-#include <boost/regex.hpp>
-#include <boost/filesystem.hpp>
-#include <boost/filesystem/path.hpp>
-#include <boost/lexical_cast.hpp>
-#include <fann.h>
-#include <gtkmm.h>
 
 #include "Point.h"
 
@@ -40,14 +29,14 @@ namespace Utils {
 		return a * a;
 	}
 
-	template <class T> ostream &operator<< (ostream &out, vector<T> const &vec) {
-		out << vec.size() << endl;
+	template <class T> std::ostream &operator<< (std::ostream &out, std::vector<T> const &vec) {
+		out << vec.size() << std::endl;
 		xForEach(iter, vec)
-		out << *iter << endl;
+		out << *iter << std::endl;
 		return out;
 	}
 
-	template <class T> istream &operator>> (istream &in, vector<T> &vec) {
+	template <class T> std::istream &operator>> (std::istream &in, std::vector<T> &vec) {
 		int size;
 		T element;
 
@@ -62,13 +51,13 @@ namespace Utils {
 	}
 
 	template <class T> T teeFunction(T source, char *prefix, char *postfix="\n") {
-		cout << prefix << source << postfix;
+		std::cout << prefix << source << postfix;
 		return source;
 	}
 
 	#define debugTee(x) teeFunction(x, #x ": ")
 
-	template <class T> void saveVector(CvFileStorage *out, const char *name, vector<T> &vec) {
+	template <class T> void saveVector(CvFileStorage *out, const char *name, std::vector<T> &vec) {
 		cvStartWriteStruct(out, name, CV_NODE_SEQ);
 		for (int i = 0; i < vec.size(); i++) {
 			vec[i].save(out);
@@ -76,12 +65,12 @@ namespace Utils {
 		cvEndWriteStruct(out);
 	}
 
-	template <class T> vector<T> loadVector(CvFileStorage *in, CvFileNode *node) {
+	template <class T> std::vector<T> loadVector(CvFileStorage *in, CvFileNode *node) {
 		CvSeq *seq = node->data.seq;
 		CvSeqReader reader;
 
 		cvStartReadSeq(seq, &reader, 0);
-		vector<T> result(seq->total);
+		std::vector<T> result(seq->total);
 
 		for (int i = 0; i < seq->total; i++) {
 			CvFileNode *item = (CvFileNode *)reader.ptr;
@@ -96,7 +85,7 @@ namespace Utils {
 		to = from;
 	}
 
-	template <class From, class To> void convert(const vector<From> &from, vector<To> &to) {
+	template <class From, class To> void convert(const std::vector<From> &from, std::vector<To> &to) {
 		to.resize(from.size());
 		for (int i = 0; i < (int)from.size(); i++) {
 			convert(from[i], to[i]);
@@ -142,7 +131,7 @@ namespace Utils {
 		int _maxCounter;
 	};
 
-	// #define output(X) { cout << #X " = " << X << endl; }
+	// #define output(X) { std::cout << #X " = " << X << std::endl; }
 
 	template <class T> int maxAbsIndex(T const &vec, int size) {
 		int maxIndex = 0;
@@ -165,7 +154,7 @@ namespace Utils {
 	void mapToNeuralNetworkCoordinates(Point point, Point &nnPoint);
 	void mapFromNeuralNetworkToScreenCoordinates(Point nnPoint, Point &point);
 
-	string getUniqueFileName(string directory, string baseFileName);
+	std::string getUniqueFileName(std::string directory, std::string baseFileName);
 
 	void normalizeGrayScaleImage(IplImage *image, double standardMean=127, double standardStd=50);
 	void normalizeGrayScaleImage2(IplImage *image, double standardMean=127, double standardStd=50);
@@ -176,3 +165,4 @@ namespace Utils {
 namespace boost {
 	template <> void checked_delete(IplImage *image);
 }
+

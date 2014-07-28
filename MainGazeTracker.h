@@ -1,14 +1,11 @@
 #pragma once
-#include "utils.h"
+
+#include <opencv/highgui.h>
+
 #include "TrackingSystem.h"
 #include "Calibrator.h"
-#include "FaceDetector.h"
-#include <opencv/highgui.h>
-#include <gtkmm.h>
-#include "fann.h"
 #include "GameWindow.h"
-
-#include <sys/time.h>
+#include "OutputMethods.h"
 
 bool detect_nose(IplImage* img, double resolution, CvRect nose_rect, Point points[]);
 bool detect_mouth(IplImage* img, double resolution, CvRect nose_rect, Point points[]);
@@ -18,22 +15,22 @@ void check_rect_size(IplImage* image, CvRect* rect);
 CvPoint2D32f* detect_corners_in_grayscale(IplImage* eye_region_image_gray, int& corner_count);
 
 struct CommandLineArguments {
-    vector<string> parameters;
-    vector<string> options;
+    std::vector<std::string> parameters;
+    std::vector<std::string> options;
      
     CommandLineArguments(int argc, char **argv);
     ~CommandLineArguments();
-    bool isoption(string option);
-	string getoptionvalue(string option);
-    vector<int> getoptionvalueasvector(string option);
+    bool isoption(std::string option);
+	std::string getoptionvalue(std::string option);
+    std::vector<int> getoptionvalueasvector(std::string option);
 };
 
 
 struct Command {
 	long frameno;
-	string commandname;
+	std::string commandname;
 	
-    Command(long no, string name): frameno(no), commandname(name) {}
+    Command(long no, std::string name): frameno(no), commandname(name) {}
 };
 
 
@@ -46,10 +43,10 @@ class VideoInput {
     IplImage* frame;
     CvSize size;
 	bool capture_from_video;
-	string resolution_parameter;
+	std::string resolution_parameter;
     VideoInput();
-    VideoInput(string resolution);
-    VideoInput(string resolution, string filename, bool dummy);
+    VideoInput(std::string resolution);
+    VideoInput(std::string resolution, std::string filename, bool dummy);
     ~VideoInput();
     void updateFrame();
 	double get_resolution();
@@ -61,25 +58,25 @@ class VideoWriter;
 class MainGazeTracker {
 	boost::scoped_ptr<VideoWriter> video;
     int framestoreload;
-    vector<boost::shared_ptr<AbstractStore> > stores;
+    std::vector<boost::shared_ptr<AbstractStore> > stores;
     int framecount;
     bool autoreload;
-	string directory;
-	string base_path;
-	ofstream* outputfile;
-	ofstream* commandoutputfile;
-	ifstream* commandinputfile;
+	std::string directory;
+	std::string base_path;
+	std::ofstream* outputfile;
+	std::ofstream* commandoutputfile;
+	std::ifstream* commandinputfile;
 	IplImage* conversionimage;
 	IplImage* overlayimage;
 	IplImage* repositioning_image;
-	vector<CvRect> faces;
+	std::vector<CvRect> faces;
 	
 	Calibrator* calibrator;
 	int headdistance;
 	bool videooverlays;
 	long totalframecount;
 	bool recording;
-	vector<Command> commands;
+	std::vector<Command> commands;
 	int commandindex;
 
 	GameWindow* game_win;
@@ -97,7 +94,7 @@ class MainGazeTracker {
 	
 
     MainGazeTracker(int argc, char** argv,
-            const vector<boost::shared_ptr<AbstractStore> > &stores);
+            const std::vector<boost::shared_ptr<AbstractStore> > &stores);
     void doprocessing(void);
 	void simulateClicks(void);
     ~MainGazeTracker(void);
@@ -112,5 +109,5 @@ class MainGazeTracker {
     void choosepoints();
 	void pauseOrRepositionHead();
     void clearpoints();
-    void extract_face_region_rectangle(IplImage* frame, vector<Point> feature_points);
+    void extract_face_region_rectangle(IplImage* frame, std::vector<Point> feature_points);
 };

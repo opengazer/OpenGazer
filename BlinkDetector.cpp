@@ -2,7 +2,6 @@
 
 #include "BlinkDetector.h"
 #include "EyeExtractor.h"
-#include "utils.h"
 
 StateNode::StateNode(int minDuration, int maxDuration, double threshold, double finishThreshold):
 	minDuration(minDuration),
@@ -20,7 +19,7 @@ bool StateNode::isFinished(double value) const {
 	return threshold > 0 ? value < finishThreshold : value > -finishThreshold;
 }
 
-LinearStateSystem::LinearStateSystem(const vector<StateNode> &states):
+LinearStateSystem::LinearStateSystem(const std::vector<StateNode> &states):
 	_states(states),
 	_currentState(0),
 	_duration(0)
@@ -92,8 +91,8 @@ int BlinkDetector::getState() {
 	return _states.getState();
 }
 
-vector<StateNode> BlinkDetector::constructStates() {
-	vector<StateNode> states;
+std::vector<StateNode> BlinkDetector::constructStates() {
+	std::vector<StateNode> states;
 
 	// 1.60 - 1.20
 	states.push_back(StateNode(0, 0, +0.00, +0.00));

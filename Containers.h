@@ -2,8 +2,7 @@
 
 #include <glibmm.h>
 #include <vector>
-
-#include "utils.h"
+#include <boost/shared_ptr.hpp>
 
 #define xForEachActive(iter, container) \
 	for(typeof(container.begin())iter = container.begin(); iter != container.end(); iter++)	\

@@ -1,6 +1,6 @@
-#include"PointTracker.h"
+#include "Point.h"
 
-vector<double> *computeAffineFMatrix(vector<Point> const &points1, vector<Point> const &points2) {
+std::vector<double> *computeAffineFMatrix(std::vector<Point> const &points1, std::vector<Point> const &points2) {
 	assert(points1.size() == points2.size());
 
 	int n = points1.size();
@@ -30,7 +30,7 @@ vector<double> *computeAffineFMatrix(vector<Point> const &points1, vector<Point>
 	}
 
 	if (n == 0) {
-		return new vector<double>();
+		return new std::vector<double>();
 	}
 
 	CvMat *ut  = cvCreateMat(n, n, CV_32FC1);
@@ -43,9 +43,9 @@ vector<double> *computeAffineFMatrix(vector<Point> const &points1, vector<Point>
 	//cout << "W = " << endl << svd.W() << endl << endl;
 	//cout << "V = " << endl << svd.V() << endl << endl;
 
-	//Vector v = svd.V().get_column(3);
+	//std::vector v = svd.V().get_column(3);
 
-	vector<double> *result = new vector<double>();
+	std::vector<double> *result = new std::vector<double>();
 
 	for (int i = 0; i < 4; i++) {
 		result->push_back(CV_MAT_ELEM(*vt, float, i, 3));

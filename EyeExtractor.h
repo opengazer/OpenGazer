@@ -1,6 +1,7 @@
 #pragma once
 
-#include "utils.h"
+#include <opencv/cv.h>
+
 #include "PointTracker.h"
 #include "BlinkDetector.h"
 

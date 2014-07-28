@@ -4,7 +4,6 @@
 #include <gtkmm/box.h>
 
 #include "GazeTracker.h"
-#include "utils.h"
 #include "GraphicalPointer.h"
 
 class GameArea: public Gtk::DrawingArea {

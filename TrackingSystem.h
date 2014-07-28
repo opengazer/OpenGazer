@@ -1,12 +1,12 @@
 #pragma once
 
-#include "utils.h"
+#include <opencv/cv.h>
+
 #include "PointTracker.h"
+#include "EyeExtractor.h"
+#include "GazeTracker.h"
 #include "HeadTracker.h"
 #include "HeadCompensation.cpp"
-#include "EyeExtractor.h"
-#include "OutputMethods.h"
-#include "GazeTracker.h"
 
 class TrackingSystem {
 public:

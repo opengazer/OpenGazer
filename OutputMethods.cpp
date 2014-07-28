@@ -1,11 +1,6 @@
-#include <sys/types.h>
-#include <sys/socket.h>
 #include <arpa/inet.h>
 #include <sys/mman.h>
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <fcntl.h>
-#include <unistd.h>
 
 #include "OutputMethods.h"
 
@@ -33,7 +28,7 @@ void MmapStore::store(const TrackerOutput &output) {
 	_positionTable[1] = (int)output.gazepoint.y - 240;
 }
 
-StreamStore::StreamStore(ostream &stream):
+StreamStore::StreamStore(std::ostream &stream):
 	_stream(stream)
 {
 }
@@ -41,7 +36,7 @@ StreamStore::StreamStore(ostream &stream):
 StreamStore::~StreamStore() {}
 
 void StreamStore::store(const TrackerOutput &output) {
-	_stream << (int)output.gazepoint.x << " " << (int)output.gazepoint.y << " -> " << output.targetid << endl;
+	_stream << (int)output.gazepoint.x << " " << (int)output.gazepoint.y << " -> " << output.targetid << std::endl;
 	_stream.flush();
 }
 
@@ -57,9 +52,9 @@ SocketStore::~SocketStore(void) {
 }
 
 void SocketStore::store(const TrackerOutput &output) {
-	ostringstream stream;
-	stream << "x " << (int)output.gazepoint.x << endl << "y " << (int)output.gazepoint.y << endl;
-	string str = stream.str();
+	std::ostringstream stream;
+	stream << "x " << (int)output.gazepoint.x << std::endl << "y " << (int)output.gazepoint.y << std::endl;
+	std::string str = stream.str();
 	sendto(_mySocket, str.c_str(), str.size(), 0, (sockaddr *)&_destAddr, sizeof(_destAddr));
 }
 

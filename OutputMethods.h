@@ -2,7 +2,6 @@
 
 #include <netinet/in.h>
 
-#include "utils.h"
 #include "GazeTracker.h"
 
 class AbstractStore {
@@ -24,12 +23,12 @@ private:
 
 class StreamStore: public AbstractStore {
 public:
-	StreamStore(ostream &stream);
+	StreamStore(std::ostream &stream);
 	virtual ~StreamStore();
 	virtual void store(const TrackerOutput &output);
 
 private:
-	ostream &_stream;
+	std::ostream &_stream;
 };
 
 class SocketStore: public AbstractStore {

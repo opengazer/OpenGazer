@@ -1,5 +1,5 @@
-#include "utils.h"
 #include "EyeExtractor.h"
+#include "utils.h"
 
 const int EyeExtractor::eyeDX = 32;
 const int EyeExtractor::eyeDY = 16;

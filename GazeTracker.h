@@ -1,4 +1,7 @@
 #pragma once
+
+#include <boost/scoped_ptr.hpp>
+
 #include "utils.h"
 #include "GaussianProcess.cpp"
 
@@ -8,10 +11,10 @@ const int nn_eyewidth = 16;
 const int nn_eyeheight = 8;
 
 struct Targets {
-    vector<Point> targets;
+	std::vector<Point> targets;
 
     Targets(void) {};
-    Targets(vector<Point> const& targets): targets(targets) {}
+    Targets(std::vector<Point> const& targets): targets(targets) {}
     int getCurrentTarget(Point point);
 };
 
@@ -46,12 +49,12 @@ struct TrackerOutput {
 
 class GazeTracker {
     boost::scoped_ptr<ImProcess> gpx, gpy;
-    vector<CalTarget> caltargets;
+	std::vector<CalTarget> caltargets;
 	boost::scoped_ptr<Targets> targets;
 
 	// ONUR DUPLICATED CODE FOR LEFT EYE
 	boost::scoped_ptr<ImProcess> gpx_left, gpy_left;
-    vector<CalTarget> caltargets_left;
+	std::vector<CalTarget> caltargets_left;
     //boost::scoped_ptr<Targets> targets_left;
     
 	// Neural network
@@ -73,7 +76,7 @@ class GazeTracker {
 
 public:
     TrackerOutput output;
-	ostream* output_file;
+	std::ostream* output_file;
 
     GazeTracker(): targets(new Targets), 
 	output(Point(0,0), Point(0,0), -1), nn_eye(cvCreateImage(cvSize(16, 8), 8, 1)),

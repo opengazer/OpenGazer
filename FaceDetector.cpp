@@ -1,13 +1,3 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <assert.h>
-#include <math.h>
-#include <float.h>
-#include <limits.h>
-#include <time.h>
-#include <ctype.h>
-
 #include "FaceDetector.h"
 
 FaceDetector FaceDetector::faceDetector;
@@ -24,8 +14,8 @@ FaceDetector::~FaceDetector() {
 	// fixme: release the cascade somehow
 }
 
-vector<CvRect> FaceDetector::detect(const IplImage *img) {
-	vector<CvRect> result;
+std::vector<CvRect> FaceDetector::detect(const IplImage *img) {
+	std::vector<CvRect> result;
 
 	try {
 		double scale = 1.3;
@@ -49,15 +39,15 @@ vector<CvRect> FaceDetector::detect(const IplImage *img) {
 		//cvReleaseSeq(&faces);
 	}
 	catch (std::exception &ex) {
-		cout << ex.what() << endl;
+		std::cout << ex.what() << std::endl;
 		return result;
 	}
 
 	return result;
 }
 
-vector<CvRect> FaceDetector::detectInGrayscale(const IplImage *grayImage) {
-	vector<CvRect> result;
+std::vector<CvRect> FaceDetector::detectInGrayscale(const IplImage *grayImage) {
+	std::vector<CvRect> result;
 
 	try {
 		double scale = 1.3;
@@ -78,7 +68,7 @@ vector<CvRect> FaceDetector::detectInGrayscale(const IplImage *grayImage) {
 		//cvReleaseSeq(&faces);
 	}
 	catch (std::exception &ex) {
-		cout << ex.what() << endl;
+		std::cout << ex.what() << std::endl;
 		return result;
 	}
 

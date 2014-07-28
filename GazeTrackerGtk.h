@@ -2,7 +2,6 @@
 
 #include <gtkmm/button.h>
 #include <gtkmm/window.h>
-#include <gtkmm/drawingarea.h>
 #include <gtkmm/box.h>
 
 #include "GazeArea.h"

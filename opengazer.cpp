@@ -4,11 +4,8 @@
 //#define DEBUG
 
 #include <gtkmm.h>
-#include <iostream>
 
 #include "GazeTrackerGtk.h"
-#include "OutputMethods.h"
-#include "GtkStore.h"
 
 int main(int argc, char **argv) {
 	try {
@@ -25,7 +22,7 @@ int main(int argc, char **argv) {
 		Gtk::Main::run(helloworld);
 	}
 	catch (Utils::QuitNow) {
-		cout << "Caught it!\n";
+		std::cout << "Caught it!\n";
 	}
 
 	return 0;

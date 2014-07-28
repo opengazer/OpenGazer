@@ -1,9 +1,8 @@
 #include <opencv/cv.h>
 
 #include "GazeArea.h"
-#include "OutputMethods.h"
 
-GazeArea::GazeArea(int argc, char **argv, const vector<boost::shared_ptr<AbstractStore> > &stores):
+GazeArea::GazeArea(int argc, char **argv, const std::vector<boost::shared_ptr<AbstractStore> > &stores):
 	_lastPointId(-1),
 	gazeTracker(argc, argv, stores)
 {

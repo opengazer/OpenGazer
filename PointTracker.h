@@ -1,9 +1,10 @@
 #pragma once
 
+#include <boost/scoped_ptr.hpp>
 #include <opencv/cv.h>
 #include <vector>
 
-#include "utils.h"
+#include "Point.h"
 
 class TrackingException: public std::exception {};
 
@@ -11,8 +12,8 @@ class PointTracker {
 public:
 	static const int eyePoint1 = 0;
 	static const int eyePoint2 = 1;
-	vector<char> status;
-	vector<CvPoint2D32f> origPoints, currentPoints, lastPoints;
+	std::vector<char> status;
+	std::vector<CvPoint2D32f> origPoints, currentPoints, lastPoints;
 
 	PointTracker(const CvSize &size);
 	void clearTrackers();
@@ -25,12 +26,12 @@ public:
 	int countActivePoints();
 	bool areAllPointsActive();
 	int pointCount();
-	vector<Point> getPoints(const vector<CvPoint2D32f> PointTracker::*points, bool allPoints=true);
+	std::vector<Point> getPoints(const std::vector<CvPoint2D32f> PointTracker::*points, bool allPoints=true);
 	void draw(IplImage *canvas);
 	void normalizeOriginalGrey();
 
-	void save(string filename, string newname, const IplImage *frame);
-	void load(string filename, string newname, const IplImage *frame);
+	void save(std::string filename, std::string newname, const IplImage *frame);
+	void load(std::string filename, std::string newname, const IplImage *frame);
 	void saveImage();
 
 private:

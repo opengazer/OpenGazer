@@ -1,8 +1,7 @@
 #pragma once
 
 #include <opencv/cv.h>
-
-#include "utils.h"
+#include <vector>
 
 class FaceDetector {
 public:
@@ -10,8 +9,8 @@ public:
 
 	FaceDetector(char *cascadeName="haarcascade_frontalface_alt.xml");
 	~FaceDetector();
-	vector<CvRect> detect(const IplImage *img);
-	vector<CvRect> detectInGrayscale(const IplImage *img);
+	std::vector<CvRect> detect(const IplImage *img);
+	std::vector<CvRect> detectInGrayscale(const IplImage *img);
 
 private:
 	CvMemStorage *_storage;

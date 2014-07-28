@@ -1,6 +1,8 @@
 #pragma once
 
-#include "utils.h"
+#include <boost/scoped_ptr.hpp>
+#include <vector>
+#include <opencv/cv.h>
 
 struct StateNode {
 	int minDuration;
@@ -15,14 +17,14 @@ struct StateNode {
 
 class LinearStateSystem {
 public:
-	LinearStateSystem(const vector<StateNode> &states);
+	LinearStateSystem(const std::vector<StateNode> &states);
 	void updateState(double value);
 	void setState(int state);
 	int getState();
 	bool isFinalState();
 
 private:
-	const vector<StateNode> _states;
+	const std::vector<StateNode> _states;
 	int _currentState;
 	int _duration;
 };
@@ -50,7 +52,7 @@ private:
 	LinearStateSystem _states;
 	bool _initialized;
 
-	static vector<StateNode> constructStates();
+	static std::vector<StateNode> constructStates();
 };
 
 //template <class T> class TwoClassDetector {

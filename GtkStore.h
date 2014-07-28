@@ -1,7 +1,5 @@
 #pragma once
 
-#include <gtkmm.h>
-
 #include "OutputMethods.h"
 #include "GraphicalPointer.h"
 

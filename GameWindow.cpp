@@ -1,11 +1,11 @@
 #include <gtkmm.h>
-#include <iostream>
-#include <stdlib.h>
-#include <opencv2/opencv.hpp>
+#include <opencv/cv.h>
+#include <opencv/highgui.h>
+#include <sys/time.h>
 
-#include "OutputMethods.h"
 #include "GameWindow.h"
 #include "Application.h"
+#include "utils.h"
 
 CvScalar background_color2;
 
@@ -56,7 +56,7 @@ GameArea::GameArea(TrackerOutput* op)
 	//black = (IplImage*) cvCreateImage(cvSize(background->width, background->height), 8, 3 );
     clearing_image = (IplImage*) cvCreateImage(cvSize(2000, 1500), 8, 3 );
 	
-	cout << "IMAGES CREATED WITH SIZE: " << background->width << "x" << background->height << endl;
+	std::cout << "IMAGES CREATED WITH SIZE: " << background->width << "x" << background->height << std::endl;
 	
 	cvSetZero(background);
 	//cvSetZero(black);
@@ -138,7 +138,7 @@ void GameArea::clearLastUpdatedRegion() {
 	            Gdk::RGB_DITHER_NORMAL , 0, 0);
                 
                 
-        //cout << "CLEARING THE AREA: " << last_updated_region->x << ", " << last_updated_region->y << ", " << last_updated_region->width << ", " << last_updated_region->height << "." << endl;
+        //std::cout << "CLEARING THE AREA: " << last_updated_region->x << ", " << last_updated_region->y << ", " << last_updated_region->width << ", " << last_updated_region->height << "." << std::endl;
         
                 
         last_updated_region->x = 0;
@@ -165,18 +165,18 @@ void GameArea::calculateNewFrogPosition() {
 	frog_y = rand() % (game_area_height-90) + game_area_y + 90;
 
 
-    cout << "Preparing bg image" << endl;
+	std::cout << "Preparing bg image" << std::endl;
     // Copy the initial background image to "background"
 	cvSetZero(background);
 	cvSetImageROI(background, cvRect(game_area_x, game_area_y, game_area_width, game_area_height));
 	cvCopy(orig_image, background);
-    cout << "Original image copied" << endl;
+	std::cout << "Original image copied" << std::endl;
 
     // Copy the frog image to the background
 	cvSetImageROI(background, cvRect(frog_x-90, frog_y-90, 180, 180));
 	cvCopy(frog, background, frog_mask);
 	cvResetImageROI(background);
-    cout << "Background prepared" << endl;
+	std::cout << "Background prepared" << std::endl;
 }
 
 void GameArea::showContents() {
@@ -185,7 +185,7 @@ void GameArea::showContents() {
 	if (window) {
 
 		if(Application::status == Application::STATUS_PAUSED) {
-			cout << "PAUSED, DRAWING HERE" << endl;
+			std::cout << "PAUSED, DRAWING HERE" << std::endl;
 			Glib::RefPtr<Gdk::GC> gc = Gdk::GC::create(window);
 			IplImage* repimg = repositioningImage;
 			CvRect bounds = cvRect((background->width - repimg->width)/2, (background->height - repimg->height)/2, repimg->width, repimg->height);
@@ -229,7 +229,7 @@ void GameArea::showContents() {
 			
 			//int estimation_x = output->gazepoint.x;
 			//int estimation_y = output->gazepoint.y;
-			//cout << "INIT EST: " << estimation_x << ", " << estimation_y << endl;
+			//std::cout << "INIT EST: " << estimation_x << ", " << estimation_y << std::endl;
 			
 			// Map estimation to window coordinates
 			int window_x, window_y;
@@ -240,7 +240,7 @@ void GameArea::showContents() {
 			//top_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 			
 			//gdk_window_get_position(top_window->window, &x, &y);
-			//cout << "WINDOW POSITION: " << x<< ", " << y << endl;
+			//std::cout << "WINDOW POSITION: " << x<< ", " << y << std::endl;
 			//estimation_x -= window_x;
 			//estimation_y -= window_y;
 			
@@ -248,9 +248,9 @@ void GameArea::showContents() {
 			//estimation_x = 800;
 			//estimation_y = 500;
 			
-			//cout << "EST: " << estimation_x << ", " << estimation_y << endl;
-			//cout << "separately: (" << output->gazepoint.x << ", " << output->gazepoint.y << ") and (" << output->gazepoint_left.x << ", " << output->gazepoint_left.y << ")" << endl;
-			//cout << "  --errors: (" << output->nn_gazepoint.x << ", " << output->nn_gazepoint.y << ") and (" << output->nn_gazepoint_left.x << ", " << output->nn_gazepoint_left.y << ")" << endl;
+			//std::cout << "EST: " << estimation_x << ", " << estimation_y << std::endl;
+			//std::cout << "separately: (" << output->gazepoint.x << ", " << output->gazepoint.y << ") and (" << output->gazepoint_left.x << ", " << output->gazepoint_left.y << ")" << std::endl;
+			//std::cout << "  --errors: (" << output->nn_gazepoint.x << ", " << output->nn_gazepoint.y << ") and (" << output->nn_gazepoint_left.x << ", " << output->nn_gazepoint_left.y << ")" << std::endl;
 			
 			//cvSet(black, background_color2);
 	
@@ -284,37 +284,37 @@ void GameArea::showContents() {
 			
 			if(estimation_x <= 0) {
 				estimation_x = 1;
-				//cout << "IMPOSSIBLE CHANGE 1" << endl;
+				//std::cout << "IMPOSSIBLE CHANGE 1" << std::endl;
 			}
 			if(estimation_y <= 0) {
 				estimation_y = 1;
-				//cout << "IMPOSSIBLE CHANGE 2" << endl;
+				//std::cout << "IMPOSSIBLE CHANGE 2" << std::endl;
 			}
 			if(estimation_x >= background->width) {
 				estimation_x = background->width -1;
-				//cout << "IMPOSSIBLE CHANGE 3" << endl;
+				//std::cout << "IMPOSSIBLE CHANGE 3" << std::endl;
 			}
 			if(estimation_y >= background->height) {
 				estimation_y = background->height -1;
-				//cout << "IMPOSSIBLE CHANGE 4" << endl;
+				//std::cout << "IMPOSSIBLE CHANGE 4" << std::endl;
 			}
 			
-			//cout << "4" << endl;
+			//std::cout << "4" << std::endl;
 			//cvCopy(black, current);
             cvSet(current, background_color2);
-			//cout << "44" << endl;
+			//std::cout << "44" << std::endl;
 			
-			//cout << "Bounds: " << bounds.x << ", " << bounds.y << "," << bounds.width << ", " << bounds.height << endl;
-			//cout << "Gaussian Bounds: " << gaussian_bounds.x << ", " << gaussian_bounds.y << "," << gaussian_bounds.width << ", " << gaussian_bounds.height << endl;
+			//std::cout << "Bounds: " << bounds.x << ", " << bounds.y << "," << bounds.width << ", " << bounds.height << std::endl;
+			//std::cout << "Gaussian Bounds: " << gaussian_bounds.x << ", " << gaussian_bounds.y << "," << gaussian_bounds.width << ", " << gaussian_bounds.height << std::endl;
 			
 			if(bounds.width > 0 && bounds.height > 0) {
 				if(estimation_x != 0 || estimation_y != 0) {
 					cvSetImageROI(background, bounds);
 					cvSetImageROI(current, bounds);
 					cvSetImageROI(gaussian_mask, gaussian_bounds);
-					//cout << "5" << endl;
+					//std::cout << "5" << std::endl;
 					cvCopy(background, current, gaussian_mask);
-					//cout << "6" << endl;
+					//std::cout << "6" << std::endl;
 				}
 			}
 			
@@ -346,7 +346,7 @@ void GameArea::showContents() {
 					
 			// If less than 150 pix, count
 			if(diff < 35000) {
-				//cout << "Difference is fine!" << endl;
+				//std::cout << "Difference is fine!" << std::endl;
 				timeval time;
 				gettimeofday(&time, NULL);
 				temp_time = (time.tv_sec * 1000) + (time.tv_usec / 1000);
@@ -395,7 +395,7 @@ void GameArea::showContents() {
 			Point calibrationPoint = calibrationPointer->getPosition();
 			
 			//if(Application::status == Application::STATUS_TESTING) {
-			//	cout << "EXPECTED OUTPUT: ("<< calibrationPoint.x << ", " << calibrationPoint.y << ")" << endl << endl;
+			//	std::cout << "EXPECTED OUTPUT: ("<< calibrationPoint.x << ", " << calibrationPoint.y << ")" << std::endl << std::endl;
 			//}
 			
 			// If the coordinates are beyond bounds, calibration is finished
@@ -429,9 +429,9 @@ void GameArea::showContents() {
 				
 				//cvSetImageROI(current, currentBounds);
 				//cvSetImageROI(target, targetBounds);
-				//cout << "7" << endl;
+				//std::cout << "7" << std::endl;
 				//cvCopy(target, current);
-				//cout << "8" << endl;
+				//std::cout << "8" << std::endl;
 				
 				//cvResetImageROI(current);
 				//cvResetImageROI(target);
@@ -507,7 +507,7 @@ GameWindow::GameWindow(TrackerOutput* op) :
 	}
 	catch (Utils::QuitNow)
 	{
-		cout << "Caught it!\n";
+		std::cout << "Caught it!\n";
 	}
 }
 

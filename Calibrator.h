@@ -2,8 +2,8 @@
 
 #include <glibmm.h>
 #include <gdkmm.h>
+#include <vector>
 
-#include "utils.h"
 #include "TrackingSystem.h"
 #include "Containers.h"
 #include "GraphicalPointer.h"
@@ -30,7 +30,7 @@ class FrameProcessing: public ProcessContainer<FrameProcessing, FrameFunction> {
 
 class MovingTarget: public FrameFunction {
 public:
-	MovingTarget(const int &frameNumber, const vector<Point> &points, const boost::shared_ptr<WindowPointer> &windowPointer, int dwellTime=20);
+	MovingTarget(const int &frameNumber, const std::vector<Point> &points, const boost::shared_ptr<WindowPointer> &windowPointer, int dwellTime=20);
 	virtual ~MovingTarget();
 	virtual void process();
 	Point getActivePoint();
@@ -40,7 +40,7 @@ public:
 	bool isLast();
 
 protected:
-	vector<Point> _points;
+	std::vector<Point> _points;
 	const int _dwellTime;
 
 	int getPointNumber();
@@ -51,14 +51,14 @@ private:
 
 class Calibrator: public MovingTarget {
 public:
-	static vector<Point> defaultPoints;
+	static std::vector<Point> defaultPoints;
 
-	Calibrator(const int &frameNumber, const boost::shared_ptr<TrackingSystem> &trackingSystem, const vector<Point> &points, const boost::shared_ptr<WindowPointer> &windowPointer, int dwellTime=20);
+	Calibrator(const int &frameNumber, const boost::shared_ptr<TrackingSystem> &trackingSystem, const std::vector<Point> &points, const boost::shared_ptr<WindowPointer> &windowPointer, int dwellTime=20);
 	virtual ~Calibrator();
 	virtual void process();
-	static vector<Point> loadPoints(istream &in);
-	static vector<Point> scaled(const vector<Point> &points, double x, double y);
-	static vector<Point> scaled(const vector<Point> &points, int x, int y, double width, double height);
+	static std::vector<Point> loadPoints(std::istream &in);
+	static std::vector<Point> scaled(const std::vector<Point> &points, double x, double y);
+	static std::vector<Point> scaled(const std::vector<Point> &points, int x, int y, double width, double height);
 
 private:
 	static const Point _defaultPointArray[];

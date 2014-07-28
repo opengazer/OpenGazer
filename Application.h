@@ -1,6 +1,6 @@
 #pragma once
 
-#include "utils.h"
+#include <opencv/cv.h>
 
 namespace Application {
 	// Tracker status

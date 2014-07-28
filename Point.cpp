@@ -1,3 +1,5 @@
+#include <gtkmm.h>
+
 #include "Point.h"
 
 Point::Point():
@@ -28,12 +30,12 @@ double Point::distance(Point other) const {
     return fabs(other.x - x) + fabs(other.y - y);
 }
 
-int Point::closestPoint(const vector<Point> &points) const {
+int Point::closestPoint(const std::vector<Point> &points) const {
     if (points.empty()) {
 		return -1;
 	}
 
-    vector<double> distances(points.size());
+	std::vector<double> distances(points.size());
     transform(points.begin(), points.end(), distances.begin(), sigc::mem_fun(*this, &Point::distance));
 
     return min_element(distances.begin(), distances.end()) - distances.begin();
@@ -77,12 +79,12 @@ void Point::operator=(CvPoint const &point) {
     y = point.y;
 }
 
-ostream &operator<< (ostream &out, const Point &p) {
-    out << p.x << " " << p.y << endl;
+std::ostream &operator<< (std::ostream &out, const Point &p) {
+    out << p.x << " " << p.y << std::endl;
     return out;
 }
 
-istream &operator>> (istream &in, Point &p) {
+std::istream &operator>> (std::istream &in, Point &p) {
     in >> p.x >> p.y;
 	return in;
 }

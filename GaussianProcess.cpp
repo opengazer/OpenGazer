@@ -1,18 +1,14 @@
-#include <algorithm>
-#include <functional>
 #include <numeric>
-
-#include "utils.h"
 
 template <class T> class GaussianProcess {
 public:
 	typedef double (*CovarianceFunction)(const T&, const T&);
 private:
-	vector<T> _inputs;
+	std::vector<T> _inputs;
 	CovarianceFunction _covarianceFunction;
 	CvMat *_alpha;
 
-	CvMat *getCovarianceMatrix(vector<T> const &in1, vector<T> const &in2) const {
+	CvMat *getCovarianceMatrix(std::vector<T> const &in1, std::vector<T> const &in2) const {
 		CvMat *K = cvCreateMat(in1.size(), in2.size(), CV_32FC1);
 
 		for (int i = 0; i < in1.size(); i++) {
@@ -25,7 +21,7 @@ private:
 	}
 
 public:
-	GaussianProcess(vector<T> const &inputs, vector<double> const &targets, CovarianceFunction covarianceFunction, double noise=0.0):
+	GaussianProcess(std::vector<T> const &inputs, std::vector<double> const &targets, CovarianceFunction covarianceFunction, double noise=0.0):
 		_inputs(inputs),
 		_covarianceFunction(covarianceFunction),
 		_alpha(cvCreateMat(targets.size(), 1, CV_32FC1))
@@ -43,7 +39,7 @@ public:
 		cvSolve(K, targetsMatrix, _alpha, CV_CHOLESKY);
 	}
 
-	CvMat* getMeans(vector<T> const &tests) const {
+	CvMat* getMeans(std::vector<T> const &tests) const {
 		CvMat *KK = getCovarianceMatrix(_inputs, tests);
 		CvMat *result = cvCreateMat(KK->cols, _alpha->cols, CV_32FC1);
 
@@ -53,18 +49,18 @@ public:
 	}
 
 	double getMean(T const &test) const {
-		CvMat* means = getMeans(vector<T>(1, test));
+		CvMat* means = getMeans(std::vector<T>(1, test));
 		return CV_MAT_ELEM(*means, float, 0, 0);
 	}
 };
 
 template <class T> class MeanAdjustedGaussianProcess {
 public:
-	MeanAdjustedGaussianProcess(vector<T> const &inputs, vector<double> const &targets, typename GaussianProcess<T>::CovarianceFunction covarianceFunction, double noise=0.0) {
+	MeanAdjustedGaussianProcess(std::vector<T> const &inputs, std::vector<double> const &targets, typename GaussianProcess<T>::CovarianceFunction covarianceFunction, double noise=0.0) {
 		_mean = std::accumulate(targets.begin(), targets.end(), 0.0) / targets.size();
 
 		// Calculate "targets - mean"
-		vector<double> zeroMeanTargets;
+		std::vector<double> zeroMeanTargets;
 		for (int i = 0; i < targets.size(); i++) {
 			zeroMeanTargets.push_back(targets[i] - _mean);
 		}

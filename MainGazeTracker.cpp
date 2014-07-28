@@ -1,18 +1,15 @@
 #include <fstream>
-#include <stdlib.h>
-#include "MainGazeTracker.h"
-#include <boost/thread/thread.hpp> 
-#include <boost/lexical_cast.hpp>
-#include <sys/types.h>
-#include <unistd.h>
+#include <sys/time.h>
 
+#include "MainGazeTracker.h"
 #include "Application.h"
 #include "utils.h"
+#include "FaceDetector.h"
 
 class VideoWriter {
     CvVideoWriter *video;
 public:
-    VideoWriter(CvSize size, string filename) : 
+    VideoWriter(CvSize size, std::string filename) : 
 	video(cvCreateVideoWriter(filename.c_str(), 0x58564944, 15.0, size, 1))
     {}
     
@@ -29,27 +26,27 @@ public:
 
 CommandLineArguments::CommandLineArguments(int argc, char** argv) {
     for(int i=1; i<argc; i++) {
-		string parameter(argv[i]);
+		std::string parameter(argv[i]);
 		int equal_sign_index = parameter.find("=");
-		string option = parameter.substr(2, equal_sign_index - 2);
-		string value = parameter.substr(equal_sign_index + 1, parameter.length()-equal_sign_index-1);
+		std::string option = parameter.substr(2, equal_sign_index - 2);
+		std::string value = parameter.substr(equal_sign_index + 1, parameter.length()-equal_sign_index-1);
 	    options.push_back(option);
 	    parameters.push_back(value);
 	}
 }
 CommandLineArguments::~CommandLineArguments() {
-    options = std::vector<string>();
-    parameters = std::vector<string>();
+    options = std::vector<std::string>();
+    parameters = std::vector<std::string>();
 }
 
-bool CommandLineArguments::isoption(string option) {
+bool CommandLineArguments::isoption(std::string option) {
     xForEach(iter, options)
 	if (iter->compare(option) == 0)
 	    return true;
     return false;
 }
 
-string CommandLineArguments::getoptionvalue(string option) {
+std::string CommandLineArguments::getoptionvalue(std::string option) {
     for(int i=0; i<options.size(); i++) {
 		if (options[i].compare(option) == 0)
 		    return parameters[i];
@@ -57,13 +54,13 @@ string CommandLineArguments::getoptionvalue(string option) {
     return "";
 }
 
-vector<int> CommandLineArguments::getoptionvalueasvector(string option) {
-    vector<int> return_vector;
+std::vector<int> CommandLineArguments::getoptionvalueasvector(std::string option) {
+	std::vector<int> return_vector;
     for(int i=0; i<options.size(); i++) {
 		if (options[i].compare(option) == 0) {
-            string input = parameters[i];
-            istringstream ss(input);
-            string token;
+			std::string input = parameters[i];
+			std::istringstream ss(input);
+			std::string token;
 
             while(std::getline(ss, token, ',')) {
                 return_vector.push_back(atoi(token.c_str()));
@@ -89,7 +86,7 @@ VideoInput::VideoInput():
 	cvFlip(frame, frame, 1);
 }
 
-VideoInput::VideoInput(string resolution):
+VideoInput::VideoInput(std::string resolution):
     capture(cvCaptureFromCAM(0)), framecount(0), capture_from_video(false), resolution_parameter(resolution)
 {	
 	if(resolution.compare("720") == 0) {
@@ -116,7 +113,7 @@ VideoInput::VideoInput(string resolution):
 	cvFlip(frame, frame, 1);
 }
 
-VideoInput::VideoInput(string resolution, string filename, bool dummy):
+VideoInput::VideoInput(std::string resolution, std::string filename, bool dummy):
     capture(cvCaptureFromFile(filename.c_str())), framecount(0),
     frame(cvQueryFrame(capture)), size(cvSize(frame->width, frame->height)), capture_from_video(true), resolution_parameter(resolution)
 {
@@ -137,8 +134,8 @@ VideoInput::VideoInput(string resolution, string filename, bool dummy):
 		else if(video_resolution == 1080 && tracker_resolution == 480)
 			cvSetImageROI(frame, cvRect(240, 0, 1440, 1080));		// Set ROI
 		
-		//cout << "FRAME: " << frame->height << "x" << frame->width << " " << frame->depth << endl;
-		//cout << "TEMP: " << tempimage->height << "x" << tempimage->width << " " << tempimage->depth << endl; 
+		//std::cout << "FRAME: " << frame->height << "x" << frame->width << " " << frame->depth << std::std::endl;
+		//std::cout << "TEMP: " << tempimage->height << "x" << tempimage->width << " " << tempimage->depth << std::endl; 
 		cvResize(frame, tempimage);
 		frame = tempimage;
 		cvResetImageROI(frame);
@@ -146,7 +143,7 @@ VideoInput::VideoInput(string resolution, string filename, bool dummy):
 		size.height = frame->height;
 		
 		
-		cout << "Successfully resized first frame" << endl;
+		std::cout << "Successfully resized first frame" << std::endl;
 	}
 }
 
@@ -196,7 +193,7 @@ VideoInput::~VideoInput() {
 }
 
 MainGazeTracker::MainGazeTracker(int argc, char** argv, 
-                 const vector<boost::shared_ptr<AbstractStore> >
+                 const std::vector<boost::shared_ptr<AbstractStore> >
 				 &stores): 
     framestoreload(-1), stores(stores), autoreload(false), videooverlays(false), totalframecount(0), recording(false), commandindex(-1)
 //     , statemachine(shared_ptr<AlertWindow>(new AlertWindow("start")))
@@ -204,33 +201,33 @@ MainGazeTracker::MainGazeTracker(int argc, char** argv,
     CommandLineArguments args(argc, argv);
 
 	if (args.getoptionvalue("help").compare("") != 0) {
-		cout << endl;
-		cout << "CVC Machine Vision Group Eye-Tracker" << endl;
-		cout << endl << endl;
-		cout << "Usage:\teyetracker --subject=SUBJECT_NAME [--resolution=[480|720]] [--setup=SETUP_FOLDER_NAME] [--headdistance=DISTANCE] [--record=[0|1]] [--overlay=[0|1]] [--input=INPUT_FILE_PATH]" << endl;
-		cout << endl << endl;
-		cout << "OPTIONS:" << endl;
-		cout << "\tsubject:\tSubject\'s name to be used in the output file name." << endl;
-		cout << "\tresolution:\tResolution for the camera. 480 for 640x480 resolution, 720 for 1280x720." << endl;
-		cout << "\tsetup:\t\tExperiment setup name and also the folder to read the test and calibration point locations." << endl;
-		cout << "\theaddistance:\tSubject\'s head distance in cm to be included in the output file for automatic error calculation purposes." << endl;
-		cout << "\trecord:\t\tWhether a video of the experiment should be recorded for offline processing purposes." << endl;
-		cout << "\toverlay:\tWhether target point and estimation pointers are written as an overlay to the recorded video. Should not be used when offline processing is desired on the output video." << endl;
-		cout << "\tinput:\t\tInput video path in case of offline processing." << endl;
-		cout << endl << endl;
-		cout << "SAMPLE USAGES:" << endl;
-		cout << "\tBasic usage without video recording:" << endl;
-		cout << "\t\t./eyetracker --subject=david --resolution=720 --setup=std --headdistance=80 --record=0" << endl;
-		cout << endl;
-		cout << "\tUsage during experiments to enable video recording for offline processing:" << endl;
-		cout << "\t\t./eyetracker --subject=david --resolution=720 --setup=std --headdistance=80 --record=1" << endl;
-		cout << endl;
-		cout << "\tUsage during offline processing:" << endl;
-		cout << "\t\t./eyetracker --subject=david --resolution=720 --setup=std --headdistance=80 --record=1 --overlay=1 --input=../outputs/david_std_720_1.avi" << endl;
-		cout << endl;
-		cout << "\tUsage during offline processing with lower resolution:" << endl;
-		cout << "\t\t./eyetracker --subject=david --resolution=480 --setup=std --headdistance=80 --record=1 --overlay=1 --input=../outputs/david_std_720_1.avi" << endl;
-		cout << endl << endl;
+		std::cout << std::endl;
+		std::cout << "CVC Machine Vision Group Eye-Tracker" << std::endl;
+		std::cout << std::endl << std::endl;
+		std::cout << "Usage:\teyetracker --subject=SUBJECT_NAME [--resolution=[480|720]] [--setup=SETUP_FOLDER_NAME] [--headdistance=DISTANCE] [--record=[0|1]] [--overlay=[0|1]] [--input=INPUT_FILE_PATH]" << std::endl;
+		std::cout << std::endl << std::endl;
+		std::cout << "OPTIONS:" << std::endl;
+		std::cout << "\tsubject:\tSubject\'s name to be used in the output file name." << std::endl;
+		std::cout << "\tresolution:\tResolution for the camera. 480 for 640x480 resolution, 720 for 1280x720." << std::endl;
+		std::cout << "\tsetup:\t\tExperiment setup name and also the folder to read the test and calibration point locations." << std::endl;
+		std::cout << "\theaddistance:\tSubject\'s head distance in cm to be included in the output file for automatic error calculation purposes." << std::endl;
+		std::cout << "\trecord:\t\tWhether a video of the experiment should be recorded for offline processing purposes." << std::endl;
+		std::cout << "\toverlay:\tWhether target point and estimation pointers are written as an overlay to the recorded video. Should not be used when offline processing is desired on the output video." << std::endl;
+		std::cout << "\tinput:\t\tInput video path in case of offline processing." << std::endl;
+		std::cout << std::endl << std::endl;
+		std::cout << "SAMPLE USAGES:" << std::endl;
+		std::cout << "\tBasic usage without video recording:" << std::endl;
+		std::cout << "\t\t./eyetracker --subject=david --resolution=720 --setup=std --headdistance=80 --record=0" << std::endl;
+		std::cout << std::endl;
+		std::cout << "\tUsage during experiments to enable video recording for offline processing:" << std::endl;
+		std::cout << "\t\t./eyetracker --subject=david --resolution=720 --setup=std --headdistance=80 --record=1" << std::endl;
+		std::cout << std::endl;
+		std::cout << "\tUsage during offline processing:" << std::endl;
+		std::cout << "\t\t./eyetracker --subject=david --resolution=720 --setup=std --headdistance=80 --record=1 --overlay=1 --input=../outputs/david_std_720_1.avi" << std::endl;
+		std::cout << std::endl;
+		std::cout << "\tUsage during offline processing with lower resolution:" << std::endl;
+		std::cout << "\t\t./eyetracker --subject=david --resolution=480 --setup=std --headdistance=80 --record=1 --overlay=1 --input=../outputs/david_std_720_1.avi" << std::endl;
+		std::cout << std::endl << std::endl;
 		exit(0);
 	}
 	
@@ -238,14 +235,14 @@ MainGazeTracker::MainGazeTracker(int argc, char** argv,
 		videoinput.reset(new VideoInput(args.getoptionvalue("resolution"), args.getoptionvalue("input"), true));
 		
 		// Read the commands (SELECT, CLEAR, CALIBRATE, TEST)
-		string inputcommandfilename = args.getoptionvalue("input");
+		std::string inputcommandfilename = args.getoptionvalue("input");
 		inputcommandfilename = inputcommandfilename.substr(0, inputcommandfilename.length()-4) + "_commands.txt";
 		
-		commandinputfile = new ifstream(inputcommandfilename.c_str());
+		commandinputfile = new std::ifstream(inputcommandfilename.c_str());
 
 	    for(;;) {
 			long no;
-			string name;
+			std::string name;
 			*commandinputfile >> no >> name;
 			
 			if (commandinputfile->rdstate())
@@ -256,7 +253,7 @@ MainGazeTracker::MainGazeTracker(int argc, char** argv,
 	
 		commandindex = 0;
 	
-		cout << commands.size() << " commands read." << endl;
+		std::cout << commands.size() << " commands read." << std::endl;
 	}
 	else {
 		// --resolution parameter
@@ -278,8 +275,8 @@ MainGazeTracker::MainGazeTracker(int argc, char** argv,
 		conversionimage = cvCreateImage(cvSize(640, 480), 8, 3 );
 	}
 	
-	string subject = args.getoptionvalue("subject");
-	string setup = args.getoptionvalue("setup");
+	std::string subject = args.getoptionvalue("subject");
+	std::string setup = args.getoptionvalue("setup");
 
 	if(subject.compare("") == 0) {
 		subject = "default";
@@ -318,7 +315,7 @@ MainGazeTracker::MainGazeTracker(int argc, char** argv,
 		Application::sleepParameter = 0;
 		
 	// --folder parameter
-    string folder_parameter = "outputs";
+	std::string folder_parameter = "outputs";
     
 	if (args.getoptionvalue("outputfolder").compare("") != 0)
 		folder_parameter = args.getoptionvalue("outputfolder");
@@ -332,32 +329,32 @@ MainGazeTracker::MainGazeTracker(int argc, char** argv,
 	    recording = true;
 	}
 
-	outputfile = new ofstream((base_path + "_").c_str());
+	outputfile = new std::ofstream((base_path + "_").c_str());
 
 	// First write the system time
     time_t current_time = time(NULL);
-    *outputfile << ctime(&current_time) << endl;
+    *outputfile << ctime(&current_time) << std::endl;
 
 	// Then write the setup parameters
-	*outputfile << "--input=" << args.getoptionvalue("input") << endl;
-	*outputfile << "--record=" << args.getoptionvalue("record") << endl;
-	*outputfile << "--overlay=" << (videooverlays ? "true" : "false") << endl;
-	*outputfile << "--headdistance=" << headdistance << endl;
-	*outputfile << "--resolution=" << args.getoptionvalue("resolution") << endl;
-	*outputfile << "--setup=" << setup << endl;
-	*outputfile << "--subject=" << subject << endl << endl;
+	*outputfile << "--input=" << args.getoptionvalue("input") << std::endl;
+	*outputfile << "--record=" << args.getoptionvalue("record") << std::endl;
+	*outputfile << "--overlay=" << (videooverlays ? "true" : "false") << std::endl;
+	*outputfile << "--headdistance=" << headdistance << std::endl;
+	*outputfile << "--resolution=" << args.getoptionvalue("resolution") << std::endl;
+	*outputfile << "--setup=" << setup << std::endl;
+	*outputfile << "--subject=" << subject << std::endl << std::endl;
 
 	// Finally the screen resolution
     Glib::RefPtr<Gdk::Screen> screen = Gdk::Display::get_default()->get_default_screen();
 	Gdk::Rectangle rect;
 	screen->get_monitor_geometry(Gdk::Screen::get_default()->get_n_monitors() - 1, rect);
-	*outputfile << "Screen resolution: " << rect.get_width() << " x " << rect.get_height() << " (Position: "<< rect.get_x() << ", "<< rect.get_y() << ")" << endl << endl;
+	*outputfile << "Screen resolution: " << rect.get_width() << " x " << rect.get_height() << " (Position: "<< rect.get_x() << ", "<< rect.get_y() << ")" << std::endl << std::endl;
 	outputfile->flush();
 	
 	// If recording, create the file to write the commands for button events
 	if (recording) {
-		string commandfilename = base_path.substr(0, base_path.length()-4) + "_commands.txt";
-		commandoutputfile = new ofstream(commandfilename.c_str());
+		std::string commandfilename = base_path.substr(0, base_path.length()-4) + "_commands.txt";
+		commandoutputfile = new std::ofstream(commandfilename.c_str());
 	}	
 	
 	directory = setup;
@@ -394,8 +391,8 @@ void MainGazeTracker::savepoints() {
 	tracking->pointTracker.save("pointTracker", "points.txt", videoinput->frame);
 	autoreload = true;
     }
-    catch (ios_base::failure &e) {
-	cout << e.what() << endl;
+    catch (std::ios_base::failure &e) {
+		std::cout << e.what() << std::endl;
     }
 }
 
@@ -404,8 +401,8 @@ void MainGazeTracker::loadpoints() {
 	tracking->pointTracker.load("pointTracker", "points.txt", videoinput->frame);
 	autoreload = true;
     }
-    catch (ios_base::failure &e) {
-	cout << e.what() << endl;
+    catch (std::ios_base::failure &e) {
+		std::cout << e.what() << std::endl;
     }
 
 }
@@ -418,7 +415,7 @@ void MainGazeTracker::choosepoints() {
 		Point eyebrows[2];
 		
 	    if (recording) {
-			*commandoutputfile << totalframecount << " SELECT" << endl;
+			*commandoutputfile << totalframecount << " SELECT" << std::endl;
 		}
 		
 		detect_eye_corners(videoinput->frame, videoinput->get_resolution(), eyes);
@@ -426,10 +423,10 @@ void MainGazeTracker::choosepoints() {
 		
 		CvRect nose_rect = cvRect(eyes[0].x, eyes[0].y, fabs(eyes[0].x-eyes[1].x), fabs(eyes[0].x-eyes[1].x));
 		check_rect_size(videoinput->frame, &nose_rect);
-		//cout << "Nose rect: " << nose_rect.x << ", " << nose_rect.y << " - " << nose_rect.width << ", " << nose_rect.height << endl;
+		//std::cout << "Nose rect: " << nose_rect.x << ", " << nose_rect.y << " - " << nose_rect.width << ", " << nose_rect.height << std::endl;
 		
 		if(!detect_nose(videoinput->frame, videoinput->get_resolution(), nose_rect, nose)) {
-			cout << "NO NOSE" << endl;
+			std::cout << "NO NOSE" << std::endl;
 			return;
 		}
 			
@@ -437,7 +434,7 @@ void MainGazeTracker::choosepoints() {
 		check_rect_size(videoinput->frame, &mouth_rect);
 		
 		if(!detect_mouth(videoinput->frame, videoinput->get_resolution(), mouth_rect, mouth)) {
-			cout << "NO MOUTH" << endl;
+			std::cout << "NO MOUTH" << std::endl;
 			return;
 		}
 		
@@ -459,10 +456,10 @@ void MainGazeTracker::choosepoints() {
 		tracking->pointTracker.addTracker(eyebrows[1]);
 		
 			
-		cout << "EYES: " << eyes[0] << " + " << eyes[1] << endl;
-		cout << "NOSE: " << nose[0] << " + " << nose[1] << endl;
-		cout << "MOUTH: " << mouth[0] << " + " << mouth[1] << endl;
-		cout << "EYEBROWS: " << eyebrows[0] << " + " << eyebrows[1] << endl;
+		std::cout << "EYES: " << eyes[0] << " + " << eyes[1] << std::endl;
+		std::cout << "NOSE: " << nose[0] << " + " << nose[1] << std::endl;
+		std::cout << "MOUTH: " << mouth[0] << " + " << mouth[1] << std::endl;
+		std::cout << "EYEBROWS: " << eyebrows[0] << " + " << eyebrows[1] << std::endl;
 		
 
 		// Save point selection image 
@@ -472,17 +469,17 @@ void MainGazeTracker::choosepoints() {
 		extract_face_region_rectangle(videoinput->frame, tracking->pointTracker.getPoints(&PointTracker::lastPoints, true));
 		tracking->pointTracker.normalizeOriginalGrey();
     }
-    catch (ios_base::failure &e) {
-	cout << e.what() << endl;
+    catch (std::ios_base::failure &e) {
+		std::cout << e.what() << std::endl;
     }
     catch (std::exception &ex) {
-	cout << ex.what() << endl;
+		std::cout << ex.what() << std::endl;
     }
 }
 
 void MainGazeTracker::clearpoints() {
     if (recording) {
-		*commandoutputfile << totalframecount << " CLEAR" << endl;
+		*commandoutputfile << totalframecount << " CLEAR" << std::endl;
 	}
 	
     tracking->pointTracker.clearTrackers();
@@ -525,7 +522,7 @@ void MainGazeTracker::doprocessing(void) {
 				image_norm *= 1.05;
 			}
 			
-			cout << "ROI NORM: " << image_norm << " (" << faces[0].width << "x" << faces[0].height << ")" << endl;
+			std::cout << "ROI NORM: " << image_norm << " (" << faces[0].width << "x" << faces[0].height << ")" << std::endl;
 			cvResetImageROI(const_cast<IplImage*>(frame));
 			cvResetImageROI(overlayimage);
 		}
@@ -540,7 +537,7 @@ void MainGazeTracker::doprocessing(void) {
 			if(videoinput->get_resolution() == 720) {
 				image_norm *= 1.05;
 			}
-			//cout << "WHOLE NORM: " << image_norm << endl;
+			//std::cout << "WHOLE NORM: " << image_norm << std::endl;
 		}
 	
 		
@@ -570,7 +567,7 @@ void MainGazeTracker::doprocessing(void) {
 		if(outputfile != NULL) {
 			TrackerOutput output = tracking->gazeTracker.output;
 			if(Application::status == Application::STATUS_TESTING) {
-                cout << "TESTING, WRITING OUTPUT!!!!!!!!!!!!!!!!!" << endl;
+				std::cout << "TESTING, WRITING OUTPUT!!!!!!!!!!!!!!!!!" << std::endl;
 				if(!tracking->eyeExtractor.isBlinking()) {
 					*outputfile << output.frameid + 1 << "\t" 
 							<< output.actualTarget.x << "\t" << output.actualTarget.y << "\t"
@@ -578,7 +575,7 @@ void MainGazeTracker::doprocessing(void) {
 							<< output.gazepoint_left.x << "\t" << output.gazepoint_left.y 
 							// << "\t" << output.nn_gazepoint.x << "\t" << output.nn_gazepoint.y << "\t"
 							// << output.nn_gazepoint_left.x << "\t" << output.nn_gazepoint_left.y 
-							<< endl;
+							<< std::endl;
 				}
 				else {
 					*outputfile << output.frameid + 1 << "\t" 
@@ -587,7 +584,7 @@ void MainGazeTracker::doprocessing(void) {
 							<< 0 << "\t" << 0 
 							// << "\t" << 0 << "\t" << 0 << "\t"
 							//<< 0 << "\t" << 0 
-							<< endl;
+							<< std::endl;
 				}
 			}
 
@@ -637,7 +634,7 @@ void MainGazeTracker::doprocessing(void) {
 	// If video output is requested
     if (recording) {
 		if(videooverlays) {
-			//cout << "VIDEO EXISTS" << endl;
+			//std::cout << "VIDEO EXISTS" << std::endl;
 			TrackerOutput output = tracking->gazeTracker.output;
 		
 			Point actualtarget(0, 0);
@@ -646,9 +643,9 @@ void MainGazeTracker::doprocessing(void) {
 			cvCopy(canvas.get(), conversionimage);
 			
 			if(Application::status == Application::STATUS_TESTING) {
-				//cout << "TARGET: " << output.actualTarget.x << ", " << output.actualTarget.y << endl;
+				//std::cout << "TARGET: " << output.actualTarget.x << ", " << output.actualTarget.y << std::endl;
 				Utils::mapToVideoCoordinates(output.actualTarget, videoinput->get_resolution(), actualtarget);
-				//cout << "MAPPING: " << actualtarget.x << ", " << actualtarget.y << endl << endl;
+				//std::cout << "MAPPING: " << actualtarget.x << ", " << actualtarget.y << std::endl << std::endl;
 
 				cvCircle((CvArr*) conversionimage, cvPoint(actualtarget.x, actualtarget.y), 8, cvScalar(0, 0, 255), -1, 8, 0);
 			
@@ -685,11 +682,11 @@ void MainGazeTracker::doprocessing(void) {
 			video->write(conversionimage); //conversionimage);
 		}
 		else {
-			//cout << "Trying to write video image" << endl;
+			//std::cout << "Trying to write video image" << std::endl;
 			cvCopy(videoinput->frame, conversionimage);
-			//cout << "Image copied" << endl;
+			//std::cout << "Image copied" << std::endl;
 			video->write(conversionimage);
-			//cout << "Image written" << endl << endl;
+			//std::cout << "Image written" << std::endl << std::endl;
 		}
 	}
 	
@@ -726,25 +723,25 @@ void MainGazeTracker::doprocessing(void) {
 void MainGazeTracker::simulateClicks(void) {
 	if(commands.size() > 0) {
 	while(commandindex >= 0 && commandindex <= (commands.size()-1) && commands[commandindex].frameno == totalframecount) {
-		cout << "Command: " << commands[commandindex].commandname << endl;
+		std::cout << "Command: " << commands[commandindex].commandname << std::endl;
 		if(strcmp(commands[commandindex].commandname.c_str(), "SELECT") == 0) {
-			cout << "Choosing points automatically" << endl;
+			std::cout << "Choosing points automatically" << std::endl;
 			choosepoints();
 		}
 		else if(strcmp(commands[commandindex].commandname.c_str(), "CLEAR") == 0) {
-			cout << "Clearing points automatically" << endl;
+			std::cout << "Clearing points automatically" << std::endl;
 			clearpoints();
 		}
 		else if(strcmp(commands[commandindex].commandname.c_str(), "CALIBRATE") == 0) {
-			cout << "Calibrating automatically" << endl;
+			std::cout << "Calibrating automatically" << std::endl;
 			startCalibration();
 		}
 		else if(strcmp(commands[commandindex].commandname.c_str(), "TEST") == 0) {
-			cout << "Testing automatically" << endl;
+			std::cout << "Testing automatically" << std::endl;
 			startTesting();
 		}
 		else if(strcmp(commands[commandindex].commandname.c_str(), "UNPAUSE") == 0 || strcmp(commands[commandindex].commandname.c_str(), "PAUSE") == 0) {
-			cout << "Pausing/unpausing automatically" << endl;
+			std::cout << "Pausing/unpausing automatically" << std::endl;
 			pauseOrRepositionHead();
 		}
 		
@@ -783,7 +780,7 @@ void MainGazeTracker::addExemplar(Point exemplar) {
 	}
 }
 
-static vector<Point> scalebyscreen(const vector<Point> &points) {
+static std::vector<Point> scalebyscreen(const std::vector<Point> &points) {
 	int num_of_monitors = Gdk::Screen::get_default()->get_n_monitors();
 	Gdk::Rectangle rect;
 	
@@ -808,7 +805,7 @@ void MainGazeTracker::startCalibration() {
 	game_win->show();
 	
 	if (recording) {
-		*commandoutputfile << totalframecount << " CALIBRATE" << endl;
+		*commandoutputfile << totalframecount << " CALIBRATE" << std::endl;
 	}
 	
     boost::shared_ptr<WindowPointer> 
@@ -823,7 +820,7 @@ void MainGazeTracker::startCalibration() {
 		pointer->mirror = mirror;
 	}
 
-    ifstream calfile((directory + "/calpoints.txt").c_str());
+	std::ifstream calfile((directory + "/calpoints.txt").c_str());
 
     boost::shared_ptr<Calibrator> 
 	cal(new Calibrator(framecount, tracking, 
@@ -843,10 +840,10 @@ void MainGazeTracker::startTesting() {
 	Application::status = Application::STATUS_TESTING;
 
     if (recording) {
-		*commandoutputfile << totalframecount << " TEST" << endl;
+		*commandoutputfile << totalframecount << " TEST" << std::endl;
 	}
 	
-    vector<Point> points;
+	std::vector<Point> points;
 
     boost::shared_ptr<WindowPointer> 
 	pointer(new WindowPointer(WindowPointer::PointerSpec(30,30,1,0,0.2)));
@@ -861,7 +858,7 @@ void MainGazeTracker::startTesting() {
 	}
 	
 	// ONUR Modified code to read the test points from a text file
-    ifstream calfile((directory + "/testpoints.txt").c_str());
+	std::ifstream calfile((directory + "/testpoints.txt").c_str());
 	points = Calibrator::loadPoints(calfile);
 	
     boost::shared_ptr<MovingTarget>
@@ -872,7 +869,7 @@ void MainGazeTracker::startTesting() {
 	//MovingTarget* target = new MovingTarget(framecount, scalebyscreen(points), pointer);
 	//shared_ptr<MovingTarget> moving((const boost::shared_ptr<MovingTarget>&) *target);
     
-	*outputfile << "TESTING" << endl << endl;
+	*outputfile << "TESTING" << std::endl << std::endl;
 	
     framefunctions.clear();
     framefunctions.addChild(&framefunctions, moving);
@@ -887,7 +884,7 @@ void MainGazeTracker::startPlaying() {
 void MainGazeTracker::pauseOrRepositionHead() {
 	if(Application::status == Application::STATUS_PAUSED) {
 	    if (recording) {
-			*commandoutputfile << totalframecount << " UNPAUSE" << endl;
+			*commandoutputfile << totalframecount << " UNPAUSE" << std::endl;
 		}
 		
 		if(Application::isTrackerCalibrated) {
@@ -901,7 +898,7 @@ void MainGazeTracker::pauseOrRepositionHead() {
 	}
 	else {
 	    if (recording) {
-			*commandoutputfile << totalframecount << " PAUSE" << endl;
+			*commandoutputfile << totalframecount << " PAUSE" << std::endl;
 		}
 		
 		Application::status = Application::STATUS_PAUSED;
@@ -951,9 +948,9 @@ bool detect_nose(IplImage* img, double resolution, CvRect nose_rect, Point point
 	storage = cvCreateMemStorage(0);
 	
 	if(cascade == NULL)
-		cout << "CASCADE NOT LOADED" << endl;
+		std::cout << "CASCADE NOT LOADED" << std::endl;
 	else
-		cout << "Loaded" << endl;
+		std::cout << "Loaded" << std::endl;
 
 	// Detect objects
 	CvSeq* nose_seq = cvHaarDetectObjects(
@@ -966,7 +963,7 @@ bool detect_nose(IplImage* img, double resolution, CvRect nose_rect, Point point
 					nose_size
 					);
 		
-				cout << nose_seq->total << " NOSES DETECTED" << endl;
+	std::cout << nose_seq->total << " NOSES DETECTED" << std::endl;
 	// Return the first nose if any eye is detected
 	if((nose_seq ? nose_seq->total : 0) > 0) {
 		// If there are multiple matches, choose the one with larger area
@@ -1036,9 +1033,9 @@ bool detect_mouth(IplImage* img, double resolution, CvRect mouth_rect, Point poi
 	storage = cvCreateMemStorage(0);
 	
 	if(cascade == NULL)
-		cout << "CASCADE NOT LOADED" << endl;
+		std::cout << "CASCADE NOT LOADED" << std::endl;
 	else
-		cout << "Loaded" << endl;
+		std::cout << "Loaded" << std::endl;
 
 	// Detect objects
 	CvSeq* mouth_seq = cvHaarDetectObjects(
@@ -1051,7 +1048,7 @@ bool detect_mouth(IplImage* img, double resolution, CvRect mouth_rect, Point poi
 					mouth_size
 					);
 	
-	cout << mouth_seq->total << " MOUTHS DETECTED" << endl;
+	std::cout << mouth_seq->total << " MOUTHS DETECTED" << std::endl;
 		
 	// Return the first mouth if any eye is detected
 	if((mouth_seq ? mouth_seq->total : 0) > 0) {
@@ -1132,7 +1129,7 @@ void detect_eye_corners(IplImage* img, double resolution, Point points[]){
 					both_eyes_size
 					);
 		
-	cout << eye_regions->total << " eye regions detected" << endl;
+	std::cout << eye_regions->total << " eye regions detected" << std::endl;
 				
 	// Return the first eye if any eye is detected
 	if((eye_regions ? eye_regions->total : 0) > 0) {
@@ -1142,7 +1139,7 @@ void detect_eye_corners(IplImage* img, double resolution, Point points[]){
 		return;
 	}
 	
-	cout << "Resolution: " << resolution << ", both eye reg.:" << both_eyes->width << ", " << both_eyes->height << endl;
+	std::cout << "Resolution: " << resolution << ", both eye reg.:" << both_eyes->width << ", " << both_eyes->height << std::endl;
 	
 	/*
 	cvRectangle(
@@ -1241,11 +1238,11 @@ void detect_eyebrow_corners(IplImage* img, double resolution, CvRect eyebrow_rec
 	                               img->nChannels);
 	eyebrow_region_image_gray_2 = cvCreateImage(cvSize(eyebrow_rect.width, eyebrow_rect.height), 8, 1);
 	
-	cout << "EYEBROW x, y = " << eyebrow_rect.x << " - " << eyebrow_rect.y << " width, height =" << eyebrow_rect.width << " - " << eyebrow_rect.height << endl;
+	std::cout << "EYEBROW x, y = " << eyebrow_rect.x << " - " << eyebrow_rect.y << " width, height =" << eyebrow_rect.width << " - " << eyebrow_rect.height << std::endl;
 	cvSetImageROI(img, eyebrow_rect);
 	cvCopy(img, eyebrow_region_image);
 	
-	cout << "Copied first" << endl;
+	std::cout << "Copied first" << std::endl;
 	
 	CvRect eyebrow_rect_2 = cvRect(eyebrow_rect.x + eyebrow_rect.width, eyebrow_rect.y, eyebrow_rect.width, eyebrow_rect.height);
 	cvSetImageROI(img, eyebrow_rect_2);
@@ -1266,7 +1263,7 @@ void detect_eyebrow_corners(IplImage* img, double resolution, CvRect eyebrow_rec
 	points[0] = Point(eyebrow_rect.x + corners[0].x, eyebrow_rect.y + corners[0].y);
 	points[1] = Point(eyebrow_rect_2.x + corners_2[0].x, eyebrow_rect_2.y + corners_2[0].y);
 	
-	cout << "Finished eyebrows" << endl;
+	std::cout << "Finished eyebrows" << std::endl;
 }
 
 
@@ -1316,7 +1313,7 @@ void check_rect_size(IplImage* image, CvRect* rect) {
 }
 
 
-void MainGazeTracker::extract_face_region_rectangle(IplImage* frame, vector<Point> feature_points) {
+void MainGazeTracker::extract_face_region_rectangle(IplImage* frame, std::vector<Point> feature_points) {
 	int min_x = 10000;
 	int max_x = 0;
 	int min_y = 10000;

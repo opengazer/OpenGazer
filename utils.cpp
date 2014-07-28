@@ -1,3 +1,7 @@
+#include <gdkmm.h>
+#include <boost/filesystem.hpp>
+#include <boost/lexical_cast.hpp>
+
 #include "utils.h"
 
 namespace Utils {
@@ -80,15 +84,15 @@ namespace Utils {
 		//cout << "ORIG: " << point.x << ", " << point.y << " MAP: " << nnPoint.x << ", " << nnPoint.y << endl;
 	}
 
-	string getUniqueFileName(string directory, string baseFileName) {
-		string fileAbsName;
+	std::string getUniqueFileName(std::string directory, std::string baseFileName) {
+		std::string fileAbsName;
 		boost::filesystem::path currentDir(directory);
 		int maximumExistingNumber = 0;
 		//boost::regex pattern(base_file_name + ".*"); // list all files having this base file name
 
 		// Check all the files matching this base file name and find the maximum serial number until now
 		for (boost::filesystem::directory_iterator iter(currentDir),end; iter != end; ++iter) {
-			string name = iter->path().filename().string();
+			std::string name = iter->path().filename().string();
 			if (strncmp(baseFileName.c_str(), name.c_str(), baseFileName.length()) == 0) { // regex_match(name, pattern)) {
 				//cout << "MATCH: base=" << baseFileName << ", file=" << name << endl;
 				int currentNumber = 0;

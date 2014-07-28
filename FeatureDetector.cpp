@@ -1,4 +1,5 @@
 #include "FeatureDetector.h"
+#include "utils.h"
 
 FeatureDetector::FeatureDetector(CvSize eyeSize):
 	_eyeSize(eyeSize),

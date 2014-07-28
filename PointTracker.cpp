@@ -1,8 +1,8 @@
 #include <opencv/highgui.h>
 #include <fstream>
 
-#include "Application.h"
 #include "PointTracker.h"
+#include "Application.h"
 #include "FaceDetector.h"
 #include "utils.h"
 
@@ -13,8 +13,8 @@ static Point pointBetweenRects(const Point &point, CvRect source, CvRect dest) {
 	return Point((point.x - source.x) * (double(dest.width) / source.width) + dest.x, (point.y - source.y) * (double(dest.height) / source.height) + dest.y);
 }
 
-static vector<Point> pointBetweenRects(const vector<Point> &points, CvRect source, CvRect dest) {
-	vector<Point> result;
+static std::vector<Point> pointBetweenRects(const std::vector<Point> &points, CvRect source, CvRect dest) {
+	std::vector<Point> result;
 
 	result.reserve(points.size());
 	xForEach(iter, points)
@@ -59,7 +59,7 @@ void PointTracker::removeTracker(int id) {
 }
 
 int PointTracker::getClosestTracker(const Point &point) {
-	vector<Point> points;
+	std::vector<Point> points;
 	Utils::convert(currentPoints, points);
 	return point.closestPoint(points);
 }
@@ -100,7 +100,7 @@ void PointTracker::track(const IplImage *frame, int pyramidDepth) {
 		lastPoints = currentPoints;
 	}
 	catch (std::exception &ex) {
-		cout << ex.what() << endl;
+		std::cout << ex.what() << std::endl;
 		clearTrackers();
 	}
 }
@@ -109,9 +109,9 @@ void PointTracker::retrack(const IplImage *frame, int pyramidDepth) {
 	try {
 		currentPoints = origPoints;
 
-		cout << "RETRACKING" << endl;
+		std::cout << "RETRACKING" << std::endl;
 		for (int i = 0; i < (int)currentPoints.size(); i++) {
-			cout << "CP["<< i <<"]" << currentPoints[i].x << ", " << currentPoints[i].y << endl;
+			std::cout << "CP["<< i <<"]" << currentPoints[i].x << ", " << currentPoints[i].y << std::endl;
 		}
 
 		_flags = 0;
@@ -140,19 +140,19 @@ void PointTracker::retrack(const IplImage *frame, int pyramidDepth) {
 		cvCopy(_pyramid.get(), _lastPyramid.get(), 0);
 		lastPoints = currentPoints;
 
-		cout << endl << "AFTER RETRACKING" << endl;
+		std::cout << std::endl << "AFTER RETRACKING" << std::endl;
 		for (int i = 0; i < (int)currentPoints.size(); i++) {
-			cout << "CP["<< i <<"]" << currentPoints[i].x << ", " << currentPoints[i].y << endl;
+			std::cout << "CP["<< i <<"]" << currentPoints[i].x << ", " << currentPoints[i].y << std::endl;
 		}
 	}
 	catch (std::exception &ex) {
-		cout << ex.what() << endl;
+		std::cout << ex.what() << std::endl;
 		clearTrackers();
 	}
 }
 
 int PointTracker::countActivePoints() {
-	return count_if(status.begin(), status.end(), bind1st(not_equal_to<char>(), 0));
+	return count_if(status.begin(), status.end(), bind1st(std::not_equal_to<char>(), 0));
 }
 
 bool PointTracker::areAllPointsActive() {
@@ -163,8 +163,8 @@ int PointTracker::pointCount() {
 	return currentPoints.size();
 }
 
-vector<Point> PointTracker::getPoints(const vector<CvPoint2D32f> PointTracker::*points, bool allPoints) {
-	vector<Point> vec;
+std::vector<Point> PointTracker::getPoints(const std::vector<CvPoint2D32f> PointTracker::*points, bool allPoints) {
+	std::vector<Point> vec;
 	for (int i = 0; i < pointCount(); i++) {
 		if (allPoints || status[i]) {
 			vec.push_back(Point((this->*points)[i].x, (this->*points)[i].y));
@@ -180,7 +180,7 @@ void PointTracker::draw(IplImage *canvas) {
 		}
 	}
 	catch (std::exception &ex) {
-		cout << ex.what() << endl;
+		std::cout << ex.what() << std::endl;
 		clearTrackers();
 	}
 }
@@ -191,40 +191,40 @@ void PointTracker::normalizeOriginalGrey() {
 	cvResetImageROI(_origGrey.get());
 }
 
-void PointTracker::save(string filename, string newname, const IplImage *frame) {
-	vector<CvRect> faces = FaceDetector::faceDetector.detect(frame);
+void PointTracker::save(std::string filename, std::string newname, const IplImage *frame) {
+	std::vector<CvRect> faces = FaceDetector::faceDetector.detect(frame);
 	if (faces.size() == 1) {
 		cvSaveImage((filename + "-orig-grey.png").c_str(), _origGrey.get());
 		cvSaveImage((filename + "-orig-pyramid.png").c_str(), _origPyramid.get());
 
-		ofstream origFile((filename + "-orig-points.txt").c_str());
+		std::ofstream origFile((filename + "-orig-points.txt").c_str());
 		origFile << origPoints;
 
 		CvRect face = faces[0];
-		ofstream facefile(newname.c_str());
-		vector<Point> tempPoints;
+		std::ofstream facefile(newname.c_str());
+		std::vector<Point> tempPoints;
 		Utils::convert(currentPoints, tempPoints);
 		facefile << pointBetweenRects(tempPoints, face, cvRect(0, 0, 1, 1));
 	} else {
-		throw ios_base::failure("No face found in the image");
+		throw std::ios_base::failure("No face found in the image");
 	}
 }
 
-void PointTracker::load(string filename, string newname, const IplImage *frame) {
-	vector<CvRect> faces = FaceDetector::faceDetector.detect(frame);
+void PointTracker::load(std::string filename, std::string newname, const IplImage *frame) {
+	std::vector<CvRect> faces = FaceDetector::faceDetector.detect(frame);
 
 	if (faces.size() == 1) {
-		ifstream origFile((filename + "-orig-points.txt").c_str());
-		ifstream faceFile(newname.c_str());
+		std::ifstream origFile((filename + "-orig-points.txt").c_str());
+		std::ifstream faceFile(newname.c_str());
 		if (!origFile.is_open() || !faceFile.is_open()) {
-			throw ios_base::failure("File not found");
+			throw std::ios_base::failure("File not found");
 		}
 
 		// todo: memory leak here, change to scoped_ptr!
 		_origGrey.reset(cvLoadImage((filename + "-orig-grey.png").c_str(), 0));
 		_origPyramid.reset(cvLoadImage((filename + "-orig-pyramid.png").c_str(), 0));
 
-		vector<Point> tempPoints;
+		std::vector<Point> tempPoints;
 		origFile >> tempPoints;
 		Utils::convert(tempPoints, origPoints);
 
@@ -233,7 +233,7 @@ void PointTracker::load(string filename, string newname, const IplImage *frame) 
 		Utils::convert(tempPoints, currentPoints);
 		lastPoints = currentPoints;
 	} else {
-		throw ios_base::failure("No face found in the image");
+		throw std::ios_base::failure("No face found in the image");
 	}
 }
 

@@ -9,7 +9,7 @@ FrameFunction::FrameFunction(const int &frameNumber):
 
 FrameFunction::~FrameFunction() {
 #ifdef DEBUG
-	cout << "Destroying framefunction" << endl;
+	std::cout << "Destroying framefunction" << std::endl;
 #endif
 }
 
@@ -17,7 +17,7 @@ int FrameFunction::getFrame() {
 	return _frameNumber - _startFrame;
 }
 
-MovingTarget::MovingTarget(const int &frameNumber, const vector<Point> &points, const boost::shared_ptr<WindowPointer> &windowPointer, int dwellTime):
+MovingTarget::MovingTarget(const int &frameNumber, const std::vector<Point> &points, const boost::shared_ptr<WindowPointer> &windowPointer, int dwellTime):
 	FrameFunction(frameNumber),
 	_points(points),
 	_dwellTime(dwellTime),
@@ -88,9 +88,9 @@ const Point Calibrator::_defaultPointArray[] = {
 	Point(0.7, 0.3)
 };
 
-vector<Point> Calibrator::defaultPoints(_defaultPointArray, _defaultPointArray + (sizeof(_defaultPointArray) / sizeof(_defaultPointArray[0])));
+std::vector<Point> Calibrator::defaultPoints(_defaultPointArray, _defaultPointArray + (sizeof(_defaultPointArray) / sizeof(_defaultPointArray[0])));
 
-Calibrator::Calibrator(const int &frameNumber, const boost::shared_ptr<TrackingSystem> &trackingSystem, const vector<Point> &points,  const boost::shared_ptr<WindowPointer> &windowPointer, int dwellTime):
+Calibrator::Calibrator(const int &frameNumber, const boost::shared_ptr<TrackingSystem> &trackingSystem, const std::vector<Point> &points,  const boost::shared_ptr<WindowPointer> &windowPointer, int dwellTime):
 	MovingTarget(frameNumber, points, windowPointer, dwellTime),
 	_trackingSystem(trackingSystem)
 {
@@ -100,7 +100,7 @@ Calibrator::Calibrator(const int &frameNumber, const boost::shared_ptr<TrackingS
 
 Calibrator::~Calibrator() {
 #ifdef DEBUG
-	cout << "Destroying calibrator" << endl;
+	std::cout << "Destroying calibrator" << std::endl;
 #endif
 }
 
@@ -130,7 +130,7 @@ void Calibrator::process() {
 					dummy++;
 				//}
 			} else {
-				cout << "Skipped adding sample!!!!" << endl;
+				std::cout << "Skipped adding sample!!!!" << std::endl;
 			}
 		}
 
@@ -157,8 +157,8 @@ void Calibrator::process() {
 	MovingTarget::process();
 }
 
-vector<Point> Calibrator::loadPoints(istream &in) {
-	vector<Point> result;
+std::vector<Point> Calibrator::loadPoints(std::istream &in) {
+	std::vector<Point> result;
 
 	for(;;) {
 		double x, y;
@@ -173,12 +173,12 @@ vector<Point> Calibrator::loadPoints(istream &in) {
 	return result;
 }
 
-vector<Point> Calibrator::scaled(const vector<Point> &points, double x, double y) {
+std::vector<Point> Calibrator::scaled(const std::vector<Point> &points, double x, double y) {
 	//double dx = x > y ? (x-y)/2 : 0.0;
 	//double dy = y > x ? (y-x)/2 : 0.0;
 	//double scale = x > y ? y : x;
 
-	vector<Point> result;
+	std::vector<Point> result;
 
 	xForEach(iter, points) {
 		result.push_back(Point(iter->x * x, iter->y * y));
@@ -188,12 +188,12 @@ vector<Point> Calibrator::scaled(const vector<Point> &points, double x, double y
 	return result;
 }
 
-vector<Point> Calibrator::scaled(const vector<Point> &points, int x, int y, double width, double height) {
-	vector<Point> result;
+std::vector<Point> Calibrator::scaled(const std::vector<Point> &points, int x, int y, double width, double height) {
+	std::vector<Point> result;
 
 	xForEach(iter, points) {
 		result.push_back(Point(iter->x * width + x, iter->y * height + y));
-		//cout << "ADDED POINT (" << iter->x * width + x << ", " << iter->y * height + y << ")" << endl;
+		//std::cout << "ADDED POINT (" << iter->x * width + x << ", " << iter->y * height + y << ")" << std::endl;
 	}
 
 	return result;
