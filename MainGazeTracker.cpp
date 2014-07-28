@@ -362,7 +362,7 @@ MainGazeTracker::MainGazeTracker(int argc, char** argv,
     canvas.reset(cvCreateImage(videoinput->size, 8, 3));
     tracking.reset(new TrackingSystem(videoinput->size));
 	
-	tracking->gazeTracker.output_file = outputfile;
+	tracking->gazeTracker.outputFile = outputfile;
 	isCalibrationOutputWritten = true;
 	
 	game_win = new GameWindow (&(tracking->gazeTracker.output));
@@ -569,16 +569,16 @@ void MainGazeTracker::doprocessing(void) {
 			if(Application::status == Application::STATUS_TESTING) {
 				std::cout << "TESTING, WRITING OUTPUT!!!!!!!!!!!!!!!!!" << std::endl;
 				if(!tracking->eyeExtractor.isBlinking()) {
-					*outputfile << output.frameid + 1 << "\t" 
+					*outputfile << output.frameId + 1 << "\t" 
 							<< output.actualTarget.x << "\t" << output.actualTarget.y << "\t"
-							<< output.gazepoint.x << "\t" << output.gazepoint.y << "\t"
-							<< output.gazepoint_left.x << "\t" << output.gazepoint_left.y 
-							// << "\t" << output.nn_gazepoint.x << "\t" << output.nn_gazepoint.y << "\t"
-							// << output.nn_gazepoint_left.x << "\t" << output.nn_gazepoint_left.y 
+							<< output.gazePoint.x << "\t" << output.gazePoint.y << "\t"
+							<< output.gazePointLeft.x << "\t" << output.gazePointLeft.y 
+							// << "\t" << output.nnGazePoint.x << "\t" << output.nnGazePoint.y << "\t"
+							// << output.nnGazePointLeft.x << "\t" << output.nnGazePointLeft.y 
 							<< std::endl;
 				}
 				else {
-					*outputfile << output.frameid + 1 << "\t" 
+					*outputfile << output.frameId + 1 << "\t" 
 							<< output.actualTarget.x << "\t" << output.actualTarget.y << "\t"
 							<< 0 << "\t" << 0 << "\t"
 							<< 0 << "\t" << 0 
@@ -651,10 +651,10 @@ void MainGazeTracker::doprocessing(void) {
 			
 				// If not blinking, show the estimation in video
 				if(!tracking->eyeExtractor.isBlinking()) {
-					Utils::mapToVideoCoordinates(output.gazepoint, videoinput->get_resolution(), estimation);
+					Utils::mapToVideoCoordinates(output.gazePoint, videoinput->get_resolution(), estimation);
 					cvCircle((CvArr*) conversionimage, cvPoint(estimation.x, estimation.y), 8, cvScalar(0, 255, 0), -1, 8, 0);
 					
-					Utils::mapToVideoCoordinates(output.gazepoint_left, videoinput->get_resolution(), estimation);
+					Utils::mapToVideoCoordinates(output.gazePointLeft, videoinput->get_resolution(), estimation);
 					cvCircle((CvArr*) conversionimage, cvPoint(estimation.x, estimation.y), 8, cvScalar(255, 0, 0), -1, 8, 0);
 				}
 			}
@@ -707,10 +707,10 @@ void MainGazeTracker::doprocessing(void) {
 		
 		// If not blinking, show the estimation in video
 		if(!tracking->eyeExtractor.isBlinking()) {
-			Utils::mapToVideoCoordinates(output.gazepoint, videoinput->get_resolution(), estimation, false);
+			Utils::mapToVideoCoordinates(output.gazePoint, videoinput->get_resolution(), estimation, false);
 			cvCircle((CvArr*) canvas.get(), cvPoint(estimation.x, estimation.y), 8, cvScalar(0, 255, 0), -1, 8, 0);
 			
-			Utils::mapToVideoCoordinates(output.gazepoint_left, videoinput->get_resolution(), estimation, false);
+			Utils::mapToVideoCoordinates(output.gazePointLeft, videoinput->get_resolution(), estimation, false);
 			cvCircle((CvArr*) canvas.get(), cvPoint(estimation.x, estimation.y), 8, cvScalar(255, 0, 0), -1, 8, 0);
 		}
 	}
@@ -774,7 +774,7 @@ void MainGazeTracker::addExemplar(Point exemplar) {
 						  tracking->eyeExtractor.eyeFloat.get(), 
 						  tracking->eyeExtractor.eyeGrey.get());
 						
-		tracking->gazeTracker.addExemplar_left(exemplar, 
+		tracking->gazeTracker.addExemplarLeft(exemplar, 
 						  tracking->eyeExtractor.eyeFloatLeft.get(), 
 						  tracking->eyeExtractor.eyeGreyLeft.get());
 	}

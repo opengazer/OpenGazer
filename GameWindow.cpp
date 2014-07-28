@@ -219,16 +219,16 @@ void GameArea::showContents() {
 			Glib::RefPtr<Gdk::GC> gc = Gdk::GC::create(window);
 			
 			double alpha = 0.6;
-			estimation_x_right = (1-alpha)*output->gazepoint.x + alpha*estimation_x_right;
-			estimation_y_right = (1-alpha)*output->gazepoint.y + alpha*estimation_y_right;
-			estimation_x_left = (1-alpha)*output->gazepoint_left.x + alpha*estimation_x_left;
-			estimation_y_left = (1-alpha)*output->gazepoint_left.y + alpha*estimation_y_left;
+			estimation_x_right = (1-alpha)*output->gazePoint.x + alpha*estimation_x_right;
+			estimation_y_right = (1-alpha)*output->gazePoint.y + alpha*estimation_y_right;
+			estimation_x_left = (1-alpha)*output->gazePointLeft.x + alpha*estimation_x_left;
+			estimation_y_left = (1-alpha)*output->gazePointLeft.y + alpha*estimation_y_left;
 			
 			int estimation_x = (estimation_x_right + estimation_x_left) / 2;
 			int estimation_y = (estimation_y_right + estimation_y_left) / 2;
 			
-			//int estimation_x = output->gazepoint.x;
-			//int estimation_y = output->gazepoint.y;
+			//int estimation_x = output->gazePoint.x;
+			//int estimation_y = output->gazePoint.y;
 			//std::cout << "INIT EST: " << estimation_x << ", " << estimation_y << std::endl;
 			
 			// Map estimation to window coordinates

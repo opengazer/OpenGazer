@@ -24,8 +24,8 @@ MmapStore::~MmapStore() {
 }
 
 void MmapStore::store(const TrackerOutput &output) {
-	_positionTable[0] = (int)output.gazepoint.x - 320;
-	_positionTable[1] = (int)output.gazepoint.y - 240;
+	_positionTable[0] = (int)output.gazePoint.x - 320;
+	_positionTable[1] = (int)output.gazePoint.y - 240;
 }
 
 StreamStore::StreamStore(std::ostream &stream):
@@ -36,7 +36,7 @@ StreamStore::StreamStore(std::ostream &stream):
 StreamStore::~StreamStore() {}
 
 void StreamStore::store(const TrackerOutput &output) {
-	_stream << (int)output.gazepoint.x << " " << (int)output.gazepoint.y << " -> " << output.targetid << std::endl;
+	_stream << (int)output.gazePoint.x << " " << (int)output.gazePoint.y << " -> " << output.targetId << std::endl;
 	_stream.flush();
 }
 
@@ -53,7 +53,7 @@ SocketStore::~SocketStore(void) {
 
 void SocketStore::store(const TrackerOutput &output) {
 	std::ostringstream stream;
-	stream << "x " << (int)output.gazepoint.x << std::endl << "y " << (int)output.gazepoint.y << std::endl;
+	stream << "x " << (int)output.gazePoint.x << std::endl << "y " << (int)output.gazePoint.y << std::endl;
 	std::string str = stream.str();
 	sendto(_mySocket, str.c_str(), str.size(), 0, (sockaddr *)&_destAddr, sizeof(_destAddr));
 }

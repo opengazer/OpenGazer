@@ -125,7 +125,7 @@ void Calibrator::process() {
 				//if (dummy % 8 == 0) {  // Only add samples on the 11-19-27-35 frames
 				//	for (int i = 0; i < 1000; i++) {   // Train 100 times with each frame
 					_trackingSystem->gazeTracker.addSampleToNN(_points[id], _trackingSystem->eyeExtractor.eyeFloat.get(), _trackingSystem->eyeExtractor.eyeGrey.get());
-					_trackingSystem->gazeTracker.addSampleToNN_left(_points[id], _trackingSystem->eyeExtractor.eyeFloatLeft.get(), _trackingSystem->eyeExtractor.eyeGreyLeft.get());
+					_trackingSystem->gazeTracker.addSampleToNNLeft(_points[id], _trackingSystem->eyeExtractor.eyeFloatLeft.get(), _trackingSystem->eyeExtractor.eyeGreyLeft.get());
 
 					dummy++;
 				//}
@@ -137,7 +137,7 @@ void Calibrator::process() {
 		if (frame == _dwellTime - 1) { // end
 			_trackingSystem->gazeTracker.addExemplar(_points[id], _averageEye->getMean().get(), _trackingSystem->eyeExtractor.eyeGrey.get());
 			// ONUR DUPLICATED CODE
-			_trackingSystem->gazeTracker.addExemplar_left(_points[id], _averageEyeLeft->getMean().get(), _trackingSystem->eyeExtractor.eyeGreyLeft.get());
+			_trackingSystem->gazeTracker.addExemplarLeft(_points[id], _averageEyeLeft->getMean().get(), _trackingSystem->eyeExtractor.eyeGreyLeft.get());
 
 			if(id == _points.size() - 1) {
 				Application::status = Application::STATUS_CALIBRATED;

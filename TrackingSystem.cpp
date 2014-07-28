@@ -50,7 +50,7 @@ void TrackingSystem::process(const IplImage *frame, IplImage *image) {
 		_headTracker.updateTracker();
 		eyeExtractor.extractEyes(frame);	// throws Tracking Exception
 		gazeTracker.update(eyeExtractor.eyeFloat.get(), eyeExtractor.eyeGrey.get());
-		gazeTracker.update_left(eyeExtractor.eyeFloatLeft.get(), eyeExtractor.eyeGreyLeft.get());
+		gazeTracker.updateLeft(eyeExtractor.eyeFloatLeft.get(), eyeExtractor.eyeGreyLeft.get());
 
 		displayEye(image, 0, 0, 0, 2);
 		pointTracker.draw(image);
