@@ -48,7 +48,7 @@ bool GazeArea::onButtonPressEvent(GdkEventButton *event) {
 		}
 
 		if (event->type == GDK_BUTTON_PRESS) {
-			PointTracker &pointTracker = gazeTracker.tracking->pointTracker;
+			PointTracker &pointTracker = gazeTracker.trackingSystem->pointTracker;
 			Point point(event->x, event->y);
 
 			int closest = pointTracker.getClosestTracker(point);
@@ -67,7 +67,7 @@ bool GazeArea::onButtonPressEvent(GdkEventButton *event) {
 
 bool GazeArea::onButtonReleaseEvent(GdkEventButton *event) {
 	if (event->button == 1) {
-		PointTracker &pointTracker = gazeTracker.tracking->pointTracker;
+		PointTracker &pointTracker = gazeTracker.trackingSystem->pointTracker;
 		Point point(event->x, event->y);
 
 		if (_lastPointId >= 0) {
@@ -93,7 +93,7 @@ bool GazeArea::onButtonReleaseEvent(GdkEventButton *event) {
 
 bool GazeArea::onIdle() {
 	try {
-		gazeTracker.doprocessing();
+		gazeTracker.process();
 		queue_draw();
 		gazeTracker.simulateClicks();
 	}
