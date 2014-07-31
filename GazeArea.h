@@ -20,8 +20,10 @@ private:
 	int _lastPointId;
 	int _clickCount;
 
-	bool onExposeEvent(GdkEventExpose *event);
-	bool onButtonPressEvent(GdkEventButton *event);
-	bool onButtonReleaseEvent(GdkEventButton *event);
 	bool onIdle();
+
+	// Gtk::DrawingArea
+	bool on_expose_event(GdkEventExpose *event);
+	bool on_button_press_event(GdkEventButton *event);
+	bool on_button_release_event(GdkEventButton *event);
 };

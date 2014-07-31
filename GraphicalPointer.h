@@ -29,8 +29,10 @@ private:
 	class GtkPointerDrawingArea: public Gtk::DrawingArea {
 	public:
 		GtkPointerDrawingArea(const PointerSpec &pointerspec);
-		virtual bool onExposeEvent(GdkEventExpose *event);
 		void drawOnWindow(Glib::RefPtr<Gdk::Window> window, GdkEventExpose *event);
+
+		// Gtk::DrawingArea
+		virtual bool on_expose_event(GdkEventExpose *event);
 
 	private:
 		PointerSpec _spec;

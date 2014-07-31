@@ -27,8 +27,8 @@ private:
 	BlinkDetector _blinkDetectorLeft;
 	bool _isBlinking;
 
-	CvMat pointMatrix() throw (TrackingException);
-	void extractEye(const IplImage *originalImage, IplImage *eyeGrey, IplImage *eyeImage);
+	void extractEye(const IplImage *originalImage) throw (TrackingException);
+	void extractEyeLeft(const IplImage *originalImage) throw (TrackingException);
 	void processEyes();
 };
 

@@ -14,7 +14,21 @@ GazeArea::GazeArea(int argc, char **argv, const std::vector<boost::shared_ptr<Ab
 
 GazeArea::~GazeArea(void) {}
 
-bool GazeArea::onExposeEvent(GdkEventExpose *event) {
+bool GazeArea::onIdle() {
+	try {
+		gazeTracker.process();
+		queue_draw();
+		gazeTracker.simulateClicks();
+	}
+	catch (Utils::QuitNow) {
+		gazeTracker.cleanUp();
+		exit(0);
+	}
+
+	return true;
+}
+
+bool GazeArea::on_expose_event(GdkEventExpose *event) {
 	Glib::RefPtr<Gdk::Window> window = get_window();
 	if (window) {
 		Gtk::Allocation allocation = get_allocation();
@@ -31,7 +45,7 @@ bool GazeArea::onExposeEvent(GdkEventExpose *event) {
 	return true;
 }
 
-bool GazeArea::onButtonPressEvent(GdkEventButton *event) {
+bool GazeArea::on_button_press_event(GdkEventButton *event) {
 	if (event->button == 1) {
 		switch(event->type) {
 		case GDK_BUTTON_PRESS:
@@ -65,7 +79,7 @@ bool GazeArea::onButtonPressEvent(GdkEventButton *event) {
 	return false;
 }
 
-bool GazeArea::onButtonReleaseEvent(GdkEventButton *event) {
+bool GazeArea::on_button_release_event(GdkEventButton *event) {
 	if (event->button == 1) {
 		PointTracker &pointTracker = gazeTracker.trackingSystem->pointTracker;
 		Point point(event->x, event->y);
@@ -89,19 +103,5 @@ bool GazeArea::onButtonReleaseEvent(GdkEventButton *event) {
 	}
 
 	return false;
-}
-
-bool GazeArea::onIdle() {
-	try {
-		gazeTracker.process();
-		queue_draw();
-		gazeTracker.simulateClicks();
-	}
-	catch (Utils::QuitNow) {
-		gazeTracker.cleanUp();
-		exit(0);
-	}
-
-	return true;
 }
 

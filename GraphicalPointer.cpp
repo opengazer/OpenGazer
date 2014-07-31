@@ -58,16 +58,6 @@ GtkPointerDrawingArea(const PointerSpec &pointerspec):
 	set_size_request(_spec.width, _spec.height);
 }
 
-bool WindowPointer::GtkPointerDrawingArea::onExposeEvent(GdkEventExpose *event)
-{
-	Glib::RefPtr<Gdk::Window> window = get_window();
-	if (window) {
-		drawOnWindow(window, event);
-	}
-
-	return false;
-}
-
 void WindowPointer::GtkPointerDrawingArea::drawOnWindow(Glib::RefPtr<Gdk::Window> window, GdkEventExpose *event) {
 	Cairo::RefPtr<Cairo::Context> cr(new Cairo::Context(gdk_cairo_create(window->gobj()), true));
 	if (event) {
@@ -87,6 +77,16 @@ void WindowPointer::GtkPointerDrawingArea::drawOnWindow(Glib::RefPtr<Gdk::Window
 	//color.set_blue(100);
 	//gc->set_foreground(color);
 	//window->draw_arc(gc, true, 0, 0, get_width(), get_height(), 0, 360*64);
+}
+
+bool WindowPointer::GtkPointerDrawingArea::on_expose_event(GdkEventExpose *event)
+{
+	Glib::RefPtr<Gdk::Window> window = get_window();
+	if (window) {
+		drawOnWindow(window, event);
+	}
+
+	return false;
 }
 
 WindowPointer::GtkPointerWindow::GtkPointerWindow(const PointerSpec &pointerspec):
