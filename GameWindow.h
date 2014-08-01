@@ -7,65 +7,67 @@
 #include "GraphicalPointer.h"
 
 class GameArea: public Gtk::DrawingArea {
-    friend class GameWindow;
- public:
-	TrackerOutput* output;
-	IplImage* current;
-	WindowPointer* calibrationPointer;
-	IplImage* repositioningImage;
+	friend class GameWindow;
 
-    GameArea(TrackerOutput* op);
-    virtual ~GameArea();
+public:
+	GameArea(TrackerOutput *output);
+	virtual ~GameArea();
 	void showContents();
 	void calculateNewFrogPosition();
-    void clearLastUpdatedRegion();
-	void displayImageCentered(IplImage* image); 
-	
- protected:
-    IplImage* orig_image;
-	IplImage* background;
-	IplImage* frog;
-	IplImage* target;
-	//IplImage* black;
-	IplImage* frog_mask;
-	IplImage* gaussian_mask;
-	IplImage* clearing_image;
-	int frog_x;
-	int frog_y;
-	int frog_counter;
-	int game_area_x;
-	int game_area_y;
-	int game_area_width;
-	int game_area_height;
-	long start_time;
-	long future_time;
-	long temp_time;
-	CvScalar background_color;
-    bool is_window_initialized;
+	void clearLastUpdatedRegion();
+	void displayImageCentered(IplImage *image);
 
-    CvRect* last_updated_region;
-	
-    virtual bool on_expose_event(GdkEventExpose *event);
-    virtual bool on_button_press_event(GdkEventButton *event);
+private:
+	TrackerOutput *_output;
+	IplImage *_current;
+	WindowPointer *_calibrationPointer;
+	IplImage *_repositioningImage;
+	IplImage *_origImage;
+	IplImage *_background;
+	IplImage *_frog;
+	IplImage *_target;
+	//IplImage *_black;
+	IplImage *_frogMask;
+	IplImage *_gaussianMask;
+	IplImage *_clearingImage;
+	CvRect *_lastUpdatedRegion;
+	int _frogX;
+	int _frogY;
+	int _frogCounter;
+	int _gameAreaX;
+	int _gameAreaY;
+	int _gameAreaWidth;
+	int _gameAreaHeight;
+	long _startTime;
+	long _futureTime;
+	long _tempTime;
+	CvScalar _backgroundColor;
+	bool _isWindowInitialized;
+
+	bool onIdle();
+
+	// Gtk::DrawingArea;
+	virtual bool on_expose_event(GdkEventExpose *event);
+	virtual bool on_button_press_event(GdkEventButton *event);
 	virtual bool on_button_release_event(GdkEventButton *event);
-    bool on_idle();
 };
 
-
 class GameWindow: public Gtk::Window {
- protected:
-  //Member widgets:
-    //Gtk::Button calibratebutton, loadbutton, savebutton, clearbutton, choosebutton;
-    Gtk::VBox vbox;
-    //Gtk::HBox buttonbar;
+public:
+	GameWindow(TrackerOutput *output);
+	virtual ~GameWindow();
+	IplImage *getCurrent();
+	void setCalibrationPointer(WindowPointer *pointer);
+	void setRepositioningImage(IplImage *image);
+	void changeWindowColor(double illuminationLevel);
 
- public:
-	int gray_level;
-    GameArea picture;
-	GameWindow(TrackerOutput* op);
-    virtual ~GameWindow();
-	IplImage* get_current();
-	void setCalibrationPointer(WindowPointer* pointer);
-	void setRepositioningImage(IplImage* image);
-    void changeWindowColor(double illuminationLevel);
+private:
+	GameArea _picture;
+	int _grayLevel;
+
+	//Member widgets:
+	//Gtk::Button _calibrateButton, _loadButton, _saveButton, _clearButton, _chooseButton;
+	Gtk::VBox _vbox;
+	//Gtk::HBox _buttonBar;
+
 };
