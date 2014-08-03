@@ -12,14 +12,10 @@ int main(int argc, char **argv) {
 		Gtk::Main kit(argc, argv);
 		Glib::thread_init();
 
-		//CalibrationWindow calwindow;
-		//calwindow.show();
+		GazeTrackerGtk window(argc, argv);
+		window.show();
 
-		GazeTrackerGtk helloworld(argc, argv);
-
-		helloworld.show();
-
-		Gtk::Main::run(helloworld);
+		Gtk::Main::run(window);
 	}
 	catch (Utils::QuitNow) {
 		std::cout << "Caught it!\n";

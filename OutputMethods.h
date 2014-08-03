@@ -3,6 +3,7 @@
 #include <netinet/in.h>
 
 #include "GazeTracker.h"
+#include "GraphicalPointer.h"
 
 class AbstractStore {
 public:
@@ -41,3 +42,15 @@ private:
 	int _mySocket;
 	struct sockaddr_in _destAddr;
 };
+
+class WindowStore: public AbstractStore {
+public:
+	WindowStore(const WindowPointer::PointerSpec &pointerSpec, const WindowPointer::PointerSpec &pointerSpecLeft, const WindowPointer::PointerSpec &targetSpec);
+	virtual void store(const TrackerOutput &output);
+
+private:
+	WindowPointer _pointer;
+	WindowPointer _pointerLeft;
+	WindowPointer _target;
+};
+

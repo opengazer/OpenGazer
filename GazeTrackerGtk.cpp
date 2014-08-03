@@ -1,5 +1,5 @@
 #include "GazeTrackerGtk.h"
-#include "GtkStore.h"
+#include "OutputMethods.h"
 
 static std::vector<boost::shared_ptr<AbstractStore> > getStores() {
 	std::vector<boost::shared_ptr<AbstractStore> > stores;
