@@ -3,7 +3,7 @@
 #include <netinet/in.h>
 
 #include "GazeTracker.h"
-#include "GraphicalPointer.h"
+#include "WindowPointer.h"
 
 class AbstractStore {
 public:

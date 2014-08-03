@@ -6,7 +6,7 @@
 
 #include "TrackingSystem.h"
 #include "Containers.h"
-#include "GraphicalPointer.h"
+#include "WindowPointer.h"
 #include "FeatureDetector.h"
 
 class FrameProcessing;

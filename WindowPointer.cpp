@@ -1,6 +1,6 @@
 #include <cairomm/context.h>
 
-#include "GraphicalPointer.h"
+#include "WindowPointer.h"
 
 WindowPointer::WindowPointer(const PointerSpec &pointerSpec):
 	_pointerWindow(pointerSpec)
