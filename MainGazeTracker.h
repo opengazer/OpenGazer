@@ -78,6 +78,5 @@ private:
 	int _commandIndex;
 
 	GameWindow *_gameWin;
-//	StateMachine<void> _stateMachine;
 };
 
