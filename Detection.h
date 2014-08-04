@@ -1,7 +1,5 @@
 #pragma once
 
-#include <opencv/cv.h>
-
 #include "Point.h"
 
 namespace Detection {

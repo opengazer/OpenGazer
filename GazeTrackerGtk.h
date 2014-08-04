@@ -1,9 +1,5 @@
 #pragma once
 
-#include <gtkmm/button.h>
-#include <gtkmm/window.h>
-#include <gtkmm/box.h>
-
 #include "GazeArea.h"
 
 class GazeTrackerGtk: public Gtk::Window {

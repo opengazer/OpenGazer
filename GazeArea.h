@@ -1,8 +1,6 @@
 #pragma once
 
-#include <gtkmm/drawingarea.h>
 #include <boost/shared_ptr.hpp>
-#include <vector>
 
 #include "MainGazeTracker.h"
 #include "OutputMethods.h"

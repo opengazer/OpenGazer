@@ -2,3 +2,4 @@ outputs/
 opengazer
 point-selection-frame.png
 *.o
+*.gch

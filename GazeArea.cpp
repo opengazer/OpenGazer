@@ -1,5 +1,3 @@
-#include <opencv/cv.h>
-
 #include "GazeArea.h"
 
 GazeArea::GazeArea(int argc, char **argv, const std::vector<boost::shared_ptr<AbstractStore> > &stores):

@@ -1,8 +1,5 @@
 #pragma once
 
-#include <opencv/cv.h>
-#include <vector>
-
 class FaceDetector {
 public:
 	static FaceDetector faceDetector;

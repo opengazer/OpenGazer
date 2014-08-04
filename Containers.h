@@ -1,7 +1,5 @@
 #pragma once
 
-#include <glibmm.h>
-#include <vector>
 #include <boost/shared_ptr.hpp>
 
 #define xForEachActive(iter, container) \

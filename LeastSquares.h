@@ -1,7 +1,5 @@
 #pragma once
 
-#include <opencv/cv.h>
-
 class LeastSquares {
 public:
 	const int n;

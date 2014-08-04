@@ -1,7 +1,5 @@
 #pragma once
 
-#include <gtkmm.h>
-
 #include "Containers.h"
 #include "Point.h"
 #include "utils.h"

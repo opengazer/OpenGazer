@@ -1,8 +1,6 @@
 #pragma once
 
 #include <boost/scoped_ptr.hpp>
-#include <opencv/cv.h>
-#include <vector>
 
 #include "Point.h"
 

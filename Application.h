@@ -1,7 +1,5 @@
 #pragma once
 
-#include <opencv/cv.h>
-
 namespace Application {
 	// Tracker status
 	enum trackerStatus {

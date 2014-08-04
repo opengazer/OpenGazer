@@ -1,7 +1,5 @@
 #pragma once
 
-#include <opencv/cv.h>
-
 #include "PointTracker.h"
 #include "BlinkDetector.h"
 

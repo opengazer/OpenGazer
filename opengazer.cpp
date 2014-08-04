@@ -3,8 +3,6 @@
 //#define EXPERIMENT_MODE
 //#define DEBUG
 
-#include <gtkmm.h>
-
 #include "GazeTrackerGtk.h"
 
 int main(int argc, char **argv) {

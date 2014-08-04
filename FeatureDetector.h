@@ -2,7 +2,6 @@
 
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
-#include <opencv/cv.h>
 
 class FeatureDetector {
 public:

@@ -1,5 +1,3 @@
-#include <gtkmm.h>
-#include <opencv/cv.h>
 #include <opencv/highgui.h>
 #include <sys/time.h>
 

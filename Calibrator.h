@@ -1,9 +1,5 @@
 #pragma once
 
-#include <glibmm.h>
-#include <gdkmm.h>
-#include <vector>
-
 #include "TrackingSystem.h"
 #include "Containers.h"
 #include "WindowPointer.h"

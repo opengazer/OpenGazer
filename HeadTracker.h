@@ -1,8 +1,5 @@
 #pragma once
 
-#include <opencv/cv.h>
-#include <vector>
-
 #include "PointTracker.h"
 
 class HeadTracker {

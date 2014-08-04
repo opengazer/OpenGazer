@@ -1,4 +1,3 @@
-#include <gdkmm.h>
 #include <fann.h>
 
 #include "GazeTracker.h"

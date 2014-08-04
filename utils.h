@@ -1,7 +1,5 @@
 #pragma once
 
-#include <opencv/cv.h>
-#include <vector>
 #include <boost/shared_ptr.hpp>
 
 #include "Point.h"
