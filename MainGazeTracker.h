@@ -5,26 +5,7 @@
 #include "GameWindow.h"
 #include "OutputMethods.h"
 #include "Video.h"
-
-struct CommandLineArguments {
-	std::vector<std::string> parameters;
-	std::vector<std::string> options;
-
-	CommandLineArguments(int argc, char **argv);
-	~CommandLineArguments();
-	bool isOption(std::string option);
-	std::string getOptionValue(std::string option);
-	std::vector<int> getOptionValueAsVector(std::string option);
-};
-
-struct Command {
-	long frameNumber;
-	std::string commandName;
-
-	Command(long number, std::string name);
-};
-
-/* class FileInput; */
+#include "Command.h"
 
 class MainGazeTracker {
 public:
@@ -36,7 +17,7 @@ public:
 	boost::scoped_ptr<IplImage> canvas;
 	boost::scoped_ptr<VideoInput> videoInput;
 
-	MainGazeTracker(int argc, char** argv, const std::vector<boost::shared_ptr<AbstractStore> > &stores);
+	MainGazeTracker(int argc, char **argv);
 	~MainGazeTracker();
 	void process();
 	void simulateClicks();
@@ -68,7 +49,6 @@ private:
 	IplImage *_overlayImage;
 	IplImage *_repositioningImage;
 	std::vector<CvRect> _faces;
-
 	Calibrator *_calibrator;
 	int _headDistance;
 	bool _videoOverlays;
@@ -76,7 +56,6 @@ private:
 	bool _recording;
 	std::vector<Command> _commands;
 	int _commandIndex;
-
 	GameWindow *_gameWin;
 };
 

@@ -1,8 +1,8 @@
 #include "GazeArea.h"
 
-GazeArea::GazeArea(int argc, char **argv, const std::vector<boost::shared_ptr<AbstractStore> > &stores):
+GazeArea::GazeArea(int argc, char **argv):
 	_lastPointId(-1),
-	gazeTracker(argc, argv, stores)
+	gazeTracker(argc, argv)
 {
 	set_size_request(gazeTracker.canvas->width, gazeTracker.canvas->height);
 	Glib::signal_idle().connect(sigc::mem_fun(*this, &GazeArea::onIdle));
@@ -10,7 +10,7 @@ GazeArea::GazeArea(int argc, char **argv, const std::vector<boost::shared_ptr<Ab
 	add_events(Gdk::BUTTON_RELEASE_MASK);
 }
 
-GazeArea::~GazeArea(void) {}
+GazeArea::~GazeArea() {}
 
 bool GazeArea::onIdle() {
 	try {

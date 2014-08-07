@@ -1,7 +1,7 @@
 #include "Detection.h"
 #include "utils.h"
 
-namespace Detection {
+namespace {
 	CvPoint2D32f *detectCornersInGrayscale(IplImage *eyeRegionImageGray, int &cornerCount) {
 		IplImage *eigImage = 0;
 		IplImage *tempImage = 0;
@@ -19,7 +19,9 @@ namespace Detection {
 
 		return corners;
 	}
+}
 
+namespace Detection {
 	bool detectNose(IplImage *image, double resolution, CvRect noseRect, Point points[]) {
 		CvHaarClassifierCascade *cascade = 0;
 		CvMemStorage *storage = 0;
