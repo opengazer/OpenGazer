@@ -15,10 +15,11 @@ static Point pointBetweenRects(const Point &point, CvRect source, CvRect dest) {
 
 static std::vector<Point> pointBetweenRects(const std::vector<Point> &points, CvRect source, CvRect dest) {
 	std::vector<Point> result;
-
 	result.reserve(points.size());
-	xForEach(iter, points)
-	result.push_back(pointBetweenRects(*iter, source, dest));
+
+	xForEach(iter, points) {
+		result.push_back(pointBetweenRects(*iter, source, dest));
+	}
 
 	return result;
 }

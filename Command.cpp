@@ -24,7 +24,7 @@ CommandLineArguments::~CommandLineArguments() {
 
 bool CommandLineArguments::isOption(std::string option) {
 	xForEach(iter, options) {
-		if (iter->compare(option) == 0) {
+		if (*iter == option) {
 			return true;
 		}
 	}
@@ -34,7 +34,7 @@ bool CommandLineArguments::isOption(std::string option) {
 
 std::string CommandLineArguments::getOptionValue(std::string option) {
 	for (int i = 0; i < options.size(); i++) {
-		if (options[i].compare(option) == 0) {
+		if (options[i] == option) {
 			return parameters[i];
 		}
 	}
@@ -46,7 +46,7 @@ std::vector<int> CommandLineArguments::getOptionValueAsVector(std::string option
 	std::vector<int> returnVector;
 
 	for (int i = 0; i < options.size(); i++) {
-		if (options[i].compare(option) == 0) {
+		if (options[i] == option) {
 			std::string input = parameters[i];
 			std::istringstream ss(input);
 			std::string token;

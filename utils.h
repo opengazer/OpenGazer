@@ -29,8 +29,9 @@ namespace Utils {
 
 	template <class T> std::ostream &operator<< (std::ostream &out, std::vector<T> const &vec) {
 		out << vec.size() << std::endl;
-		xForEach(iter, vec)
-		out << *iter << std::endl;
+		xForEach(iter, vec) {
+			out << *iter << std::endl;
+		}
 		return out;
 	}
 

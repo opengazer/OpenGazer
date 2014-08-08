@@ -57,7 +57,7 @@ MainGazeTracker::MainGazeTracker(int argc, char **argv):
 {
 	CommandLineArguments args(argc, argv);
 
-	if (args.getOptionValue("help").compare("") != 0) {
+	if (args.getOptionValue("help").length()) {
 		std::cout << std::endl;
 		std::cout << "CVC Machine Vision Group Eye-Tracker" << std::endl;
 		std::cout << std::endl << std::endl;
@@ -88,7 +88,7 @@ MainGazeTracker::MainGazeTracker(int argc, char **argv):
 		exit(0);
 	}
 
-	if (args.getOptionValue("input").compare("") != 0) {
+	if (args.getOptionValue("input").length()) {
 		videoInput.reset(new VideoInput(args.getOptionValue("resolution"), args.getOptionValue("input"), true));
 
 		// Read the commands (SELECT, CLEAR, CALIBRATE, TEST)
@@ -114,7 +114,7 @@ MainGazeTracker::MainGazeTracker(int argc, char **argv):
 		std::cout << _commands.size() << " commands read." << std::endl;
 	} else {
 		// --resolution parameter
-		if (args.getOptionValue("resolution").compare("") != 0) {
+		if (args.getOptionValue("resolution").length()) {
 			videoInput.reset(new VideoInput(args.getOptionValue("resolution")));
 		} else {
 			videoInput.reset(new VideoInput("480"));
@@ -132,41 +132,41 @@ MainGazeTracker::MainGazeTracker(int argc, char **argv):
 	std::string subject = args.getOptionValue("subject");
 	std::string setup = args.getOptionValue("setup");
 
-	if (subject.compare("") == 0) {
+	if (subject.length() == 0) {
 		subject = "default";
 	}
 
-	if (setup.compare("") == 0) {
+	if (setup.length() == 0) {
 		setup = "std";
 	}
 
-	if (args.getOptionValue("overlay").compare("1") == 0) {
+	if (args.getOptionValue("overlay") == "1") {
 		_videoOverlays = true;
 	}
 
 	// --headdistance parameter
-	if (args.getOptionValue("headdistance").compare("") != 0) {
+	if (args.getOptionValue("headdistance").length()) {
 		_headDistance = atoi(args.getOptionValue("headdistance").c_str());
 	} else {
 		_headDistance = 70;
 	}
 
 	// --dwelltime parameter
-	if (args.getOptionValue("dwelltime").compare("") != 0) {
+	if (args.getOptionValue("dwelltime").length()) {
 		Application::dwelltimeParameter = atoi(args.getOptionValue("dwelltime").c_str());
 	} else {
 		Application::dwelltimeParameter = 30;
 	}
 
 	// --testdwelltime parameter
-	if (args.getOptionValue("testdwelltime").compare("") != 0) {
+	if (args.getOptionValue("testdwelltime").length()) {
 		Application::testDwelltimeParameter = atoi(args.getOptionValue("testdwelltime").c_str());
 	} else {
 		Application::testDwelltimeParameter = 20;
 	}
 
 	// --sleep parameter
-	if (args.getOptionValue("sleep").compare("") != 0) {
+	if (args.getOptionValue("sleep").length()) {
 		Application::sleepParameter = atoi(args.getOptionValue("sleep").c_str());
 	 } else {
 		Application::sleepParameter = 0;
@@ -175,7 +175,7 @@ MainGazeTracker::MainGazeTracker(int argc, char **argv):
 	// --folder parameter
 	std::string folderParameter = "outputs";
 
-	if (args.getOptionValue("outputfolder").compare("") != 0) {
+	if (args.getOptionValue("outputfolder").length()) {
 		folderParameter = args.getOptionValue("outputfolder");
 	}
 
@@ -183,7 +183,7 @@ MainGazeTracker::MainGazeTracker(int argc, char **argv):
 	_basePath = Utils::getUniqueFileName(folderParameter, subject + "_" + setup + "_" + args.getOptionValue("resolution"));
 
 	// --record parameter
-	if (args.getOptionValue("record").compare("1") == 0) {
+	if (args.getOptionValue("record") == "1") {
 		_video.reset(new VideoWriter(videoInput->size, _basePath.substr(0, _basePath.length() - 4) + ".avi"));
 		_recording = true;
 	}

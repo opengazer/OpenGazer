@@ -61,7 +61,7 @@ GazeTrackerGtk::GazeTrackerGtk(int argc, char **argv):
 GazeTrackerGtk::~GazeTrackerGtk() {}
 
 void GazeTrackerGtk::changePauseButtonText() {
-	if(_pauseButton.get_label().compare("Pause") == 0) {
+	if(_pauseButton.get_label() == "Pause") {
 		_pauseButton.set_label("Unpause");
 	} else {
 		_pauseButton.set_label("Pause");
