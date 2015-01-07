@@ -11,9 +11,15 @@ This software is the result of [on-going research] (http://mv.cvc.uab.es/project
 
 The installation steps for [Mac OS X] (#installation-using-macports-on-mac-os-x-systems) and [Ubuntu] (#installation-on-ubuntu-1204) systems are below.
 
-**UPDATE:** VXL library is removed from the dependencies and the installation steps are updated to reflect this change.
+Scripted Installation for Mac OS X or Ubuntu systems
+-----
+Open a terminal and run:
+  - cd opengazer
+  - sudo bash dependencies.sh
+  - make
 
-Installation using MacPorts on Mac OS X systems
+
+Manual Installation using MacPorts on Mac OS X systems
 -----------------------------------------------
 This has been tested on a MacBook with OS X 10.6, 10.8 and 10.9, both with the built-in 
 iSight camera and a Logitech webcam.
@@ -60,7 +66,7 @@ case, the preferred version (@2.4.6_0) can be installed with the following steps
 6. Install the old version:
   - sudo port install opencv @2.4.6
 
-Installation on Ubuntu 12.04
+Manual Installation on Ubuntu 12.04
 -------------------------------
 Tested on a clean installation of Ubuntu 12.04 with a Logitech webcam.
 
