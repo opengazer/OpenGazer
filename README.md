@@ -13,6 +13,9 @@ The installation steps for [Mac OS X] (#installation-using-macports-on-mac-os-x-
 
 Scripted Installation for Mac OS X or Ubuntu systems
 -----
+
+OS X only: Install Xcode, Xcode Command Line Tools, XQuartz and Homebrew
+
 Open a terminal and run:
   - cd opengazer
   - sudo bash dependencies.sh

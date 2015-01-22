@@ -39,7 +39,7 @@ elif [[ "$(uname)" == "Darwin" ]] ; then
     exit_script "You must first install Xcode"
   fi
 
-  if [[ ! -d /Applications/Utilities/XQuartz ]] ; then
+  if [[ ! -d /Applications/Utilities/XQuartz.app ]] ; then
     exit_script "You must first install XQuartz"
   fi
 
