@@ -1,0 +1,6 @@
+outputs/*.txt_
+outputs/*.txt
+opengazer
+point-selection-frame.png
+*.o
+*.gch

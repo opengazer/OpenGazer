@@ -1,16 +1,17 @@
-#include "utils.h"
-#include <opencv/cv.h>
+#pragma once
 
 class FaceDetector {
-    CvMemStorage* storage;
-    CvHaarClassifierCascade* cascade ;
-
 public:
-    static FaceDetector facedetector;
-    FaceDetector(char *cascadename="haarcascade_frontalface_alt.xml");
-    ~FaceDetector();
-    vector<CvRect> detect(const IplImage *img);
-    vector<CvRect> detect_in_grayscale(const IplImage *img);
+	static FaceDetector faceDetector;
+
+	FaceDetector(char *cascadeName="haarcascade_frontalface_alt.xml");
+	~FaceDetector();
+	std::vector<CvRect> detect(const IplImage *img);
+	std::vector<CvRect> detectInGrayscale(const IplImage *img);
+
+private:
+	CvMemStorage *_storage;
+	CvHaarClassifierCascade *_cascade ;
 };
 
 

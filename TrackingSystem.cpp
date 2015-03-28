@@ -1,171 +1,164 @@
 #include "TrackingSystem.h"
 #include "FeatureDetector.h"
 #include "BlinkDetector.h"
+#include "Application.h"
 
-static double quadraticminimum(double xm1, double x0, double xp1) {
-//     cout << "values:" << xm1 << " " << x0 << " " << xp1 << endl;
-    return (xm1 - xp1) / (2*(xp1 + xm1 - 2*x0));
+static double quadraticMinimum(double xm1, double x0, double xp1) {
+	//cout << "values:" << xm1 << " " << x0 << " " << xp1 << endl;
+	return (xm1 - xp1) / (2*(xp1 + xm1 - 2*x0));
 }
 
-static Point subpixelminimum(const IplImage *values) {
-    CvPoint maxpoint;
-    cvMinMaxLoc(values, NULL, NULL, &maxpoint);
-//     cout << "max: " << maxpoint.x << " " << maxpoint.y << endl;
-    
-    int x = maxpoint.x;
-    int y = maxpoint.y;
+static Point subpixelMinimum(const IplImage *values) {
+	CvPoint maxPoint;
+	cvMinMaxLoc(values, NULL, NULL, &maxPoint);
+	//cout << "max: " << maxPoint.x << " " << maxPoint.y << endl;
 
-    Point p(x, y);
+	int x = maxPoint.x;
+	int y = maxPoint.y;
+	Point p(x, y);
 
-    if (x > 0 && x < 6)
-	p.x += quadraticminimum(cvGetReal2D(values, y, x-1),
-				cvGetReal2D(values, y, x+0),
-				cvGetReal2D(values, y, x+1));
-    
-    if (y > 0 && y < 4)
-	p.y += quadraticminimum(cvGetReal2D(values, y-1, x),
-				cvGetReal2D(values, y+0, x),
-				cvGetReal2D(values, y+1, x));
+	if (x > 0 && x < 6) {
+		p.x += quadraticMinimum(cvGetReal2D(values, y, x - 1), cvGetReal2D(values, y, x + 0), cvGetReal2D(values, y, x + 1));
+	}
 
-    return p;
+	if (y > 0 && y < 4) {
+		p.y += quadraticMinimum(cvGetReal2D(values, y - 1, x), cvGetReal2D(values, y + 0, x), cvGetReal2D(values, y + 1, x));
+	}
+
+	return p;
 }
 
 
 TrackingSystem::TrackingSystem(CvSize size):
-    tracker(size), headtracker(tracker), headcomp(headtracker), eyex(tracker) 
-{}
-
-
-void TrackingSystem::doprocessing(const IplImage *frame, 
-				  IplImage *image) 
+	pointTracker(size),
+	eyeExtractor(pointTracker),
+	_headTracker(pointTracker),
+	_headCompensation(_headTracker)
 {
-	if(tracker_status != STATUS_PAUSED) {
-    tracker.track(frame, 2);
-    if (tracker.countactivepoints() < 4) {
-	tracker.draw(image);
-	throw TrackingException();
-    }
-
-    headtracker.updatetracker();
-    eyex.extractEye(frame);	// throws Tracking Exception
-    gazetracker.update(eyex.eyefloat.get(), eyex.eyegrey.get());
-    gazetracker.update_left(eyex.eyefloat_left.get(), eyex.eyegrey_left.get());
-	
-    displayeye(image, 0, 0, 0, 2);
-    tracker.draw(image);
-    headtracker.draw(image);
-}
 }
 
-void TrackingSystem::displayeye(IplImage *image, 
-				 int basex, int basey, int stepx, int stepy) 
-{
-    CvSize eyesize = EyeExtractor::eyesize;
-    int eyedx = EyeExtractor::eyedx;
-    int eyedy = EyeExtractor::eyedy;
 
-    static IplImage *eyegreytemp = cvCreateImage( eyesize, 8, 1 );
-    static FeatureDetector features(EyeExtractor::eyesize);
-    static FeatureDetector features_left(EyeExtractor::eyesize);
+void TrackingSystem::process(const IplImage *frame, IplImage *image) {
+	if (Application::status != Application::STATUS_PAUSED) {
+		pointTracker.track(frame, 2);
 
-    features.addSample(eyex.eyegrey.get());
+		if (pointTracker.countActivePoints() < 4) {
+			pointTracker.draw(image);
+			throw TrackingException();
+		}
 
-    basex *= 2*eyedx; basey *= 2*eyedy;
-    stepx *= 2*eyedx; stepy *= 2*eyedy;
+		_headTracker.updateTracker();
+		eyeExtractor.extractEyes(frame);	// throws Tracking Exception
+		gazeTracker.update(eyeExtractor.eyeFloat.get(), eyeExtractor.eyeGrey.get());
+		gazeTracker.updateLeft(eyeExtractor.eyeFloatLeft.get(), eyeExtractor.eyeGreyLeft.get());
 
-    gazetracker.draw(image, eyedx, eyedy);
+		displayEye(image, 0, 0, 0, 2);
+		pointTracker.draw(image);
+		_headTracker.draw(image);
+	}
+}
 
-    cvSetImageROI(image, cvRect(basex, basey, eyedx*2, eyedy*2));
-    cvCvtColor(eyex.eyegrey.get(), image, CV_GRAY2RGB);
+void TrackingSystem::displayEye(IplImage *image, int baseX, int baseY, int stepX, int stepY) {
+	CvSize eyeSize = EyeExtractor::eyeSize;
+	int eyeDX = EyeExtractor::eyeDX;
+	int eyeDY = EyeExtractor::eyeDY;
 
-    cvSetImageROI(image, cvRect(basex + stepx*1, basey + stepy*1,
-				    eyedx*2, eyedy*2));
-    cvCvtColor(eyex.eyegrey.get(), image, CV_GRAY2RGB);
+	static IplImage *eyeGreyTemp = cvCreateImage(eyeSize, 8, 1);
+	static FeatureDetector features(EyeExtractor::eyeSize);
+	static FeatureDetector features_left(EyeExtractor::eyeSize);
 
-    cvConvertScale(features.getMean().get(),  eyegreytemp);
-    cvSetImageROI(image, cvRect(basex, basey, eyedx*2, eyedy*2));
-    cvCvtColor(eyegreytemp, image, CV_GRAY2RGB);
+	features.addSample(eyeExtractor.eyeGrey.get());
+
+	baseX *= 2 * eyeDX;
+	baseY *= 2 * eyeDY;
+	stepX *= 2 * eyeDX;
+	stepY *= 2 * eyeDY;
+
+	gazeTracker.draw(image, eyeDX, eyeDY);
+
+	cvSetImageROI(image, cvRect(baseX, baseY, eyeDX * 2, eyeDY * 2));
+	cvCvtColor(eyeExtractor.eyeGrey.get(), image, CV_GRAY2RGB);
+
+	cvSetImageROI(image, cvRect(baseX + stepX * 1, baseY + stepY * 1, eyeDX * 2, eyeDY * 2));
+	cvCvtColor(eyeExtractor.eyeGrey.get(), image, CV_GRAY2RGB);
+
+	cvConvertScale(features.getMean().get(), eyeGreyTemp);
+	cvSetImageROI(image, cvRect(baseX, baseY, eyeDX * 2, eyeDY * 2));
+	cvCvtColor(eyeGreyTemp, image, CV_GRAY2RGB);
 
 	// ONUR DUPLICATED CODE FOR LEFT EYE
-    features_left.addSample(eyex.eyegrey_left.get());
+	features_left.addSample(eyeExtractor.eyeGreyLeft.get());
 
-    cvSetImageROI(image, cvRect(basex + 100, basey, eyedx*2, eyedy*2));
-    cvCvtColor(eyex.eyegrey_left.get(), image, CV_GRAY2RGB);
+	cvSetImageROI(image, cvRect(baseX + 100, baseY, eyeDX * 2, eyeDY * 2));
+	cvCvtColor(eyeExtractor.eyeGreyLeft.get(), image, CV_GRAY2RGB);
 
-    cvSetImageROI(image, cvRect(basex + 100, basey + stepy*1,
-				    eyedx*2, eyedy*2));
-    cvCvtColor(eyex.eyegrey_left.get(), image, CV_GRAY2RGB);
+	cvSetImageROI(image, cvRect(baseX + 100, baseY + stepY * 1, eyeDX * 2, eyeDY * 2));
+	cvCvtColor(eyeExtractor.eyeGreyLeft.get(), image, CV_GRAY2RGB);
 
-    cvConvertScale(features_left.getMean().get(),  eyegreytemp);
-    cvSetImageROI(image, cvRect(basex + 100, basey, eyedx*2, eyedy*2));
-    cvCvtColor(eyegreytemp, image, CV_GRAY2RGB);
+	cvConvertScale(features_left.getMean().get(), eyeGreyTemp);
+	cvSetImageROI(image, cvRect(baseX + 100, baseY, eyeDX * 2, eyeDY * 2));
+	cvCvtColor(eyeGreyTemp, image, CV_GRAY2RGB);
 
-// //     features.getVariance(eyegreytemp);
-// //     cvSetImageROI(image, cvRect(basex, basey+stepy*2, eyedx*2, eyedy*2));
-// //     cvCvtColor(eyegreytemp, image, CV_GRAY2RGB);
+	//features.getVariance(eyeGreyTemp);
+	//cvSetImageROI(image, cvRect(baseX, baseY+stepY * 2, eyeDX * 2, eyeDY * 2));
+	//cvCvtColor(eyeGreyTemp, image, CV_GRAY2RGB);
 
-//     // compute the x-derivative
-    
-//     static IplImage *eyegreytemp1 = cvCreateImage( eyesize, IPL_DEPTH_32F, 1 );
-//     static scoped_ptr<IplImage> 
-// 	eyegreytemp2(cvCreateImage(eyesize, IPL_DEPTH_32F, 1));
+	// compute the x-derivative
+	//static IplImage *eyeGreyTemp1 = cvCreateImage(eyeSize, IPL_DEPTH_32F, 1);
+	//static scoped_ptr<IplImage> eyeGreyTemp2(cvCreateImage(eyeSize, IPL_DEPTH_32F, 1));
+	//static IplImage *eyeGreyTemp3 = cvCreateImage(eyeSize, IPL_DEPTH_32F, 1);
+	//static IplImage *eyeGreyTemp4 = cvCreateImage(cvSize(7,5), IPL_DEPTH_32F, 1);
 
-// //     static IplImage *eyegreytemp3 = cvCreateImage( eyesize, IPL_DEPTH_32F, 1 );
-//     static IplImage *eyegreytemp4 = cvCreateImage(cvSize(7,5),IPL_DEPTH_32F,1);
-//     features.getMean(eyegreytemp1);
-//     cvConvertScale(eyex.eyegrey, eyegreytemp2.get());
-//     double distance = cvNorm(eyegreytemp1, eyegreytemp2.get(), CV_L2);
-//     static BlinkDetector blinkdet;
-//     blinkdet.update(eyegreytemp2);
-//     cout << "distance: " << distance 
-// 	 << " blink: " << blinkdet.getState() <<endl;
-    
-//     cvSetImageROI(eyegreytemp1, cvRect(2,2,eyedx*2-6,eyedy*2-4));
-//     cvMatchTemplate(eyegreytemp2.get(), eyegreytemp1, eyegreytemp4, CV_TM_SQDIFF);
-//     cvResetImageROI(eyegreytemp1);
+	//features.getMean(eyeGreyTemp1);
+	//cvConvertScale(eyeExtractor.eyegrey, eyeGreyTemp2.get());
+	//double distance = cvNorm(eyeGreyTemp1, eyeGreyTemp2.get(), CV_L2);
+	//static BlinkDetector blinkDetector;
+	//blinkDetector.update(eyeGreyTemp2);
+	//cout << "distance: " << distance << " blink: " << blinkDetector.getState() << endl;
 
-//     for(int i=0; i<5; i++) {
-// 	cout << endl;
-// 	for(int j=0; j<7; j++)
-// 	    cout << cvGetReal2D(eyegreytemp4, i, j)/1e6 << " ";
-//     }
-//     cout << endl;
+	//cvSetImageROI(eyeGreyTemp1, cvRect(2, 2, eyeDX * 2 - 6, eyeDY * 2 - 4));
+	//cvMatchTemplate(eyeGreyTemp2.get(), eyeGreyTemp1, eyeGreyTemp4, CV_TM_SQDIFF);
+	//cvResetImageROI(eyeGreyTemp1);
 
-//     CvPoint maxpoint;
-//     cvMinMaxLoc(eyegreytemp4, NULL, NULL, &maxpoint);
-//     cout << "max: " << maxpoint.x << " " << maxpoint.y << endl;
+	//for (int i = 0; i < 5; i++) {
+	//	cout << endl;
+	//	for (int j = 0; j < 7; j++) {
+	//		cout << cvGetReal2D(eyeGreyTemp4, i, j) / 1e6 << " ";
+	//	}
+	//}
+	//cout << endl;
 
-//     cvSetImageROI(eyex.eyegrey, 
-// 		  cvRect(maxpoint.x, maxpoint.y, eyedx*2-6, eyedy*2-4));
-//     cvSetImageROI(image, cvRect(basex, basey+stepy*3, eyedx*2-6, eyedy*2-4));
-//     cvCvtColor(eyex.eyegrey, image, CV_GRAY2RGB);
-//     cvResetImageROI(eyex.eyegrey);
+	//CvPoint maxPoint;
+	//cvMinMaxLoc(eyeGreyTemp4, NULL, NULL, &maxPoint);
+	//cout << "max: " << maxPoint.x << " " << maxPoint.y << endl;
 
-//     Point mxpoint = subpixelminimum(eyegreytemp4);
-//     cout << "max: " << mxpoint.x << " " << mxpoint.y << endl;
+	//cvSetImageROI(eyeExtractor.eyegrey, cvRect(maxPoint.x, maxPoint.y, eyeDX * 2 - 6, eyeDY * 2 - 4));
+	//cvSetImageROI(image, cvRect(baseX, baseY + stepY * 3, eyeDX * 2 - 6, eyeDY * 2 - 4));
+	//cvCvtColor(eyeExtractor.eyegrey, image, CV_GRAY2RGB);
+	//cvResetImageROI(eyeExtractor.eyegrey);
 
-//     tracker.currentpoints[0].x += 0.4 * (mxpoint.x - 3.0);
-//     tracker.currentpoints[0].y += 0.4 * (mxpoint.y - 2.0);
+	//Point maxPoint = subpixelMinimum(eyeGreyTemp4);
+	//cout << "max: " << maxPoint.x << " " << maxPoint.y << endl;
 
-//     cvSub(eyex.eyefloat, eyegreytemp1, eyegreytemp3);
-//     cvSetImageROI(eyegreytemp1, cvRect(0,0,eyedx*2-1,eyedy*2));
-//     cvSetImageROI(eyegreytemp2, cvRect(1,0,eyedx*2-1,eyedy*2));
-//     cvCopy(eyegreytemp1, eyegreytemp2);
-//     cvResetImageROI(eyegreytemp1);
-//     cvResetImageROI(eyegreytemp2);
-//     cvAddS(eyegreytemp1, cvScalar(128.0), eyegreytemp1);
-//     cvSub(eyegreytemp1, eyegreytemp2, eyegreytemp1);
-    
-//     cvSetImageROI(image, cvRect(basex, basey+stepy*2, eyedx*2, eyedy*2));
-//     cvConvertScale(eyegreytemp1, eyegreytemp);
+	//pointTracker.currentpoints[0].x += 0.4 * (maxPoint.x - 3.0);
+	//pointTracker.currentpoints[0].y += 0.4 * (maxPoint.y - 2.0);
 
-// //     cvMul(eyegreytemp3, eyegreytemp1, eyegreytemp3);
-// //     cout << "x movement: " << cvAvg(eyegreytemp3).val[0] << endl;
-    
+	//cvSub(eyeExtractor.eyefloat, eyeGreyTemp1, eyeGreyTemp3);
+	//cvSetImageROI(eyeGreyTemp1, cvRect(0, 0, eyeDX * 2 - 1, eyeDY * 2));
+	//cvSetImageROI(eyeGreyTemp2, cvRect(1, 0, eyeDX * 2 - 1, eyeDY * 2));
+	//cvCopy(eyeGreyTemp1, eyeGreyTemp2);
+	//cvResetImageROI(eyeGreyTemp1);
+	//cvResetImageROI(eyeGreyTemp2);
+	//cvAddS(eyeGreyTemp1, cvScalar(128.0), eyeGreyTemp1);
+	//cvSub(eyeGreyTemp1, eyeGreyTemp2, eyeGreyTemp1);
 
-//     cvCvtColor(eyegreytemp, image, CV_GRAY2RGB);
+	//cvSetImageROI(image, cvRect(baseX, baseY + stepY * 2, eyeDX * 2, eyeDY * 2));
+	//cvConvertScale(eyeGreyTemp1, eyeGreyTemp);
 
-    
+	//cvMul(eyeGreyTemp3, eyeGreyTemp1, eyeGreyTemp3);
+	//cout << "x movement: " << cvAvg(eyeGreyTemp3).val[0] << endl;
 
-    cvResetImageROI(image);
+	//cvCvtColor(eyeGreyTemp, image, CV_GRAY2RGB);
+
+	cvResetImageROI(image);
 }
