@@ -11,7 +11,7 @@ public:
 	double atY;
 
 	HeadTracker(PointTracker &pointTracker);
-	void draw(IplImage *image);
+	void draw(cv::Mat &image);
 	void updateTracker();
 
 private:

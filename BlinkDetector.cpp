@@ -67,24 +67,24 @@ double LambdaAccumulator::getValue() {
 }
 
 BlinkDetector::BlinkDetector():
-	_averageEye(cvCreateImage(EyeExtractor::eyeSize, IPL_DEPTH_32F, 1)),
+	_averageEye(new cv::Mat(EyeExtractor::eyeSize, CV_32FC1)),
 	_accumulator(0.1, 1000.0),
 	_states(constructStates()),
 	_initialized(false)
 {
 }
 
-void BlinkDetector::update(const boost::scoped_ptr<IplImage> &eyeFloat) {
+void BlinkDetector::update(const boost::scoped_ptr<cv::Mat> &eyeFloat) {
 	if (!_initialized) {
-		cvCopy(eyeFloat.get(), _averageEye.get());
+		eyeFloat->copyTo(*_averageEye.get());
 		_initialized = true;
 	}
 
-	double distance = cvNorm(eyeFloat.get(), _averageEye.get(), CV_L2);
+	double distance = cv::norm(*eyeFloat, *_averageEye, CV_L2);
 	_accumulator.update(distance);
 	//cout << "update distance" << distance << " -> " << accumulator.getValue() << endl;
 	_states.updateState(distance / _accumulator.getValue());
-	cvRunningAvg(eyeFloat.get(), _averageEye.get(), 0.05);
+	cv::accumulateWeighted(*eyeFloat, *_averageEye, 0.05);
 }
 
 int BlinkDetector::getState() {

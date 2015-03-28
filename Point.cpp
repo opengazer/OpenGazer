@@ -28,6 +28,10 @@ double Point::distance(Point other) const {
     return fabs(other.x - x) + fabs(other.y - y);
 }
 
+double Point::distance2f(cv::Point2f other) const {
+    return fabs(other.x - x) + fabs(other.y - y);
+}
+
 int Point::closestPoint(const std::vector<Point> &points) const {
     if (points.empty()) {
 		return -1;
@@ -77,6 +81,11 @@ void Point::operator=(CvPoint const &point) {
     y = point.y;
 }
 
+void Point::operator=(cv::Point2f const &point) {
+    x = point.x;
+    y = point.y;
+}
+
 std::ostream &operator<< (std::ostream &out, const Point &p) {
     out << p.x << " " << p.y << std::endl;
     return out;
@@ -88,6 +97,11 @@ std::istream &operator>> (std::istream &in, Point &p) {
 }
 
 void convert(const Point &point, CvPoint2D32f &p) {
+    p.x = point.x;
+    p.y = point.y;
+}
+
+void convert(const Point& point, cv::Point2f &p) {
     p.x = point.x;
     p.y = point.y;
 }

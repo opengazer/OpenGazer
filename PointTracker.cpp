@@ -9,11 +9,12 @@
 using Utils::operator<<;
 using Utils::operator>>;
 
-static Point pointBetweenRects(const Point &point, CvRect source, CvRect dest) {
-	return Point((point.x - source.x) * (double(dest.width) / source.width) + dest.x, (point.y - source.y) * (double(dest.height) / source.height) + dest.y);
+static Point pointBetweenRects(const Point &point, cv::Rect source, cv::Rect dest) {
+	return Point((point.x - source.x) * (double(dest.width) / source.width) + dest.x, 
+		(point.y - source.y) * (double(dest.height) / source.height) + dest.y);
 }
 
-static std::vector<Point> pointBetweenRects(const std::vector<Point> &points, CvRect source, CvRect dest) {
+static std::vector<Point> pointBetweenRects(const std::vector<Point> &points, cv::Rect source, cv::Rect dest) {
 	std::vector<Point> result;
 	result.reserve(points.size());
 
@@ -24,17 +25,11 @@ static std::vector<Point> pointBetweenRects(const std::vector<Point> &points, Cv
 	return result;
 }
 
-PointTracker::PointTracker(const CvSize &size):
+PointTracker::PointTracker(const cv::Size &size):
 	_flags(CV_LKFLOW_INITIAL_GUESSES),
-	_grey(cvCreateImage(size, 8, 1)),
-	_origGrey(cvCreateImage(size, 8, 1)),
-	_lastGrey(cvCreateImage(size, 8, 1)),
-	_pyramid(cvCreateImage(size, 8, 1)),
-	_origPyramid(cvCreateImage(size, 8, 1)),
-	_lastPyramid(cvCreateImage(size, 8, 1))
-	//origPoints(new CvPoint2D32f[MAX_COUNT]),
-	//currentPoints(new CvPoint2D32f[MAX_COUNT]),
-	//status(new char[MAX_COUNT]),
+	_grey(size, 1),
+	_origGrey(size, 1),
+	_lastGrey(size, 1)
 {
 }
 
@@ -65,39 +60,51 @@ int PointTracker::getClosestTracker(const Point &point) {
 	return point.closestPoint(points);
 }
 
-void PointTracker::track(const IplImage *frame, int pyramidDepth) {
+void PointTracker::track(const cv::Mat &frame, int pyramidDepth) {
 	try {
 		assert(lastPoints.size() == currentPoints.size());
 		assert(origPoints.size() == currentPoints.size());
 		status.resize(currentPoints.size());
-		cvCvtColor(frame, _grey.get(), CV_BGR2GRAY );
+		cvtColor(frame, _grey, CV_BGR2GRAY);
 
+/*
 		if (Application::faceRectangle != NULL) {
-			cvSetImageROI(_grey.get(), *Application::faceRectangle);
-			Utils::normalizeGrayScaleImage2(_grey.get(), 90, 160);
-			cvResetImageROI(_grey.get());
+			Utils::normalizeGrayScaleImage_NEW(_grey(*Application::faceRectangle), 90, 160);
 		}
-
+*/
 		// Apply median filter of 5x5
-		cvSmooth(_grey.get(), _grey.get(), CV_MEDIAN, 5);
+		medianBlur(_grey, _grey, 5);
 
 		if (!currentPoints.empty()) {
 			// then calculate the position based on the original
 			// template without any pyramids
-			cvCalcOpticalFlowPyrLK(
-				_origGrey.get(), _grey.get(),
-				_origPyramid.get(), _pyramid.get(),
-				&origPoints[0], &currentPoints[0], pointCount(),
-				cvSize(_winSize, _winSize),
-				pyramidDepth * 3, &status[0], 0,
-				cvTermCriteria(CV_TERMCRIT_EPS,20,0.03),
+			std::vector<float> err;
+
+			std::cout << "BEFORE TRACKING:" << std::endl;
+			for(int i=0; i<currentPoints.size(); i++) {
+				std::cout << "Point " << i+1 << ": " << currentPoints[i].x << ", " << currentPoints[i].y << std::endl;
+			}
+
+			cv::imwrite("a_origGrey.jpg", _origGrey);
+			cv::imwrite("a_Grey.jpg", _grey);
+
+			calcOpticalFlowPyrLK(_origGrey, _grey, 
+				origPoints, currentPoints, 
+				status, err, 
+				cv::Size(_winSize,_winSize), 
+				pyramidDepth * 3, 
+				cv::TermCriteria(CV_TERMCRIT_EPS, 20, 0.03), 
 				_flags);
 		//}
 			_flags |= CV_LKFLOW_PYR_A_READY;
+
+			std::cout << "AFTER TRACKING:" << std::endl;
+			for(int i=0; i<currentPoints.size(); i++) {
+				std::cout << "Point " << i+1 << ": " << currentPoints[i].x << ", " << currentPoints[i].y << std::endl;
+			}
 		}
 
-		cvCopy(_grey.get(), _lastGrey.get(), 0);
-		cvCopy(_pyramid.get(), _lastPyramid.get(), 0);
+		_grey.copyTo(_lastGrey);
 		lastPoints = currentPoints;
 	}
 	catch (std::exception &ex) {
@@ -106,7 +113,7 @@ void PointTracker::track(const IplImage *frame, int pyramidDepth) {
 	}
 }
 
-void PointTracker::retrack(const IplImage *frame, int pyramidDepth) {
+void PointTracker::retrack(const cv::Mat &frame, int pyramidDepth) {
 	try {
 		currentPoints = origPoints;
 
@@ -116,29 +123,29 @@ void PointTracker::retrack(const IplImage *frame, int pyramidDepth) {
 		}
 
 		_flags = 0;
-		cvCvtColor(frame, _grey.get(), CV_BGR2GRAY );
+		cvtColor(frame, _grey, CV_BGR2GRAY);
 
 		// Apply median filter of 5x5
-		cvSmooth(_grey.get(), _grey.get(), CV_MEDIAN, 5);
+		medianBlur(_grey, _grey, 5);
 
 		// then calculate the position based on the original
 		// template without any pyramids
-		cvCalcOpticalFlowPyrLK(
-			_origGrey.get(), _grey.get(),
-			_origPyramid.get(), _pyramid.get(),
-			&origPoints[0], &currentPoints[0], pointCount(),
-			cvSize(_winSize, _winSize),
-			pyramidDepth * 3, &status[0], 0,
-			cvTermCriteria(CV_TERMCRIT_EPS,200,0.0001),
+		std::vector<float> err;
+		
+		calcOpticalFlowPyrLK(_origGrey, _grey, 
+			origPoints, currentPoints, 
+			status, err, 
+			cv::Size(_winSize,_winSize), 
+			pyramidDepth * 3, 
+			cv::TermCriteria(CV_TERMCRIT_EPS, 200, 0.0001), 
 			_flags);
-
 		//}
 
 		_flags = CV_LKFLOW_INITIAL_GUESSES;
 		_flags |= CV_LKFLOW_PYR_A_READY;
 
-		cvCopy(_grey.get(), _lastGrey.get(), 0);
-		cvCopy(_pyramid.get(), _lastPyramid.get(), 0);
+		_grey.copyTo(_lastGrey);
+
 		lastPoints = currentPoints;
 
 		std::cout << std::endl << "AFTER RETRACKING" << std::endl;
@@ -164,7 +171,7 @@ int PointTracker::pointCount() {
 	return currentPoints.size();
 }
 
-std::vector<Point> PointTracker::getPoints(const std::vector<CvPoint2D32f> PointTracker::*points, bool allPoints) {
+std::vector<Point> PointTracker::getPoints(const std::vector<cv::Point2f> PointTracker::*points, bool allPoints) {
 	std::vector<Point> vec;
 	for (int i = 0; i < pointCount(); i++) {
 		if (allPoints || status[i]) {
@@ -173,11 +180,11 @@ std::vector<Point> PointTracker::getPoints(const std::vector<CvPoint2D32f> Point
 	}
 	return vec;
 }
-
-void PointTracker::draw(IplImage *canvas) {
+// TODO ONUR CHANGE CANVAS TYPE
+void PointTracker::draw(cv::Mat &canvas) {
 	try {
 		for (int i = 0; i < (int)currentPoints.size(); i++) {
-			cvCircle(canvas, cvPointFrom32f(currentPoints[i]), 3, status[i] ? (i == eyePoint1 || i == eyePoint2 ? CV_RGB(255,0,0) : CV_RGB(0,255,0)) : CV_RGB(0,0,255), -1, 8, 0);
+			cv::circle(canvas, cvPointFrom32f(currentPoints[i]), 3, status[i] ? (i == eyePoint1 || i == eyePoint2 ? CV_RGB(255,0,0) : CV_RGB(0,255,0)) : CV_RGB(0,0,255), -1, 8, 0);
 		}
 	}
 	catch (std::exception &ex) {
@@ -187,34 +194,34 @@ void PointTracker::draw(IplImage *canvas) {
 }
 
 void PointTracker::normalizeOriginalGrey() {
+	/* TODO ONUR COMMENTED HERE
 	cvSetImageROI(_origGrey.get(), *Application::faceRectangle);
 	Utils::normalizeGrayScaleImage2(_origGrey.get(), 90, 160);
 	cvResetImageROI(_origGrey.get());
+	*/
 }
 
-void PointTracker::save(std::string filename, std::string newname, const IplImage *frame) {
-	std::vector<CvRect> faces = FaceDetector::faceDetector.detect(frame);
-	if (faces.size() == 1) {
-		cvSaveImage((filename + "-orig-grey.png").c_str(), _origGrey.get());
-		cvSaveImage((filename + "-orig-pyramid.png").c_str(), _origPyramid.get());
-
+void PointTracker::save(std::string filename, std::string newname, const cv::Mat frame) {
+	cv::Rect face = FaceDetector::faceDetector.detect(frame);
+	if (face.width > 0) {
+		cv::imwrite((filename + "-orig-grey.png").c_str(), _origGrey);
+		
 		std::ofstream origFile((filename + "-orig-points.txt").c_str());
 		origFile << origPoints;
 
-		CvRect face = faces[0];
 		std::ofstream facefile(newname.c_str());
 		std::vector<Point> tempPoints;
 		Utils::convert(currentPoints, tempPoints);
-		facefile << pointBetweenRects(tempPoints, face, cvRect(0, 0, 1, 1));
+		facefile << pointBetweenRects(tempPoints, face, cv::Rect(0, 0, 1, 1));
 	} else {
 		throw std::ios_base::failure("No face found in the image");
 	}
 }
 
-void PointTracker::load(std::string filename, std::string newname, const IplImage *frame) {
-	std::vector<CvRect> faces = FaceDetector::faceDetector.detect(frame);
+void PointTracker::load(std::string filename, std::string newname, const cv::Mat frame) {
+	cv::Rect face = FaceDetector::faceDetector.detect(frame);
 
-	if (faces.size() == 1) {
+	if (face.width > 0) {
 		std::ifstream origFile((filename + "-orig-points.txt").c_str());
 		std::ifstream faceFile(newname.c_str());
 		if (!origFile.is_open() || !faceFile.is_open()) {
@@ -222,15 +229,14 @@ void PointTracker::load(std::string filename, std::string newname, const IplImag
 		}
 
 		// todo: memory leak here, change to scoped_ptr!
-		_origGrey.reset(cvLoadImage((filename + "-orig-grey.png").c_str(), 0));
-		_origPyramid.reset(cvLoadImage((filename + "-orig-pyramid.png").c_str(), 0));
-
+		_origGrey = cv::imread((filename + "-orig-grey.png").c_str(), 0);
+		
 		std::vector<Point> tempPoints;
 		origFile >> tempPoints;
 		Utils::convert(tempPoints, origPoints);
 
 		faceFile >> tempPoints;
-		tempPoints = pointBetweenRects(tempPoints, cvRect(0,0,1,1), faces[0]);
+		tempPoints = pointBetweenRects(tempPoints, cvRect(0,0,1,1), face);
 		Utils::convert(tempPoints, currentPoints);
 		lastPoints = currentPoints;
 	} else {
@@ -239,12 +245,11 @@ void PointTracker::load(std::string filename, std::string newname, const IplImag
 }
 
 void PointTracker::saveImage() {
-	cvSaveImage("point-selection-frame.png", _origGrey.get());
+	cv::imwrite("point-selection-frame.png", _origGrey);
 }
 
 void PointTracker::synchronizePoints() {
 	swap(_origGrey, _grey);
-	swap(_origPyramid, _pyramid);
 	origPoints = lastPoints = currentPoints;
 }
 

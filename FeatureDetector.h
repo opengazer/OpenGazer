@@ -5,13 +5,13 @@
 
 class FeatureDetector {
 public:
-	FeatureDetector(CvSize eyeSize);
-	void addSample(const IplImage *source);
-	boost::shared_ptr<IplImage> getMean();
-	boost::shared_ptr<IplImage> getVariance();
+	FeatureDetector(cv::Size eyeSize);
+	void addSample(const cv::Mat *source);
+	boost::shared_ptr<cv::Mat> getMean();
+	boost::shared_ptr<cv::Mat> getVariance();
 
 private:
-	CvSize _eyeSize;
-	boost::scoped_ptr<IplImage> _sumImage, _sum2Image, _temp;
+	cv::Size _eyeSize;
+	boost::scoped_ptr<cv::Mat> _sumImage, _sum2Image, _temp;
 	int _samples;
 };

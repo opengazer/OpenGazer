@@ -4,13 +4,13 @@
 #include "utils.h"
 
 namespace Utils {
-	boost::shared_ptr<IplImage> createImage(const CvSize &size, int depth, int channels) {
-		return boost::shared_ptr<IplImage>(cvCreateImage(size, depth, channels), releaseImage);
+	boost::shared_ptr<cv::Mat> createImage(const CvSize &size, int type) {
+		return boost::shared_ptr<cv::Mat>(new cv::Mat(size, type), releaseImage);
 	}
 
-	void releaseImage(IplImage *image) {
+	void releaseImage(cv::Mat *image) {
 		//cout << "deleting shared image" << endl;
-		cvReleaseImage(&image);
+		image->release();
 	}
 
 	void mapToFirstMonitorCoordinates(Point monitor2Point, Point &monitor1Point) {
@@ -114,6 +114,27 @@ namespace Utils {
 	}
 
 	// Normalize by making mean and standard deviation equal in all images
+	void normalizeGrayScaleImage(cv::Mat *image, double standardMean, double standardStd) {
+		cv::Mat scalarMean;
+		cv::Mat scalarStd;
+		double mean;
+		double std;
+
+		cv::meanStdDev(*image, scalarMean, scalarStd);
+
+		mean = scalarMean.data[0];
+		std = scalarStd.data[0];
+
+		//cout << "Image mean and std is " << mean << ", " << std << endl;
+
+		double ratio = standardStd / std;
+		double shift = standardMean - mean * ratio;
+
+		cv::convertScaleAbs(*image, *image, ratio, shift);   // Move the mean from 0 to 127
+	}
+
+	// TODO REMOVE FUNCTION
+	// Normalize by making mean and standard deviation equal in all images
 	void normalizeGrayScaleImage(IplImage *image, double standardMean, double standardStd) {
 		CvScalar scalarMean;
 		CvScalar scalarStd;
@@ -133,16 +154,18 @@ namespace Utils {
 		cvConvertScale(image, image, ratio, shift);   // Move the mean from 0 to 127
 	}
 
+/*
 	// Normalize to 50-200 interval
-	void normalizeGrayScaleImage2(IplImage *image, double standardMean, double standardStd) {
+	void normalizeGrayScaleImage2(cv::Mat *image, double standardMean, double standardStd) {
 		double minVal;
 		double maxVal;
 		double scale = 1;
 		double intervalStart = 25;
 		double intervalEnd = 230;
 
-		cvMinMaxLoc(image, &minVal, &maxVal);
-		cvConvertScale(image, image, 1, -1 * minVal);   // Subtract the minimum value
+		cv::minMaxLoc(*image, &minVal, &maxVal);
+		cv::convertScale(*image, *image, 1, -1 * minVal);   // Subtract the minimum value
+		image->convertTo(*image, )
 
 		// If pixel intensities are between 0 and 1
 		if (maxVal < 2) {
@@ -153,8 +176,27 @@ namespace Utils {
 		scale = (intervalEnd - intervalStart) / (maxVal - minVal);
 
 		// Scale the image to the selected interval
-		cvConvertScale(image, image, scale, 0);
-		cvConvertScale(image, image, 1, intervalStart);
+		cvConvertScale(*image, *image, scale, 0);
+		cvConvertScale(*image, *image, 1, intervalStart);
+	}
+*/
+	void convertAndResize(const cv::Mat &src, cv::Mat& gray, cv::Mat& resized, double scale)
+	{
+		if (src.channels() == 3) {
+			cv::cvtColor(src, gray, CV_BGR2GRAY);
+		}
+		else {
+			gray = src;
+		}
+
+		cv::Size sz(cvRound(gray.cols * scale), cvRound(gray.rows * scale));
+
+		if (scale != 1) {
+			cv::resize(gray, resized, sz);
+		}
+		else {
+			resized = gray;
+		}
 	}
 
 	void printMat(CvMat *mat) {
@@ -174,13 +216,31 @@ namespace Utils {
 
 		printf("\n");
 	}
+
+	void printMat(cv::Mat mat) {
+		printf("(%dx%d)\n", mat.cols, mat.rows);
+		for (int i = 0; i < mat.rows; i++) {
+			if (i == 0) {
+				for (int j = 0; j < mat.cols; j++) {
+					printf("%10d", j + 1);
+				}
+			}
+
+			printf("\n%4d: ", i + 1);
+			for (int j = 0; j < mat.cols; j++) {
+				printf("%10.2f", mat.at<float>(i, j));
+			}
+		}
+
+		printf("\n");
+	}
 }
 
 namespace boost {
-	template <> void checked_delete(IplImage *image) {
+	template <> void checked_delete(cv::Mat *image) {
 		//cout << "deleting scoped image" << endl;
 		if (image) {
-			cvReleaseImage(&image);
+			image->release();
 		}
 	}
 }

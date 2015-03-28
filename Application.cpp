@@ -6,7 +6,7 @@ namespace Application {
 	int dwelltimeParameter = 20;
 	int testDwelltimeParameter = 20;
 	int sleepParameter = 0;
-	CvRect *faceRectangle = NULL;
+	cv::Rect *faceRectangle = NULL;
 
 	std::vector<boost::shared_ptr<AbstractStore> > getStores() {
 		static std::vector<boost::shared_ptr<AbstractStore> > stores;

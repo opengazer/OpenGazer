@@ -17,7 +17,7 @@ namespace Application {
 	extern int dwelltimeParameter;
 	extern int testDwelltimeParameter;
 	extern int sleepParameter;
-	extern CvRect *faceRectangle;
+	extern cv::Rect *faceRectangle;
 
 	std::vector<boost::shared_ptr<AbstractStore> > getStores();
 }

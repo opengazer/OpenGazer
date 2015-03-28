@@ -27,7 +27,7 @@ namespace {
 		}
 	}
 
-	void checkRectSize(IplImage *image, CvRect *rect) {
+	void checkRectSize(const cv::Mat &image, cv::Rect *rect) {
 		if (rect->x < 0) {
 			rect->x = 0;
 		}
@@ -36,12 +36,12 @@ namespace {
 			rect->y = 0;
 		}
 
-		if (rect->x + rect->width >= image->width) {
-			rect->width = image->width - rect->x - 1;
+		if (rect->x + rect->width >= image.size().width) {
+			rect->width = image.size().width - rect->x - 1;
 		}
 
-		if (rect->y + rect->height >= image->height) {
-			rect->height = image->height - rect->y - 1;
+		if (rect->y + rect->height >= image.size().height) {
+			rect->height = image.size().height - rect->y - 1;
 		}
 	}
 }
@@ -218,7 +218,7 @@ MainGazeTracker::MainGazeTracker(int argc, char **argv):
 
 	_directory = setup;
 
-	canvas.reset(cvCreateImage(videoInput->size, 8, 3));
+	canvas.reset(new cv::Mat(videoInput->size, CV_8UC3));
 	trackingSystem.reset(new TrackingSystem(videoInput->size));
 
 	trackingSystem->gazeTracker.outputFile = _outputFile;
@@ -228,14 +228,14 @@ MainGazeTracker::MainGazeTracker(int argc, char **argv):
 	_gameWin->show();
 
 	if (videoInput.get()->getResolution() == 720) {
-		_repositioningImage = cvCreateImage(cvSize(1280, 720), 8, 3);
+		_repositioningImage.create(cv::Size(1280, 720), CV_8UC3);
 	} else if (videoInput.get()->getResolution() == 1080) {
-		_repositioningImage = cvCreateImage(cvSize(1920, 1080), 8, 3);
+		_repositioningImage.create(cv::Size(1920, 1080), CV_8UC3);
 	} else if (videoInput.get()->getResolution() == 480) {
-		_repositioningImage = cvCreateImage(cvSize(640, 480), 8, 3);
+		_repositioningImage.create(cv::Size(640, 480), CV_8UC3);
 	}
 
-	_gameWin->setRepositioningImage(_repositioningImage);
+	_gameWin->setRepositioningImage(&_repositioningImage);
 	Application::faceRectangle = NULL;
 }
 
@@ -253,32 +253,32 @@ void MainGazeTracker::process() {
 		usleep(Application::sleepParameter);
 	}
 
-	const IplImage *frame = videoInput->frame;
-	canvas->origin = frame->origin;
+	const cv::Mat frame = videoInput->frame;
+	canvas->data = frame.data;
 
 	double imageNorm = 0.0;
 
 	if (Application::status == Application::STATUS_PAUSED) {
-		cvAddWeighted(frame, 0.5, _overlayImage, 0.5, 0.0, canvas.get());
+		cv::addWeighted(frame, 0.5, _overlayImage, 0.5, 0.0, *(canvas.get()));
 
 		// Only calculate norm in the area containing the face
-		if (_faces.size() == 1) {
-			cvSetImageROI(const_cast<IplImage*>(frame), _faces[0]);
-			cvSetImageROI(_overlayImage, _faces[0]);
+		if (_face.width > 0) {
+			//cvSetImageROI(const_cast<IplImage*>(frame), _face);
+			//cvSetImageROI(_overlayImage, _face);
 
-			imageNorm = cvNorm(frame, _overlayImage, CV_L2);
-			imageNorm = (10000 * imageNorm) / (_faces[0].width * _faces[0].height);
+			imageNorm = cv::norm(frame(_face), _overlayImage(_face), CV_L2);
+			imageNorm = (10000 * imageNorm) / (_face.width * _face.height);
 
 			// To be able to use the same threshold for VGA and 720 cameras
 			if (videoInput->getResolution() == 720) {
 				imageNorm *= 1.05;
 			}
 
-			std::cout << "ROI NORM: " << imageNorm << " (" << _faces[0].width << "x" << _faces[0].height << ")" << std::endl;
-			cvResetImageROI(const_cast<IplImage*>(frame));
-			cvResetImageROI(_overlayImage);
+			std::cout << "ROI NORM: " << imageNorm << " (" << _face.width << "x" << _face.height << ")" << std::endl;
+			//cvResetImageROI(const_cast<IplImage*>(frame));
+			//cvResetImageROI(_overlayImage);
 		} else {
-			imageNorm = cvNorm(frame, _overlayImage, CV_L2);
+			imageNorm = cv::norm(frame, _overlayImage, CV_L2);
 			imageNorm = (15000 * imageNorm) / (videoInput->getResolution() * videoInput->getResolution());
 
 			// To be able to use the same threshold for only-face method and all-image method
@@ -291,11 +291,11 @@ void MainGazeTracker::process() {
 			//std::cout << "WHOLE NORM: " << imageNorm << std::endl;
 		}
 	} else {
-		cvCopy(frame, canvas.get(), 0);
+		frame.copyTo(*canvas.get());
 	}
 
 	try {
-		trackingSystem->process(frame, canvas.get());
+		trackingSystem->process(videoInput->frame, canvas.get());
 
 		if (trackingSystem->gazeTracker.isActive()) {
 			if (Application::status != Application::STATUS_TESTING) {
@@ -351,7 +351,7 @@ void MainGazeTracker::process() {
 
 	if (Application::status == Application::STATUS_PAUSED) {
 		int rectangleThickness = 15;
-		CvScalar color;
+		cv::Scalar color;
 
 		if (imageNorm < 1500) {
 			color = CV_RGB(0, 255, 0);
@@ -361,18 +361,18 @@ void MainGazeTracker::process() {
 			color = CV_RGB(0, 0, 255);
 		}
 
-		cvRectangle(canvas.get(), cvPoint(0, 0), cvPoint(rectangleThickness, videoInput->size.height), color, CV_FILLED);	// left
-		cvRectangle(canvas.get(), cvPoint(0, 0), cvPoint(videoInput->size.width, rectangleThickness), color, CV_FILLED);	// top
-		cvRectangle(canvas.get(), cvPoint(videoInput->size.width - rectangleThickness, 0), cvPoint(videoInput->size.width, videoInput->size.height), color, CV_FILLED);		// right
-		cvRectangle(canvas.get(), cvPoint(0, videoInput->size.height - rectangleThickness), cvPoint(videoInput->size.width, videoInput->size.height), color, CV_FILLED);	// bottom
+		cv::rectangle(*canvas.get(), cv::Point(0, 0), cv::Point(rectangleThickness, videoInput->size.height), color, CV_FILLED, 8, 0);	// left
+		cv::rectangle(*canvas.get(), cv::Point(0, 0), cv::Point(videoInput->size.width, rectangleThickness), color, CV_FILLED, 8, 0);	// top
+		cv::rectangle(*canvas.get(), cv::Point(videoInput->size.width - rectangleThickness, 0), cv::Point(videoInput->size.width, videoInput->size.height), color, CV_FILLED, 8, 0);		// right
+		cv::rectangle(*canvas.get(), cv::Point(0, videoInput->size.height - rectangleThickness), cv::Point(videoInput->size.width, videoInput->size.height), color, CV_FILLED, 8, 0);	// bottom
 
 		// Fill the repositioning image so that it can be displayed on the subject's monitor too
-		cvAddWeighted(frame, 0.5, _overlayImage, 0.5, 0.0, _repositioningImage);
+		cv::addWeighted(frame, 0.5, _overlayImage, 0.5, 0.0, _repositioningImage);
 
-		cvRectangle(_repositioningImage, cvPoint(0, 0), cvPoint(rectangleThickness, videoInput->size.height), color, CV_FILLED);	// left
-		cvRectangle(_repositioningImage, cvPoint(0, 0), cvPoint(videoInput->size.width, rectangleThickness), color, CV_FILLED);		// top
-		cvRectangle(_repositioningImage, cvPoint(videoInput->size.width - rectangleThickness, 0), cvPoint(videoInput->size.width, videoInput->size.height), color, CV_FILLED);	// right
-		cvRectangle(_repositioningImage, cvPoint(0, videoInput->size.height - rectangleThickness), cvPoint(videoInput->size.width, videoInput->size.height), color, CV_FILLED);	// bottom
+		cv::rectangle(_repositioningImage, cv::Point(0, 0), cv::Point(rectangleThickness, videoInput->size.height), color, CV_FILLED, 8, 0);	// left
+		cv::rectangle(_repositioningImage, cv::Point(0, 0), cv::Point(videoInput->size.width, rectangleThickness), color, CV_FILLED, 8, 0);		// top
+		cv::rectangle(_repositioningImage, cv::Point(videoInput->size.width - rectangleThickness, 0), cv::Point(videoInput->size.width, videoInput->size.height), color, CV_FILLED, 8, 0);	// right
+		cv::rectangle(_repositioningImage, cv::Point(0, videoInput->size.height - rectangleThickness), cv::Point(videoInput->size.width, videoInput->size.height), color, CV_FILLED, 8, 0);	// bottom
 	}
 
 	frameFunctions.process();
@@ -386,28 +386,28 @@ void MainGazeTracker::process() {
 			Point actualTarget(0, 0);
 			Point estimation(0, 0);
 
-			cvCopy(canvas.get(), _conversionImage);
+			canvas->copyTo(_conversionImage);
 
 			if (Application::status == Application::STATUS_TESTING) {
 				//std::cout << "TARGET: " << output.actualTarget.x << ", " << output.actualTarget.y << std::endl;
 				Utils::mapToVideoCoordinates(output.actualTarget, videoInput->getResolution(), actualTarget);
 				//std::cout << "MAPPING: " << actualTarget.x << ", " << actualTarget.y << std::endl << std::endl;
 
-				cvCircle((CvArr *)_conversionImage, cvPoint(actualTarget.x, actualTarget.y), 8, cvScalar(0, 0, 255), -1, 8, 0);
+				cv::circle(_conversionImage, cv::Point(actualTarget.x, actualTarget.y), 8, cv::Scalar(0, 0, 255), -1, 8, 0);
 
 				// If not blinking, show the estimation in video
 				if (!trackingSystem->eyeExtractor.isBlinking()) {
 					Utils::mapToVideoCoordinates(output.gazePoint, videoInput->getResolution(), estimation);
-					cvCircle((CvArr *)_conversionImage, cvPoint(estimation.x, estimation.y), 8, cvScalar(0, 255, 0), -1, 8, 0);
+					cv::circle(_conversionImage, cv::Point(estimation.x, estimation.y), 8, cv::Scalar(0, 255, 0), -1, 8, 0);
 
 					Utils::mapToVideoCoordinates(output.gazePointLeft, videoInput->getResolution(), estimation);
-					cvCircle((CvArr *)_conversionImage, cvPoint(estimation.x, estimation.y), 8, cvScalar(255, 0, 0), -1, 8, 0);
+					cv::circle(_conversionImage, cv::Point(estimation.x, estimation.y), 8, cv::Scalar(255, 0, 0), -1, 8, 0);
 				}
 			}
 
 			if (Application::status == Application::STATUS_PAUSED) {
 				int rectangleThickness = 15;
-				CvScalar color;
+				cv::Scalar color;
 
 				if (imageNorm < 1900) {
 					color = CV_RGB(0, 255, 0);
@@ -417,16 +417,16 @@ void MainGazeTracker::process() {
 					color = CV_RGB(255, 0, 0);
 				}
 
-				cvRectangle(_conversionImage, cvPoint(0, 0), cvPoint(rectangleThickness, videoInput->size.height), color, CV_FILLED);	// left
-				cvRectangle(_conversionImage, cvPoint(0, 0), cvPoint(videoInput->size.width, rectangleThickness), color, CV_FILLED);	// top
-				cvRectangle(_conversionImage, cvPoint(videoInput->size.width - rectangleThickness, 0), cvPoint(videoInput->size.width, videoInput->size.height), color, CV_FILLED);		// right
-				cvRectangle(_conversionImage, cvPoint(0, videoInput->size.height - rectangleThickness), cvPoint(videoInput->size.width, videoInput->size.height), color, CV_FILLED);	// bottom
+				cv::rectangle(_conversionImage, cv::Point(0, 0), cv::Point(rectangleThickness, videoInput->size.height), color, CV_FILLED, 8, 0);	// left
+				cv::rectangle(_conversionImage, cv::Point(0, 0), cv::Point(videoInput->size.width, rectangleThickness), color, CV_FILLED, 8, 0);	// top
+				cv::rectangle(_conversionImage, cv::Point(videoInput->size.width - rectangleThickness, 0), cv::Point(videoInput->size.width, videoInput->size.height), color, CV_FILLED, 8, 0);		// right
+				cv::rectangle(_conversionImage, cv::Point(0, videoInput->size.height - rectangleThickness), cv::Point(videoInput->size.width, videoInput->size.height), color, CV_FILLED, 8, 0);	// bottom
 			}
 
 			_video->write(_conversionImage);
 		} else {
 			//std::cout << "Trying to write video image" << std::endl;
-			cvCopy(videoInput->frame, _conversionImage);
+			videoInput->frame.copyTo(_conversionImage);
 			//std::cout << "Image copied" << std::endl;
 			_video->write(_conversionImage);
 			//std::cout << "Image written" << std::endl << std::endl;
@@ -441,19 +441,19 @@ void MainGazeTracker::process() {
 
 		if (Application::status == Application::STATUS_TESTING) {
 			Utils::mapToVideoCoordinates(target->getActivePoint(), videoInput->getResolution(), actualTarget, false);
-			cvCircle((CvArr *)canvas.get(), cvPoint(actualTarget.x, actualTarget.y), 8, cvScalar(0, 0, 255), -1, 8, 0);
+			cv::circle(*canvas.get(), cv::Point(actualTarget.x, actualTarget.y), 8, cv::Scalar(0, 0, 255), -1, 8, 0);
 		} else if(Application::status == Application::STATUS_CALIBRATING) {
 			Utils::mapToVideoCoordinates(_calibrator->getActivePoint(), videoInput->getResolution(), actualTarget, false);
-			cvCircle((CvArr *)canvas.get(), cvPoint(actualTarget.x, actualTarget.y), 8, cvScalar(0, 0, 255), -1, 8, 0);
+			cv::circle(*canvas.get(), cv::Point(actualTarget.x, actualTarget.y), 8, cv::Scalar(0, 0, 255), -1, 8, 0);
 		}
 
 		// If not blinking, show the estimation in video
 		if (!trackingSystem->eyeExtractor.isBlinking()) {
 			Utils::mapToVideoCoordinates(output.gazePoint, videoInput->getResolution(), estimation, false);
-			cvCircle((CvArr *)canvas.get(), cvPoint(estimation.x, estimation.y), 8, cvScalar(0, 255, 0), -1, 8, 0);
+			cv::circle(*canvas.get(), cv::Point(estimation.x, estimation.y), 8, cv::Scalar(0, 255, 0), -1, 8, 0);
 
 			Utils::mapToVideoCoordinates(output.gazePointLeft, videoInput->getResolution(), estimation, false);
-			cvCircle((CvArr *)canvas.get(), cvPoint(estimation.x, estimation.y), 8, cvScalar(255, 0, 0), -1, 8, 0);
+			cv::circle(*canvas.get(), cv::Point(estimation.x, estimation.y), 8, cv::Scalar(255, 0, 0), -1, 8, 0);
 		}
 	}
 
@@ -588,7 +588,7 @@ void MainGazeTracker::startPlaying() {
 
 void MainGazeTracker::savePoints() {
 	try {
-		trackingSystem->pointTracker.save("pointTracker", "points.txt", videoInput->frame);
+		trackingSystem->pointTracker.save("pointTracker", "points.txt", videoInput->cFrame);
 		_autoReload = true;
 	}
 	catch (std::ios_base::failure &e) {
@@ -598,7 +598,7 @@ void MainGazeTracker::savePoints() {
 
 void MainGazeTracker::loadPoints() {
 	try {
-		trackingSystem->pointTracker.load("pointTracker", "points.txt", videoInput->frame);
+		trackingSystem->pointTracker.load("pointTracker", "points.txt", videoInput->cFrame);
 		_autoReload = true;
 	}
 	catch (std::ios_base::failure &e) {
@@ -617,28 +617,31 @@ void MainGazeTracker::choosePoints() {
 			*_commandOutputFile << _totalFrameCount << " SELECT" << std::endl;
 		}
 
-		Detection::detectEyeCorners(videoInput->frame, videoInput->getResolution(), eyes);
 
-		CvRect noseRect = cvRect(eyes[0].x, eyes[0].y, fabs(eyes[0].x - eyes[1].x), fabs(eyes[0].x - eyes[1].x));
+		Detection::detectEyeCorners(videoInput->cFrame, videoInput->getResolution(), eyes);
+
+		cv::Rect noseRect = cv::Rect(eyes[0].x, eyes[0].y, fabs(eyes[0].x - eyes[1].x), fabs(eyes[0].x - eyes[1].x));
 		checkRectSize(videoInput->frame, &noseRect);
 		//std::cout << "Nose rect: " << noseRect.x << ", " << noseRect.y << " - " << noseRect.width << ", " << noseRect.height << std::endl;
 
-		if (!Detection::detectNose(videoInput->frame, videoInput->getResolution(), noseRect, nose)) {
+		if (!Detection::detectNose(videoInput->cFrame, videoInput->getResolution(), noseRect, nose)) {
 			std::cout << "NO NOSE" << std::endl;
 			return;
 		}
 
-		CvRect mouthRect = cvRect(eyes[0].x, nose[0].y, fabs(eyes[0].x - eyes[1].x), 0.8 * fabs(eyes[0].x - eyes[1].x));
+		cv::Rect mouthRect = cv::Rect(eyes[0].x, nose[0].y, fabs(eyes[0].x - eyes[1].x), 0.8 * fabs(eyes[0].x - eyes[1].x));
 		checkRectSize(videoInput->frame, &mouthRect);
 
-		if (!Detection::detectMouth(videoInput->frame, videoInput->getResolution(), mouthRect, mouth)) {
+		if (!Detection::detectMouth(videoInput->cFrame, videoInput->getResolution(), mouthRect, mouth)) {
 			std::cout << "NO MOUTH" << std::endl;
 			return;
 		}
 
-		CvRect eyebrowRect = cvRect(eyes[0].x + fabs(eyes[0].x - eyes[1].x) * 0.25, eyes[0].y - fabs(eyes[0].x - eyes[1].x) * 0.40, fabs(eyes[0].x - eyes[1].x) * 0.5, fabs(eyes[0].x - eyes[1].x) * 0.25);
+		cv::Rect eyebrowRect = cv::Rect(eyes[0].x + fabs(eyes[0].x - eyes[1].x) * 0.25, eyes[0].y - fabs(eyes[0].x - eyes[1].x) * 0.40, fabs(eyes[0].x - eyes[1].x) * 0.5, fabs(eyes[0].x - eyes[1].x) * 0.25);
 		checkRectSize(videoInput->frame, &eyebrowRect);
-		Detection::detectEyebrowCorners(videoInput->frame, videoInput->getResolution(), eyebrowRect, eyebrows);
+		Detection::detectEyebrowCorners(videoInput->cFrame, videoInput->getResolution(), eyebrowRect, eyebrows);
+
+		cvSaveImage("cframe.jpg", videoInput->cFrame);
 
 		trackingSystem->pointTracker.clearTrackers();
 		_autoReload = false;
@@ -662,7 +665,7 @@ void MainGazeTracker::choosePoints() {
 
 		// Calculate the area containing the face
 		extractFaceRegionRectangle(videoInput->frame, trackingSystem->pointTracker.getPoints(&PointTracker::lastPoints, true));
-		trackingSystem->pointTracker.normalizeOriginalGrey();
+		//trackingSystem->pointTracker.normalizeOriginalGrey();
 	}
 	catch (std::ios_base::failure &e) {
 		std::cout << e.what() << std::endl;
@@ -689,7 +692,7 @@ void MainGazeTracker::pauseOrRepositionHead() {
 
 		Application::status = Application::isTrackerCalibrated ? Application::STATUS_CALIBRATED : Application::STATUS_IDLE;
 
-		trackingSystem->pointTracker.retrack(videoInput->frame, 2);
+		trackingSystem->pointTracker.retrack(videoInput->cFrame, 2);
 		//choosePoints();
 	} else {
 		if (_recording) {
@@ -699,11 +702,11 @@ void MainGazeTracker::pauseOrRepositionHead() {
 		Application::status = Application::STATUS_PAUSED;
 
 		_overlayImage = cvLoadImage("point-selection-frame.png", CV_LOAD_IMAGE_COLOR);
-		_faces = FaceDetector::faceDetector.detect(_overlayImage);
+		_face = FaceDetector::faceDetector.detect(_overlayImage);
 	}
 }
 
-void MainGazeTracker::extractFaceRegionRectangle(IplImage *frame, std::vector<Point> featurePoints) {
+void MainGazeTracker::extractFaceRegionRectangle(cv::Mat &frame, std::vector<Point> featurePoints) {
 	int minX = 10000;
 	int maxX = 0;
 	int minY = 10000;
@@ -725,7 +728,7 @@ void MainGazeTracker::extractFaceRegionRectangle(IplImage *frame, std::vector<Po
 	minY -= 0.5 * diffY;
 	maxY += 0.5 * diffY;
 
-	Application::faceRectangle = new CvRect();
+	Application::faceRectangle = new cv::Rect();
 	Application::faceRectangle->x = minX;
 	Application::faceRectangle->y = minY;
 	Application::faceRectangle->width = maxX - minX;

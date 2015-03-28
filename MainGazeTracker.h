@@ -14,7 +14,7 @@ public:
 	boost::shared_ptr<TrackingSystem> trackingSystem;
 	MovingTarget *target;
 	FrameProcessing frameFunctions;
-	boost::scoped_ptr<IplImage> canvas;
+	boost::scoped_ptr<cv::Mat> canvas;
 	boost::scoped_ptr<VideoInput> videoInput;
 
 	MainGazeTracker(int argc, char **argv);
@@ -32,7 +32,7 @@ public:
 	void choosePoints();
 	void clearPoints();
 	void pauseOrRepositionHead();
-	void extractFaceRegionRectangle(IplImage *frame, std::vector<Point> featurePoints);
+	void extractFaceRegionRectangle(cv::Mat &frame, std::vector<Point> featurePoints);
 
 private:
 	boost::scoped_ptr<VideoWriter> _video;
@@ -45,10 +45,10 @@ private:
 	std::ofstream *_outputFile;
 	std::ofstream *_commandOutputFile;
 	std::ifstream *_commandInputFile;
-	IplImage *_conversionImage;
-	IplImage *_overlayImage;
-	IplImage *_repositioningImage;
-	std::vector<CvRect> _faces;
+	cv::Mat _conversionImage;
+	cv::Mat _overlayImage;
+	cv::Mat _repositioningImage;
+	cv::Rect _face;
 	Calibrator *_calibrator;
 	int _headDistance;
 	bool _videoOverlays;

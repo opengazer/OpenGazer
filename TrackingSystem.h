@@ -12,9 +12,9 @@ public:
 	EyeExtractor eyeExtractor;
 	GazeTracker gazeTracker;
 
-	TrackingSystem(CvSize size);
-	void process(const IplImage *frame, IplImage *image);
-	void displayEye(IplImage *image, int baseX, int baseY, int stepX, int stepY);
+	TrackingSystem(cv::Size size);
+	void process(const cv::Mat &frame, cv::Mat *image);
+	void displayEye(cv::Mat &image, int baseX, int baseY, int stepX, int stepY);
 
 private:
 	HeadTracker _headTracker;

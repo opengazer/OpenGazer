@@ -19,7 +19,7 @@ struct CalTarget {
 	Utils::SharedImage origImage;
 
 	CalTarget();
-	CalTarget(Point point, const IplImage *image, const IplImage *origImage);
+	CalTarget(Point point, const cv::Mat *image, const cv::Mat *origImage);
 	void save(CvFileStorage *out, const char *name=NULL);
 	void load(CvFileStorage *in, CvFileNode *node);
 };
@@ -56,12 +56,12 @@ public:
 	GazeTracker();
 	bool isActive();
 	void clear();
-	void addExemplar(Point point, const IplImage *eyeFloat, const IplImage *eyeGrey);
-	void addExemplarLeft(Point point, const IplImage *eyeFloat, const IplImage *eyeGrey);
+	void addExemplar(Point point, const cv::Mat *eyeFloat, const cv::Mat *eyeGrey);
+	void addExemplarLeft(Point point, const cv::Mat *eyeFloat, const cv::Mat *eyeGrey);
 
 	// Neural network
-	void addSampleToNN(Point point, const IplImage *eyeFloat, const IplImage *eyeGrey);
-	void addSampleToNNLeft(Point point, const IplImage *eyeFloat, const IplImage *eyeGrey);
+	void addSampleToNN(Point point, const cv::Mat *eyeFloat, const cv::Mat *eyeGrey);
+	void addSampleToNNLeft(Point point, const cv::Mat *eyeFloat, const cv::Mat *eyeGrey);
 	void trainNN();
 
 	// Calibration error removal
@@ -69,13 +69,13 @@ public:
 	void boundToScreenCoordinates(Point &estimate);
 	void checkErrorCorrection();
 
-	void draw(IplImage *canvas, int eyeDX, int eyeDY);
+	void draw(cv::Mat &canvas, int eyeDX, int eyeDY);
 	void save();
 	void save(CvFileStorage *out, const char *name);
 	void load();
 	void load(CvFileStorage *in, CvFileNode *node);
-	void update(const IplImage *image, const IplImage *eyeGrey);
-	void updateLeft(const IplImage *image, const IplImage *eyeGrey);
+	void update(const cv::Mat *image, const cv::Mat *eyeGrey);
+	void updateLeft(const cv::Mat *image, const cv::Mat *eyeGrey);
 	Point getTarget(int id);
 	int getTargetId(Point point);
 	void calculateTrainingErrors();
@@ -103,9 +103,9 @@ private:
 	double _betaX, _gammaX, _betaY, _gammaY, _sigv[100];	// Max 100 calibration points
 	double _xv[100][2], _fvX[100], _fvY[100];
 
-	IplImage *_nnEye;
+	cv::Mat *_nnEye;
 
-	static double imageDistance(const IplImage *image1, const IplImage *image2);
+	static double imageDistance(const cv::Mat *image1, const cv::Mat *image2);
 	static double covarianceFunction(const Utils::SharedImage &image1, const Utils::SharedImage &image2);
 
 	void updateGaussianProcesses();

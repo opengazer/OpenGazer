@@ -14,18 +14,18 @@ public:
 
 private:
 	TrackerOutput *_output;
-	IplImage *_current;
+	cv::Mat _current;
 	WindowPointer *_calibrationPointer;
-	IplImage *_repositioningImage;
-	IplImage *_origImage;
-	IplImage *_background;
-	IplImage *_frog;
-	IplImage *_target;
+	cv::Mat *_repositioningImage;
+	cv::Mat _origImage;
+	cv::Mat _background;
+	cv::Mat _frog;
+	cv::Mat _target;
 	//IplImage *_black;
-	IplImage *_frogMask;
-	IplImage *_gaussianMask;
-	IplImage *_clearingImage;
-	CvRect *_lastUpdatedRegion;
+	cv::Mat _frogMask;
+	cv::Mat _gaussianMask;
+	cv::Mat _clearingImage;
+	cv::Rect _lastUpdatedRegion;
 	int _frogX;
 	int _frogY;
 	int _frogCounter;
@@ -36,7 +36,7 @@ private:
 	long _startTime;
 	long _futureTime;
 	long _tempTime;
-	CvScalar _backgroundColor;
+	cv::Scalar _backgroundColor;
 	bool _isWindowInitialized;
 
 	bool onIdle();
@@ -51,9 +51,9 @@ class GameWindow: public Gtk::Window {
 public:
 	GameWindow(TrackerOutput *output);
 	virtual ~GameWindow();
-	IplImage *getCurrent();
+	cv::Mat *getCurrent();
 	void setCalibrationPointer(WindowPointer *pointer);
-	void setRepositioningImage(IplImage *image);
+	void setRepositioningImage(cv::Mat *image);
 	void changeWindowColor(double illuminationLevel);
 
 private:

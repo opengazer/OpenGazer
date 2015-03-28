@@ -6,12 +6,10 @@ public:
 
 	FaceDetector(char *cascadeName="haarcascade_frontalface_alt.xml");
 	~FaceDetector();
-	std::vector<CvRect> detect(const IplImage *img);
-	std::vector<CvRect> detectInGrayscale(const IplImage *img);
+	cv::Rect detect(const cv::Mat img);
 
 private:
-	CvMemStorage *_storage;
-	CvHaarClassifierCascade *_cascade ;
+	cv::CascadeClassifier _cascade;
 };
 
 

@@ -5,7 +5,7 @@
 #include "Point.h"
 
 namespace Utils {
-	typedef boost::shared_ptr<const IplImage> SharedImage;
+	typedef boost::shared_ptr<const cv::Mat> SharedImage;
 
 	#define xForEach(iter, container) \
 		for (typeof(container.begin()) iter = container.begin(); iter != container.end(); iter++)
@@ -145,8 +145,8 @@ namespace Utils {
 	}
 
 
-	boost::shared_ptr<IplImage> createImage(const CvSize &size, int depth, int channels);
-	void releaseImage(IplImage *image);
+	boost::shared_ptr<cv::Mat> createImage(const CvSize &size, int type);
+	void releaseImage(cv::Mat *image);
 
 	void mapToFirstMonitorCoordinates(Point monitor2Point, Point &monitor1Point);
 	void mapToVideoCoordinates(Point monitor2Point, double resolution, Point &videoPoint, bool reverseX=true);
@@ -155,13 +155,17 @@ namespace Utils {
 
 	std::string getUniqueFileName(std::string directory, std::string baseFileName);
 
+	void normalizeGrayScaleImage(cv::Mat *image, double standardMean=127, double standardStd=50);
 	void normalizeGrayScaleImage(IplImage *image, double standardMean=127, double standardStd=50);
-	void normalizeGrayScaleImage2(IplImage *image, double standardMean=127, double standardStd=50);
+	//void normalizeGrayScaleImage2(cv::Mat *image, double standardMean=127, double standardStd=50);
 
+	void convertAndResize(const cv::Mat &src, cv::Mat& gray, cv::Mat& resized, double scale);
+	
 	void printMat(CvMat *mat);
+	void printMat(cv::Mat mat);
 }
 
 namespace boost {
-	template <> void checked_delete(IplImage *image);
+	template <> void checked_delete(cv::Mat *image);
 }
 

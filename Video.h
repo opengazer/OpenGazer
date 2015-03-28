@@ -4,15 +4,17 @@
 
 class VideoInput {
 private:
-	CvCapture *_capture;
+	cv::VideoCapture _capture;
 	long _lastFrameTime;
 
 public:
 	int frameCount;
-	IplImage *frame;
-	CvSize size;
+	cv::Mat frame;
+	IplImage *cFrame;
+	cv::Size size;
 	bool captureFromVideo;
 	std::string resolutionParameter;
+    double videoResolution;
 
 	VideoInput();
 	VideoInput(std::string resolution);
@@ -24,11 +26,11 @@ public:
 
 class VideoWriter {
 public:
-	VideoWriter(CvSize size, std::string filename);
+	VideoWriter(cv::Size, std::string filename);
 	~VideoWriter();
-	void write(const IplImage *image);
+	void write(const cv::Mat &image);
 
 private:
-	CvVideoWriter *_video;
+	cv::VideoWriter _video;
 };
 

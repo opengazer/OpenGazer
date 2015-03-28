@@ -10,34 +10,33 @@ class PointTracker {
 public:
 	static const int eyePoint1 = 0;
 	static const int eyePoint2 = 1;
-	std::vector<char> status;
-	std::vector<CvPoint2D32f> origPoints, currentPoints, lastPoints;
+	std::vector<uchar> status;
+	std::vector<cv::Point2f> origPoints, currentPoints, lastPoints;
 
-	PointTracker(const CvSize &size);
+	PointTracker(const cv::Size &size);
 	void clearTrackers();
 	void addTracker(const Point &point);
 	void updateTracker(int id, const Point &point);
 	void removeTracker(int id);
 	int getClosestTracker(const Point &point);
-	void track(const IplImage *frame, int pyramidDepth=1);
-	void retrack(const IplImage *frame, int pyramidDepth=1);
+	void track(const cv::Mat &frame, int pyramidDepth=1);
+	void retrack(const cv::Mat &frame, int pyramidDepth=1);
 	int countActivePoints();
 	bool areAllPointsActive();
 	int pointCount();
-	std::vector<Point> getPoints(const std::vector<CvPoint2D32f> PointTracker::*points, bool allPoints=true);
-	void draw(IplImage *canvas);
+	std::vector<Point> getPoints(const std::vector<cv::Point2f> PointTracker::*points, bool allPoints=true);
+	void draw(cv::Mat &canvas);
 	void normalizeOriginalGrey();
 
-	void save(std::string filename, std::string newname, const IplImage *frame);
-	void load(std::string filename, std::string newname, const IplImage *frame);
+	void save(std::string filename, std::string newname, const cv::Mat frame);
+	void load(std::string filename, std::string newname, const cv::Mat frame);
 	void saveImage();
 
 private:
 	static const int _winSize = 11;
 	int _flags;
-	boost::scoped_ptr<IplImage> _grey, _origGrey, _lastGrey;
-	boost::scoped_ptr<IplImage> _pyramid, _origPyramid, _lastPyramid;
-
+	cv::Mat _grey, _origGrey, _lastGrey;
+	
 	void synchronizePoints();
 };
 

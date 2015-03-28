@@ -4,7 +4,7 @@ GazeArea::GazeArea(int argc, char **argv):
 	_lastPointId(-1),
 	gazeTracker(argc, argv)
 {
-	set_size_request(gazeTracker.canvas->width, gazeTracker.canvas->height);
+	set_size_request(gazeTracker.canvas->size().width, gazeTracker.canvas->size().height);
 	Glib::signal_idle().connect(sigc::mem_fun(*this, &GazeArea::onIdle));
 	add_events(Gdk::BUTTON_PRESS_MASK);
 	add_events(Gdk::BUTTON_RELEASE_MASK);
@@ -34,8 +34,9 @@ bool GazeArea::on_expose_event(GdkEventExpose *event) {
 		const int height = allocation.get_height();
 
 		Glib::RefPtr<Gdk::GC> gc = Gdk::GC::create(window);
-		const IplImage *image = gazeTracker.canvas.get();
-		Glib::RefPtr<Gdk::Pixbuf> pixbuf = Gdk::Pixbuf::create_from_data((guint8*) image->imageData, Gdk::COLORSPACE_RGB, false, image->depth, image->width, image->height, image->widthStep);
+		const cv::Mat *image = gazeTracker.canvas.get();
+
+		Glib::RefPtr<Gdk::Pixbuf> pixbuf = Gdk::Pixbuf::create_from_data((guint8*) image->data, Gdk::COLORSPACE_RGB, false, 8, image->size().width, image->size().height, (int) image->step[0]);
 
 		window->draw_pixbuf(gc, pixbuf, 0, 0, 0, 0, width, height, Gdk::RGB_DITHER_NONE, 0, 0);
 	}
@@ -64,7 +65,7 @@ bool GazeArea::on_button_press_event(GdkEventButton *event) {
 			Point point(event->x, event->y);
 
 			int closest = pointTracker.getClosestTracker(point);
-			if (closest >= 0 && point.distance(pointTracker.currentPoints[closest]) <= 25) {
+			if (closest >= 0 && point.distance2f(pointTracker.currentPoints[closest]) <= 25) {
 				_lastPointId = closest;
 			} else {
 				_lastPointId = -1;

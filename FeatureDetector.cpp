@@ -1,34 +1,34 @@
 #include "FeatureDetector.h"
 #include "utils.h"
 
-FeatureDetector::FeatureDetector(CvSize eyeSize):
+FeatureDetector::FeatureDetector(cv::Size eyeSize):
 	_eyeSize(eyeSize),
-	_sumImage(cvCreateImage(eyeSize, IPL_DEPTH_32F, 1)),
-	_sum2Image(cvCreateImage(eyeSize, IPL_DEPTH_32F, 1)),
-	_temp(cvCreateImage(eyeSize, IPL_DEPTH_32F, 1)),
+	_sumImage(new cv::Mat(eyeSize, CV_32FC1)),
+	_sum2Image(new cv::Mat(eyeSize, CV_32FC1)),
+	_temp(new cv::Mat(eyeSize, CV_32FC1)),
 	_samples(0)
 {
-	cvZero(_sumImage.get());
-	cvZero(_sum2Image.get());
+	_sumImage->setTo(cv::Scalar(0,0,0));
+	_sum2Image->setTo(cv::Scalar(0,0,0));
 }
 
-void FeatureDetector::addSample(const IplImage *source) {
-	cvConvertScale(source, _temp.get());
-	cvAcc(_temp.get(), _sumImage.get());
-	cvSquareAcc(_temp.get(), _sum2Image.get());
+void FeatureDetector::addSample(const cv::Mat *source) {
+	source->convertTo(*_temp, _temp->type());
+	cv::accumulate(*_temp, *_sumImage);
+	cv::accumulateSquare(*_temp, *_sum2Image);
 	_samples++;
 }
 
-boost::shared_ptr<IplImage> FeatureDetector::getMean() {
-	boost::shared_ptr<IplImage> mean(Utils::createImage(_eyeSize, IPL_DEPTH_32F, 1));
-	cvConvertScale(_sumImage.get(), mean.get(), 1.0 / _samples);
+boost::shared_ptr<cv::Mat> FeatureDetector::getMean() {
+	boost::shared_ptr<cv::Mat> mean(Utils::createImage(_eyeSize, CV_32FC1));
+	_sumImage->convertTo(*mean, mean->type(), 1.0 / _samples, 0);
 	return mean;
 }
 
-boost::shared_ptr<IplImage> FeatureDetector::getVariance() {
-	boost::shared_ptr<IplImage> variance(Utils::createImage(_eyeSize, IPL_DEPTH_32F, 1));
-	cvMul(_sumImage.get(), _sumImage.get(), _temp.get(), -1.0 / _samples);
-	cvAdd(_temp.get(), _sum2Image.get(), _temp.get());
-	cvScale(_temp.get(), variance.get(), 1.0 / _samples);
+boost::shared_ptr<cv::Mat> FeatureDetector::getVariance() {
+	boost::shared_ptr<cv::Mat> variance(Utils::createImage(_eyeSize, CV_32FC1));
+	cv::multiply(*_sumImage, *_sumImage, *_temp, -1.0 / _samples);
+	cv::add(*_temp, *_sum2Image, *_temp);
+	_temp->convertTo(*variance, variance->type(), 1.0 / _samples, 0);
 	return variance;
 }

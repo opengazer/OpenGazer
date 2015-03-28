@@ -6,7 +6,7 @@
 #include "utils.h"
 
 namespace {
-	CvScalar backgroundColor2;
+	cv::Scalar backgroundColor2(255, 255, 255);
 
 	bool buttonEvents() {
 		static int mode = 1;
@@ -19,7 +19,8 @@ namespace {
 }
 
 GameArea::GameArea(TrackerOutput *output):
-	_output(output)
+	_output(output), 
+	_backgroundColor(153, 75, 75)
 {
 	Glib::RefPtr<Gdk::Screen> screen = Gdk::Display::get_default()->get_default_screen();
 	Gdk::Rectangle rect;
@@ -36,42 +37,40 @@ GameArea::GameArea(TrackerOutput *output):
 	Glib::RefPtr<Gdk::Window> window = get_window();
 	//this->signal_key_press_event().connect(sigc::mem_fun(*this, &GameArea::onIdle));
 
-	_origImage = (IplImage *)cvLoadImage("./background_full.png");
-	cvCvtColor(_origImage, _origImage, CV_RGB2BGR);
+	_origImage = cv::imread("./background_full.png", CV_LOAD_IMAGE_COLOR);
+	cvtColor(_origImage, _origImage, CV_RGB2BGR);
 
-	_frog = (IplImage *)cvCreateImage(cvSize(180, 180), 8, 3);
-	_target = (IplImage *)cvCreateImage(cvSize(50, 50), 8, 3);
+	_frog.create(cv::Size(180, 180), CV_8UC3);
+	_target.create(cv::Size(50, 50), CV_8UC3);
 
-	_background = (IplImage *)cvCreateImage(cvSize(rect.get_width(), rect.get_height()), 8, 3);
-	_current = (IplImage *)cvCreateImage(cvSize(_background->width, _background->height), 8, 3);
-	//_black = (IplImage *)cvCreateImage(cvSize(_background->width, _background->height), 8, 3);
-	_clearingImage = (IplImage *)cvCreateImage(cvSize(2000, 1500), 8, 3);
+	_background.create(cv::Size(rect.get_width(), rect.get_height()), CV_8UC3);
+	_current.create(cv::Size(_background.size().width, _background.size().height), CV_8UC3);
+	//_black.create(cv::Size(_background.size().width, _background.size().height), CV_8UC3);
+	_clearingImage.create(cv::Size(2000, 1500), CV_8UC3);
 
-	std::cout << "IMAGES CREATED WITH SIZE: " << _background->width << "x" << _background->height << std::endl;
+	std::cout << "IMAGES CREATED WITH SIZE: " << _background.size().width << "x" << _background.size().height << std::endl;
 
-	cvSetZero(_background);
-	//cvSetZero(_black);
-	_backgroundColor = CV_RGB(153, 75, 75);
-	backgroundColor2 = CV_RGB(255, 255, 255);
-	//cvSet(_background, _backgroundColor);
-	//cvSet(_black, backgroundColor2);
+	_background.setTo(cv::Scalar(0,0,0));
 
+	//_background.setTo(_backgroundColor);
+	//_black.setTo(backgroundColor2);
+	
 	// Clearing image is filled with white
-	//cvSet(_clearingImage, backgroundColor2);
-	cvSet(_clearingImage, CV_RGB(255, 255, 255));
+	//_clearingImage.setTo(backgroundColor2);
+	_clearingImage.setTo(cv::Scalar(255, 255, 255));
 
-	_gameAreaX = (rect.get_width() - _origImage->width) / 2;
-	_gameAreaY = (rect.get_height() - _origImage->height) / 2;
-	_gameAreaWidth = _origImage->width;
-	_gameAreaHeight = _origImage->height;
+	_gameAreaX = (rect.get_width() - _origImage.size().width) / 2;
+	_gameAreaY = (rect.get_height() - _origImage.size().height) / 2;
+	_gameAreaWidth = _origImage.size().width;
+	_gameAreaHeight = _origImage.size().height;
 
-	_frog = (IplImage *)cvLoadImage("./frog.png");
-	cvCvtColor(_frog, _frog, CV_RGB2BGR);
+	_frog = cv::imread("./frog.png", CV_LOAD_IMAGE_COLOR);
+	cvtColor(_frog, _frog, CV_RGB2BGR);
 
-	_frogMask = (IplImage *)cvLoadImage("./frog-mask.png");
-	_gaussianMask = (IplImage *)cvLoadImage("./gaussian-mask.png");
+	_frogMask = cv::imread("./frog-mask.png", CV_LOAD_IMAGE_COLOR);
+	_gaussianMask = cv::imread("./gaussian-mask.png", CV_LOAD_IMAGE_COLOR);
 
-	_target = (IplImage *)cvLoadImage("./target.png");
+	_target = cv::imread("./target.png", CV_LOAD_IMAGE_COLOR);
 
 	_frogCounter = 0;
 	calculateNewFrogPosition();
@@ -85,11 +84,11 @@ GameArea::GameArea(TrackerOutput *output):
 
 	_calibrationPointer = NULL;
 
-	_lastUpdatedRegion = new CvRect();
-	_lastUpdatedRegion->x = 0;
-	_lastUpdatedRegion->y = 0;
-	_lastUpdatedRegion->width = rect.get_width() - 54;
-	_lastUpdatedRegion->height = rect.get_height() - 24;
+	_lastUpdatedRegion.x = 0;
+	_lastUpdatedRegion.y = 0;
+	_lastUpdatedRegion.width = rect.get_width();// - 54;
+	_lastUpdatedRegion.height = rect.get_height();// - 24;
+
 	_isWindowInitialized = false;
 }
 
@@ -107,24 +106,24 @@ void GameArea::showContents() {
 			std::cout << "PAUSED, DRAWING HERE" << std::endl;
 
 			Glib::RefPtr<Gdk::GC> gc = Gdk::GC::create(window);
-			CvRect bounds = cvRect((_background->width - _repositioningImage->width) / 2, (_background->height - _repositioningImage->height) / 2, _repositioningImage->width, _repositioningImage->height);
+			CvRect bounds = cvRect((_background.size().width - _repositioningImage->size().width) / 2, (_background.size().height - _repositioningImage->size().height) / 2, _repositioningImage->size().width, _repositioningImage->size().height);
 
 			Glib::RefPtr<Gdk::Pixbuf> pixbuf = Gdk::Pixbuf::create_from_data(
-				(guint8 *)_repositioningImage->imageData,
+				(guint8 *)_repositioningImage->data,
 				Gdk::COLORSPACE_RGB,
 				false,
-				_repositioningImage->depth,
-				_repositioningImage->width,
-				_repositioningImage->height,
-				_repositioningImage->widthStep
+				8,
+				_repositioningImage->size().width,
+				_repositioningImage->size().height,
+				(int) _repositioningImage->step[0]
 			);
 
 			window->draw_pixbuf(gc, pixbuf, 0, 0, bounds.x, bounds.y, bounds.width, bounds.height, Gdk::RGB_DITHER_NONE, 0, 0);
 
-			_lastUpdatedRegion->x = bounds.x;
-			_lastUpdatedRegion->y = bounds.y;
-			_lastUpdatedRegion->width = bounds.width;
-			_lastUpdatedRegion->height = bounds.height;
+			_lastUpdatedRegion.x = bounds.x;
+			_lastUpdatedRegion.y = bounds.y;
+			_lastUpdatedRegion.width = bounds.width;
+			_lastUpdatedRegion.height = bounds.height;
 		}
 
 #ifdef EXPERIMENT_MODE
@@ -133,8 +132,8 @@ void GameArea::showContents() {
 		else if(Application::status == Application::STATUS_CALIBRATED) {
 #endif
 			//Gtk::Allocation allocation = get_allocation();
-			const int width = _background->width;
-			const int height = _background->height;
+			const int width = _background.size().width;
+			const int height = _background.size().height;
 
 			Glib::RefPtr<Gdk::GC> gc = Gdk::GC::create(window);
 
@@ -172,11 +171,11 @@ void GameArea::showContents() {
 			//std::cout << "separately: (" << output->gazepoint.x << ", " << output->gazepoint.y << ") and (" << output->gazepoint_left.x << ", " << output->gazepoint_left.y << ")" << std::endl;
 			//std::cout << "  --errors: (" << output->nnGazePoint.x << ", " << output->nnGazePoint.y << ") and (" << output->nnGazePointLeft.x << ", " << output->nnGazePointLeft.y << ")" << std::endl;
 
-			//cvSet(_black, backgroundColor2);
+			//_black.setTo(backgroundColor2);
 
-			cvResetImageROI(_background);
-			cvResetImageROI(_current);
-			cvResetImageROI(_gaussianMask);
+			//cvResetImageROI(_background);
+			//cvResetImageROI(_current);
+			//cvResetImageROI(_gaussianMask);
 
 			CvRect bounds = cvRect(estimationX - 100, estimationY - 100, 200, 200);
 			CvRect gaussianBounds = cvRect(0, 0, 200, 200);
@@ -195,12 +194,12 @@ void GameArea::showContents() {
 				bounds.y = 0;
 			}
 
-			if (bounds.width + bounds.x > _background->width) {
-				bounds.width = _background->width - bounds.x;
+			if (bounds.width + bounds.x > _background.size().width) {
+				bounds.width = _background.size().width - bounds.x;
 			}
 
-			if (bounds.height + bounds.y > _background->height) {
-				bounds.height = _background->height - bounds.y;
+			if (bounds.height + bounds.y > _background.size().height) {
+				bounds.height = _background.size().height - bounds.y;
 			}
 			gaussianBounds.width = bounds.width;
 			gaussianBounds.height = bounds.height;
@@ -215,18 +214,18 @@ void GameArea::showContents() {
 				//std::cout << "IMPOSSIBLE CHANGE 2" << std::endl;
 			}
 
-			if (estimationX >= _background->width) {
-				estimationX = _background->width -1;
+			if (estimationX >= _background.size().width) {
+				estimationX = _background.size().width -1;
 				//std::cout << "IMPOSSIBLE CHANGE 3" << std::endl;
 			}
-			if (estimationY >= _background->height) {
-				estimationY = _background->height -1;
+			if (estimationY >= _background.size().height) {
+				estimationY = _background.size().height -1;
 				//std::cout << "IMPOSSIBLE CHANGE 4" << std::endl;
 			}
 
 			//std::cout << "4" << std::endl;
-			//cvCopy(_black, current);
-			cvSet(_current, backgroundColor2);
+			//_black.copyTo(_current);
+			_current.setTo(backgroundColor2);
 			//std::cout << "44" << std::endl;
 
 			//std::cout << "Bounds: " << bounds.x << ", " << bounds.y << "," << bounds.width << ", " << bounds.height << std::endl;
@@ -234,38 +233,38 @@ void GameArea::showContents() {
 
 			if (bounds.width > 0 && bounds.height > 0) {
 				if (estimationX != 0 || estimationY != 0) {
-					cvSetImageROI(_background, bounds);
-					cvSetImageROI(_current, bounds);
-					cvSetImageROI(_gaussianMask, gaussianBounds);
+					//cvSetImageROI(_background, bounds);	// TODO REMOVE
+					//cvSetImageROI(_current, bounds);
+					//cvSetImageROI(_gaussianMask, gaussianBounds);
 					//std::cout << "5" << std::endl;
-					cvCopy(_background, _current, _gaussianMask);
+					_background(bounds).copyTo(_current(bounds), _gaussianMask(gaussianBounds));
 					//std::cout << "6" << std::endl;
 				}
 			}
 
-			cvResetImageROI(_background);
-			cvResetImageROI(_current);
-			cvResetImageROI(_gaussianMask);
+			//cvResetImageROI(_background);
+			//cvResetImageROI(_current);
+			//cvResetImageROI(_gaussianMask);
 
 			clearLastUpdatedRegion();
 
 			// Draw only the region which is to be updated
 			Glib::RefPtr<Gdk::Pixbuf> pixbuf = Gdk::Pixbuf::create_from_data(
-				(guint8 *)_current->imageData,
+				(guint8 *)_current.data,
 				Gdk::COLORSPACE_RGB,
 				false,
-				_current->depth,
-				_current->width,
-				_current->height,
-				_current->widthStep
+				8,
+				_current.size().width,
+				_current.size().height,
+				(int) _current.step[0]
 			);
 
 			window->draw_pixbuf(gc, pixbuf, bounds.x, bounds.y, bounds.x, bounds.y, bounds.width, bounds.height, Gdk::RGB_DITHER_NONE, 0, 0);
 
-			_lastUpdatedRegion->x = bounds.x;
-			_lastUpdatedRegion->y = bounds.y;
-			_lastUpdatedRegion->width = bounds.width;
-			_lastUpdatedRegion->height = bounds.height;
+			_lastUpdatedRegion.x = bounds.x;
+			_lastUpdatedRegion.y = bounds.y;
+			_lastUpdatedRegion.width = bounds.width;
+			_lastUpdatedRegion.height = bounds.height;
 
 			int diff = ((estimationX - _frogX) * (estimationX - _frogX)) + ((estimationY - _frogY) * (estimationY - _frogY));
 			if (diff < 35000) {	// If less than 150 pix, count
@@ -288,21 +287,21 @@ void GameArea::showContents() {
 			Glib::RefPtr<Gdk::GC> gc = Gdk::GC::create(window);
 
 			Glib::RefPtr<Gdk::Pixbuf> pixbuf = Gdk::Pixbuf::create_from_data(
-				(guint8 *)_clearingImage->imageData,
+				(guint8 *)_clearingImage.data,
 				Gdk::COLORSPACE_RGB,
 				false,
-				_clearingImage->depth,
-				_clearingImage->width,
-				_clearingImage->height,
-				_clearingImage->widthStep
+				8,
+				_clearingImage.size().width,
+				_clearingImage.size().height,
+				(int) _clearingImage.step[0]
 			);
 
 			window->draw_pixbuf(gc, pixbuf, 0, 0, 0, 0, 1920, 1080, Gdk::RGB_DITHER_NONE , 0, 0);
 
 			_isWindowInitialized = true;
 		} else if (_calibrationPointer != NULL){	// Calibration
-			const int width = _background->width;
-			const int height = _background->height;
+			const int width = _background.size().width;
+			const int height = _background.size().height;
 			CvRect currentlyUpdatedRegion = cvRect(0, 0, 0, 0);
 			Glib::RefPtr<Gdk::GC> gc = Gdk::GC::create(window);
 			Point calibrationPoint = _calibrationPointer->getPosition();
@@ -335,18 +334,18 @@ void GameArea::showContents() {
 					currentBounds.y = 0;
 				}
 
-				if (currentBounds.width + currentBounds.x > _background->width) {
-					currentBounds.width = _background->width - currentBounds.x;
+				if (currentBounds.width + currentBounds.x > _background.size().width) {
+					currentBounds.width = _background.size().width - currentBounds.x;
 				}
 
-				if (currentBounds.height + currentBounds.y > _background->height) {
-					currentBounds.height = _background->height - currentBounds.y;
+				if (currentBounds.height + currentBounds.y > _background.size().height) {
+					currentBounds.height = _background.size().height - currentBounds.y;
 				}
 
 				//cvSetImageROI(current, currentBounds);
 				//cvSetImageROI(_target, targetBounds);
 				//std::cout << "7" << std::endl;
-				//cvCopy(_target, current);
+				//_target.copyTo(_current);
 				//std::cout << "8" << std::endl;
 
 				//cvResetImageROI(current);
@@ -357,21 +356,21 @@ void GameArea::showContents() {
 
 				// Draw only the region which is to be updated
 				Glib::RefPtr<Gdk::Pixbuf> pixbuf = Gdk::Pixbuf::create_from_data(
-					(guint8 *)_target->imageData,
+					(guint8 *)_target.data,
 					Gdk::COLORSPACE_RGB,
 					false,
-					_target->depth,
-					_target->width,
-					_target->height,
-					_target->widthStep
+					8,
+					_target.size().width,
+					_target.size().height,
+					(int) _target.step[0]
 				);
 
 				window->draw_pixbuf(gc, pixbuf, targetBounds.x,targetBounds.y, currentBounds.x, currentBounds.y, targetBounds.width, targetBounds.height, Gdk::RGB_DITHER_NONE, 0, 0);
 
-				_lastUpdatedRegion->x = currentBounds.x;
-				_lastUpdatedRegion->y = currentBounds.y;
-				_lastUpdatedRegion->width = targetBounds.width;
-				_lastUpdatedRegion->height = targetBounds.height;
+				_lastUpdatedRegion.x = currentBounds.x;
+				_lastUpdatedRegion.y = currentBounds.y;
+				_lastUpdatedRegion.width = targetBounds.width;
+				_lastUpdatedRegion.height = targetBounds.height;
 			}
 		} else {
 			clearLastUpdatedRegion();
@@ -395,41 +394,41 @@ void GameArea::calculateNewFrogPosition() {
 	std::cout << "Preparing bg image" << std::endl;
 
 	// Copy the initial background image to "background"
-	cvSetZero(_background);
-	cvSetImageROI(_background, cvRect(_gameAreaX, _gameAreaY, _gameAreaWidth, _gameAreaHeight));
-	cvCopy(_origImage, _background);
+	_background.setTo(cv::Scalar(0,0,0));
+	//cvSetImageROI(_background, );
+	_origImage.copyTo(_background(cv::Rect(_gameAreaX, _gameAreaY, _gameAreaWidth, _gameAreaHeight)));
 	std::cout << "Original image copied" << std::endl;
 
 	// Copy the frog image to the background
-	cvSetImageROI(_background, cvRect(_frogX - 90, _frogY - 90, 180, 180));
-	cvCopy(_frog, _background, _frogMask);
-	cvResetImageROI(_background);
+	//cvSetImageROI(_background, );
+	_frog.copyTo(_background(cv::Rect(_frogX - 90, _frogY - 90, 180, 180)), _frogMask);
+	//cvResetImageROI(_background);
 	std::cout << "Background prepared" << std::endl;
 }
 
 void GameArea::clearLastUpdatedRegion() {
-	if (_lastUpdatedRegion->width > 0) {
+	if (_lastUpdatedRegion.width > 0) {
 		Glib::RefPtr<Gdk::Window> window = get_window();
 		Glib::RefPtr<Gdk::GC> gc = Gdk::GC::create(window);
 
 		Glib::RefPtr<Gdk::Pixbuf> pixbuf = Gdk::Pixbuf::create_from_data(
-			(guint8 *)_clearingImage->imageData,
+			(guint8 *)_clearingImage.data,
 			Gdk::COLORSPACE_RGB,
 			false,
-			_clearingImage->depth,
-			_clearingImage->width,
-			_clearingImage->height,
-			_clearingImage->widthStep
+			8,
+			_clearingImage.size().width,
+			_clearingImage.size().height,
+			(int) _clearingImage.step[0]
 		);
 
-		window->draw_pixbuf(gc, pixbuf, 0,0, _lastUpdatedRegion->x, _lastUpdatedRegion->y, _lastUpdatedRegion->width, _lastUpdatedRegion->height, Gdk::RGB_DITHER_NORMAL , 0, 0);
+		window->draw_pixbuf(gc, pixbuf, 0,0, _lastUpdatedRegion.x, _lastUpdatedRegion.y, _lastUpdatedRegion.width, _lastUpdatedRegion.height, Gdk::RGB_DITHER_NORMAL , 0, 0);
 
-		//std::cout << "CLEARING THE AREA: " << _lastUpdatedRegion->x << ", " << _lastUpdatedRegion->y << ", " << _lastUpdatedRegion->width << ", " << _lastUpdatedRegion->height << "." << std::endl;
+		//std::cout << "CLEARING THE AREA: " << _lastUpdatedRegion.x << ", " << _lastUpdatedRegion.y << ", " << _lastUpdatedRegion.width << ", " << _lastUpdatedRegion.height << "." << std::endl;
 
-		_lastUpdatedRegion->x = 0;
-		_lastUpdatedRegion->y = 0;
-		_lastUpdatedRegion->width = 0;
-		_lastUpdatedRegion->height = 0;
+		_lastUpdatedRegion.x = 0;
+		_lastUpdatedRegion.y = 0;
+		_lastUpdatedRegion.width = 0;
+		_lastUpdatedRegion.height = 0;
 	}
 }
 
@@ -494,15 +493,15 @@ GameWindow::~GameWindow() {
 }
 
 
-IplImage *GameWindow::getCurrent(){
-	return _picture._current;
+cv::Mat *GameWindow::getCurrent(){
+	return &(_picture._current);
 }
 
 void GameWindow::setCalibrationPointer(WindowPointer *pointer) {
 	_picture._calibrationPointer = pointer;
 }
 
-void GameWindow::setRepositioningImage(IplImage *image) {
+void GameWindow::setRepositioningImage(cv::Mat *image) {
 	_picture._repositioningImage = image;
 }
 

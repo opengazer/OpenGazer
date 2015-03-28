@@ -43,10 +43,10 @@ HeadTracker::HeadTracker(PointTracker &pointTracker):
 {
 }
 
-void HeadTracker::draw(IplImage *image) {
+void HeadTracker::draw(cv::Mat &image) {
 	//std::cout << "state: "<< rotX << " " << rotY << " " << atX << " " << atY << std::endl;
 
-	cvLine(image, cvPoint(320, 240), cvPoint(320 + int(atX * 50), 240 + int(atY * 50)), CV_RGB(255,255,255));
+	cv::line(image, cv::Point(320, 240), cv::Point(320 + int(atX * 50), 240 + int(atY * 50)), cv::Scalar(255,255,255));
 
 	//for (int i = 0; i < pointTracker.pointCount; i++) {
 	// 	cvLine(
@@ -57,15 +57,15 @@ void HeadTracker::draw(IplImage *image) {
 	//}
 
 	for (int i = 0; i < pointTracker.pointCount(); i++) {
-		cvLine(
+		cv::line(
 			image,
-			cvPoint((int)pointTracker.currentPoints[i].x, (int)pointTracker.currentPoints[i].y),
-			cvPoint((int)pointTracker.currentPoints[i].x, int(pointTracker.currentPoints[i].y + _depths[i] * 100)),
-			CV_RGB(0,0,255));
+			cv::Point((int)pointTracker.currentPoints[i].x, (int)pointTracker.currentPoints[i].y),
+			cv::Point((int)pointTracker.currentPoints[i].x, int(pointTracker.currentPoints[i].y + _depths[i] * 100)),
+			cv::Scalar(0,0,255));
 	}
 
 	double scale = 10;
-	cvLine(image, cvPoint(320, 240), cvPoint(320 + int(rotY * scale), 240 + int(rotX * scale)), CV_RGB(255,0,0));
+	cv::line(image, cv::Point(320, 240), cvPoint(320 + int(rotY * scale), 240 + int(rotX * scale)), cv::Scalar(255,255,255));
 }
 
 void HeadTracker::updateTracker() {

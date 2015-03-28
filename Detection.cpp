@@ -80,10 +80,12 @@ namespace Detection {
 			return false;
 		}
 
-		//cvRectangle(image, cvPoint(nose->x, nose->y), cvPoint(nose->x + nose->width, nose->y + nose->height), CV_RGB(0, 255, 0), 2, 8, 0);
-
 		points[0] = Point(noseRect.x + nose->x + nose->width * 0.33, noseRect.y + nose->y + nose->height * 0.6);
 		points[1] = Point(noseRect.x + nose->x + nose->width * 0.67, noseRect.y + nose->y + nose->height * 0.6);
+
+		//cvRectangle(image, cvPoint(noseRect.x + nose->x, noseRect.y + nose->y), cvPoint(noseRect.x + nose->x + nose->width, noseRect.y + nose->y + nose->height), CV_RGB(0, 255, 0), 2, 8, 0);
+		//cvCircle(image, cvPoint(points[0].x, points[0].y), 3, CV_RGB(0,255,0), -1, 8, 0);
+		//cvCircle(image, cvPoint(points[1].x, points[1].y), 3, CV_RGB(0,255,0), -1, 8, 0);
 
 		return true;
 	}
@@ -145,10 +147,12 @@ namespace Detection {
 			return false;
 		}
 
-		//cvRectangle( image, cvPoint(mouth->x, mouth->y), cvPoint(mouth->x + mouth->width, mouth->y + mouth->height), CV_RGB(0, 255, 0), 2, 8, 0 );
-
 		points[0] = Point(mouthRect.x + mouth->x + mouth->width * 0.1, mouthRect.y + mouth->y + mouth->height * 0.4);
 		points[1] = Point(mouthRect.x + mouth->x + mouth->width * 0.9, mouthRect.y + mouth->y + mouth->height * 0.4);
+
+		//cvRectangle(image, cvPoint(mouthRect.x + mouth->x, mouthRect.y + mouth->y), cvPoint(mouthRect.x + mouth->x + mouth->width, mouthRect.y + mouth->y + mouth->height), CV_RGB(0, 255, 0), 2, 8, 0 );
+		//cvCircle(image, cvPoint(points[0].x, points[0].y), 3, CV_RGB(0,255,0), -1, 8, 0);
+		//cvCircle(image, cvPoint(points[1].x, points[1].y), 3, CV_RGB(0,255,0), -1, 8, 0);
 
 		return true;
 	}
@@ -195,7 +199,7 @@ namespace Detection {
 
 		std::cout << "Resolution: " << resolution << ", both eye reg.:" << bothEyes->width << ", " << bothEyes->height << std::endl;
 
-		//cvRectangle(image, cvPoint(bothEyes->x, bothEyes->y), cvPoint(bothEyes->x + bothEyes->width, bothEyes->y + bothEyes->height), CV_RGB(0, 255, 0), 2, 8, 0);
+		cvRectangle(image, cvPoint(bothEyes->x, bothEyes->y), cvPoint(bothEyes->x + bothEyes->width, bothEyes->y + bothEyes->height), CV_RGB(0, 255, 0), 2, 8, 0);
 
 		int cornerCount = 100;
 		eyeRegionImage = cvCreateImage(cvSize(bothEyes->width, bothEyes->height), image->depth, image->nChannels);
@@ -226,12 +230,12 @@ namespace Detection {
 				leftEyeCornersXSum += corners[j].x;
 				leftEyeCornersYSum += corners[j].y;
 				leftEyeCornersCount++;
-				cvCircle(eyeRegionImage, cvPoint(corners[j].x, corners[j].y), 3, CV_RGB(255,0,0), -1, 8,0);
+				//cvCircle(eyeRegionImage, cvPoint(corners[j].x, corners[j].y), 3, CV_RGB(255,0,0), -1, 8,0);
 			} else if (corners[j].x > bothEyes->width * 0.6) {
 				rightEyeCornersXSum += corners[j].x;
 				rightEyeCornersYSum += corners[j].y;
 				rightEyeCornersCount++;
-				cvCircle(eyeRegionImage, cvPoint(corners[j].x, corners[j].y), 3, CV_RGB(255,0,0), -1, 8,0);
+				//cvCircle(eyeRegionImage, cvPoint(corners[j].x, corners[j].y), 3, CV_RGB(255,0,0), -1, 8,0);
 			}
 		}
 
@@ -254,8 +258,8 @@ namespace Detection {
 		//	cvCircle(eyeRegionImage, cvPoint(corners[i].x, corners[i].y), 3, CV_RGB(255,0,0), -1, 8, 0);
 		//}
 
-		cvCircle(eyeRegionImage, cvPoint(points[0].x, points[0].y), 3, CV_RGB(0,255,0), -1, 8, 0);
-		cvCircle(eyeRegionImage, cvPoint(points[1].x, points[1].y), 3, CV_RGB(0,255,0), -1, 8, 0);
+		//cvCircle(image, cvPoint(points[0].x, points[0].y), 3, CV_RGB(0,255,0), -1, 8, 0);
+		//cvCircle(image, cvPoint(points[1].x, points[1].y), 3, CV_RGB(0,255,0), -1, 8, 0);
 
 		//cvSaveImage("eye_corners.png", eyeRegionImage);
 		//cvSaveImage((_basePath.substr(0, _basePath.length() - 4) + "_eye_corners.png").c_str(), eyeRegionImage);
