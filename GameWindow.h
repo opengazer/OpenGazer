@@ -10,7 +10,6 @@ public:
 	void showContents();
 	void calculateNewFrogPosition();
 	void clearLastUpdatedRegion();
-	void displayImageCentered(IplImage *image);
 
 private:
 	TrackerOutput *_output;
@@ -21,7 +20,6 @@ private:
 	cv::Mat _background;
 	cv::Mat _frog;
 	cv::Mat _target;
-	//IplImage *_black;
 	cv::Mat _frogMask;
 	cv::Mat _gaussianMask;
 	cv::Mat _clearingImage;

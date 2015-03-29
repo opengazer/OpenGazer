@@ -10,7 +10,6 @@ private:
 public:
 	int frameCount;
 	cv::Mat frame;
-	IplImage *cFrame;
 	cv::Size size;
 	bool captureFromVideo;
 	std::string resolutionParameter;

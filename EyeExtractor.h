@@ -7,7 +7,6 @@ class EyeExtractor {
 public:
 	static const int eyeDX;
 	static const int eyeDY;
-	static const CvSize cEyeSize;
 	static const cv::Size eyeSize;
 
 	boost::scoped_ptr<cv::Mat> eyeGrey, eyeFloat, eyeImage;
@@ -20,8 +19,6 @@ public:
 
 private:
 	const PointTracker &_pointTracker; /* dangerous */
-	//boost::scoped_ptr<IplImage> _eyeFloat2;
-	//boost::scoped_ptr<IplImage> _eyeFloat2Left;
 	BlinkDetector _blinkDetector;
 	BlinkDetector _blinkDetectorLeft;
 	bool _isBlinking;

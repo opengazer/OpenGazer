@@ -15,10 +15,6 @@ VideoInput::VideoInput():
 	_capture.read(frame);
 	size = cv::Size(frame.size().width, frame.size().height);
 	flip(frame, frame, 1);
-
-	// TODO ONUR REMOVE OLD CvMat FORMAT VARIABLE
-	cFrame = cvCreateImage(cvSize(frame.size().width, frame.size().height), IPL_DEPTH_8U, 3);
-	cFrame->imageData = (char*) frame.data;
 }
 
 VideoInput::VideoInput(std::string resolution):
@@ -47,10 +43,6 @@ VideoInput::VideoInput(std::string resolution):
 	_capture.read(frame);
 	size = cv::Size(frame.size().width, frame.size().height);
 	flip(frame, frame, 1);
-
-	// TODO ONUR REMOVE OLD CvMat FORMAT VARIABLE
-	cFrame = cvCreateImage(cvSize(frame.size().width, frame.size().height), IPL_DEPTH_8U, 3);
-	cFrame->imageData = (char*) frame.data;
 }
 
 VideoInput::VideoInput(std::string resolution, std::string filename, bool dummy):
@@ -65,9 +57,6 @@ VideoInput::VideoInput(std::string resolution, std::string filename, bool dummy)
 
 	_capture.read(frame);
 
-	// TODO ONUR REMOVE OLD CvMat FORMAT VARIABLE
-	cFrame = cvCreateImage(cvSize(frame.size().width, frame.size().height), IPL_DEPTH_8U, 3);
-	cFrame->imageData = (char*) frame.data;
 	size = cv::Size(frame.size().width, frame.size().height);
 
 	videoResolution = frame.size().height;
@@ -93,10 +82,6 @@ VideoInput::VideoInput(std::string resolution, std::string filename, bool dummy)
 		//std::cout << "TEMP: " << tempImage->height << "x" << tempImage->width << " " << tempImage->depth << std::endl;
 		resize(roi, tempimage, tempimage.size());
 		frame = tempimage;
-
-		//frame = &((IplImage) mat_frame);
-		cFrame = cvCreateImage(cvSize(frame.size().width, frame.size().height), IPL_DEPTH_8U, 3);
-		cFrame->imageData = (char*) frame.data;
 		
 		size.width = frame.size().width;
 		size.height = frame.size().height;

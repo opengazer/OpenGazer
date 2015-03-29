@@ -80,14 +80,12 @@ void PointTracker::track(const cv::Mat &frame, int pyramidDepth) {
 			// template without any pyramids
 			std::vector<float> err;
 
+/*
 			std::cout << "BEFORE TRACKING:" << std::endl;
 			for(int i=0; i<currentPoints.size(); i++) {
 				std::cout << "Point " << i+1 << ": " << currentPoints[i].x << ", " << currentPoints[i].y << std::endl;
 			}
-
-			cv::imwrite("a_origGrey.jpg", _origGrey);
-			cv::imwrite("a_Grey.jpg", _grey);
-
+*/
 			calcOpticalFlowPyrLK(_origGrey, _grey, 
 				origPoints, currentPoints, 
 				status, err, 
@@ -95,13 +93,14 @@ void PointTracker::track(const cv::Mat &frame, int pyramidDepth) {
 				pyramidDepth * 3, 
 				cv::TermCriteria(CV_TERMCRIT_EPS, 20, 0.03), 
 				_flags);
-		//}
-			_flags |= CV_LKFLOW_PYR_A_READY;
 
+			_flags |= CV_LKFLOW_PYR_A_READY;
+/*
 			std::cout << "AFTER TRACKING:" << std::endl;
 			for(int i=0; i<currentPoints.size(); i++) {
 				std::cout << "Point " << i+1 << ": " << currentPoints[i].x << ", " << currentPoints[i].y << std::endl;
 			}
+*/
 		}
 
 		_grey.copyTo(_lastGrey);

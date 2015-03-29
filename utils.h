@@ -156,7 +156,6 @@ namespace Utils {
 	std::string getUniqueFileName(std::string directory, std::string baseFileName);
 
 	void normalizeGrayScaleImage(cv::Mat *image, double standardMean=127, double standardStd=50);
-	void normalizeGrayScaleImage(IplImage *image, double standardMean=127, double standardStd=50);
 	//void normalizeGrayScaleImage2(cv::Mat *image, double standardMean=127, double standardStd=50);
 
 	void convertAndResize(const cv::Mat &src, cv::Mat& gray, cv::Mat& resized, double scale);

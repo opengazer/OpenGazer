@@ -78,10 +78,6 @@ void TrackingSystem::displayEye(cv::Mat &image, int baseX, int baseY, int stepX,
 
 	gazeTracker.draw(image, eyeDX, eyeDY);
 
-	//static IplImage *tempp = cvCreateImage(eyeSize, 8, 3);
-	//cvCvtColor(eyeExtractor.eyeGrey.get(), tempp, CV_GRAY2RGB);
-	//cvSaveImage("eyeright_display_tempp.jpg", tempp);
-
 	cv::cvtColor(*eyeExtractor.eyeGrey.get(), image(cv::Rect(baseX, baseY, eyeDX, eyeDY)), CV_GRAY2RGB);
 	cv::cvtColor(*eyeExtractor.eyeGrey.get(), image(cv::Rect(baseX + stepX * 1, baseY + stepY * 1, eyeDX, eyeDY)), CV_GRAY2RGB);
 	features.getMean().get()->convertTo(*eyeGreyTemp, eyeGreyTemp->type(), 1, 0);

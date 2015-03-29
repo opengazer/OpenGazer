@@ -122,11 +122,11 @@ MainGazeTracker::MainGazeTracker(int argc, char **argv):
 	}
 
 	if (videoInput.get()->getResolution() == 720) {
-		_conversionImage = cvCreateImage(cvSize(1280, 720), 8, 3 );
+		_conversionImage.create(cv::Size(1280, 720), CV_8UC3);
 	} else if (videoInput.get()->getResolution() == 1080) {
-		_conversionImage = cvCreateImage(cvSize(1920, 1080), 8, 3 );
+		_conversionImage.create(cv::Size(1920, 1080), 
 	} else if (videoInput.get()->getResolution() == 480) {
-		_conversionImage = cvCreateImage(cvSize(640, 480), 8, 3 );
+		_conversionImage.create(cv::Size(640, 480), 
 	}
 
 	std::string subject = args.getOptionValue("subject");
@@ -234,7 +234,10 @@ MainGazeTracker::MainGazeTracker(int argc, char **argv):
 	} else if (videoInput.get()->getResolution() == 480) {
 		_repositioningImage.create(cv::Size(640, 480), CV_8UC3);
 	}
-
+	
+	// Load detector cascades
+	Detection::loadCascades();
+	
 	_gameWin->setRepositioningImage(&_repositioningImage);
 	Application::faceRectangle = NULL;
 }
@@ -254,7 +257,7 @@ void MainGazeTracker::process() {
 	}
 
 	const cv::Mat frame = videoInput->frame;
-	canvas->data = frame.data;
+	//canvas->data = frame.data;
 
 	double imageNorm = 0.0;
 
@@ -263,9 +266,6 @@ void MainGazeTracker::process() {
 
 		// Only calculate norm in the area containing the face
 		if (_face.width > 0) {
-			//cvSetImageROI(const_cast<IplImage*>(frame), _face);
-			//cvSetImageROI(_overlayImage, _face);
-
 			imageNorm = cv::norm(frame(_face), _overlayImage(_face), CV_L2);
 			imageNorm = (10000 * imageNorm) / (_face.width * _face.height);
 
@@ -275,8 +275,6 @@ void MainGazeTracker::process() {
 			}
 
 			std::cout << "ROI NORM: " << imageNorm << " (" << _face.width << "x" << _face.height << ")" << std::endl;
-			//cvResetImageROI(const_cast<IplImage*>(frame));
-			//cvResetImageROI(_overlayImage);
 		} else {
 			imageNorm = cv::norm(frame, _overlayImage, CV_L2);
 			imageNorm = (15000 * imageNorm) / (videoInput->getResolution() * videoInput->getResolution());
@@ -616,15 +614,14 @@ void MainGazeTracker::choosePoints() {
 		if (_recording) {
 			*_commandOutputFile << _totalFrameCount << " SELECT" << std::endl;
 		}
-
-
-		Detection::detectEyeCorners(videoInput->cFrame, videoInput->getResolution(), eyes);
-
+		
+		Detection::detectEyeCorners(videoInput->frame, videoInput->getResolution(), eyes);
+		
 		cv::Rect noseRect = cv::Rect(eyes[0].x, eyes[0].y, fabs(eyes[0].x - eyes[1].x), fabs(eyes[0].x - eyes[1].x));
 		checkRectSize(videoInput->frame, &noseRect);
 		//std::cout << "Nose rect: " << noseRect.x << ", " << noseRect.y << " - " << noseRect.width << ", " << noseRect.height << std::endl;
 
-		if (!Detection::detectNose(videoInput->cFrame, videoInput->getResolution(), noseRect, nose)) {
+		if (!Detection::detectNose(videoInput->frame, videoInput->getResolution(), noseRect, nose)) {
 			std::cout << "NO NOSE" << std::endl;
 			return;
 		}
@@ -632,16 +629,16 @@ void MainGazeTracker::choosePoints() {
 		cv::Rect mouthRect = cv::Rect(eyes[0].x, nose[0].y, fabs(eyes[0].x - eyes[1].x), 0.8 * fabs(eyes[0].x - eyes[1].x));
 		checkRectSize(videoInput->frame, &mouthRect);
 
-		if (!Detection::detectMouth(videoInput->cFrame, videoInput->getResolution(), mouthRect, mouth)) {
+		if (!Detection::detectMouth(videoInput->frame, videoInput->getResolution(), mouthRect, mouth)) {
 			std::cout << "NO MOUTH" << std::endl;
 			return;
 		}
 
 		cv::Rect eyebrowRect = cv::Rect(eyes[0].x + fabs(eyes[0].x - eyes[1].x) * 0.25, eyes[0].y - fabs(eyes[0].x - eyes[1].x) * 0.40, fabs(eyes[0].x - eyes[1].x) * 0.5, fabs(eyes[0].x - eyes[1].x) * 0.25);
 		checkRectSize(videoInput->frame, &eyebrowRect);
-		Detection::detectEyebrowCorners(videoInput->cFrame, videoInput->getResolution(), eyebrowRect, eyebrows);
+		Detection::detectEyebrowCorners(videoInput->frame, videoInput->getResolution(), eyebrowRect, eyebrows);
 
-		cvSaveImage("cframe.jpg", videoInput->cFrame);
+		//cvSaveImage("cframe.jpg", videoInput->cFrame);
 
 		trackingSystem->pointTracker.clearTrackers();
 		_autoReload = false;
@@ -664,7 +661,7 @@ void MainGazeTracker::choosePoints() {
 		trackingSystem->pointTracker.saveImage();
 
 		// Calculate the area containing the face
-		extractFaceRegionRectangle(videoInput->frame, trackingSystem->pointTracker.getPoints(&PointTracker::lastPoints, true));
+		//extractFaceRegionRectangle(videoInput->frame, trackingSystem->pointTracker.getPoints(&PointTracker::lastPoints, true));
 		//trackingSystem->pointTracker.normalizeOriginalGrey();
 	}
 	catch (std::ios_base::failure &e) {

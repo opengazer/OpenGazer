@@ -133,27 +133,6 @@ namespace Utils {
 		cv::convertScaleAbs(*image, *image, ratio, shift);   // Move the mean from 0 to 127
 	}
 
-	// TODO REMOVE FUNCTION
-	// Normalize by making mean and standard deviation equal in all images
-	void normalizeGrayScaleImage(IplImage *image, double standardMean, double standardStd) {
-		CvScalar scalarMean;
-		CvScalar scalarStd;
-		double mean;
-		double std;
-
-		cvAvgSdv(image, &scalarMean, &scalarStd);
-
-		mean = scalarMean.val[0];
-		std = scalarStd.val[0];
-
-		//cout << "Image mean and std is " << mean << ", " << std << endl;
-
-		double ratio = standardStd / std;
-		double shift = standardMean - mean * ratio;
-
-		cvConvertScale(image, image, ratio, shift);   // Move the mean from 0 to 127
-	}
-
 /*
 	// Normalize to 50-200 interval
 	void normalizeGrayScaleImage2(cv::Mat *image, double standardMean, double standardStd) {
