@@ -124,9 +124,9 @@ MainGazeTracker::MainGazeTracker(int argc, char **argv):
 	if (videoInput.get()->getResolution() == 720) {
 		_conversionImage.create(cv::Size(1280, 720), CV_8UC3);
 	} else if (videoInput.get()->getResolution() == 1080) {
-		_conversionImage.create(cv::Size(1920, 1080), 
+		_conversionImage.create(cv::Size(1920, 1080), CV_8UC3);
 	} else if (videoInput.get()->getResolution() == 480) {
-		_conversionImage.create(cv::Size(640, 480), 
+		_conversionImage.create(cv::Size(640, 480), CV_8UC3);
 	}
 
 	std::string subject = args.getOptionValue("subject");
@@ -586,7 +586,7 @@ void MainGazeTracker::startPlaying() {
 
 void MainGazeTracker::savePoints() {
 	try {
-		trackingSystem->pointTracker.save("pointTracker", "points.txt", videoInput->cFrame);
+		trackingSystem->pointTracker.save("pointTracker", "points.txt", videoInput->frame);
 		_autoReload = true;
 	}
 	catch (std::ios_base::failure &e) {
@@ -596,7 +596,7 @@ void MainGazeTracker::savePoints() {
 
 void MainGazeTracker::loadPoints() {
 	try {
-		trackingSystem->pointTracker.load("pointTracker", "points.txt", videoInput->cFrame);
+		trackingSystem->pointTracker.load("pointTracker", "points.txt", videoInput->frame);
 		_autoReload = true;
 	}
 	catch (std::ios_base::failure &e) {
@@ -638,7 +638,7 @@ void MainGazeTracker::choosePoints() {
 		checkRectSize(videoInput->frame, &eyebrowRect);
 		Detection::detectEyebrowCorners(videoInput->frame, videoInput->getResolution(), eyebrowRect, eyebrows);
 
-		//cvSaveImage("cframe.jpg", videoInput->cFrame);
+		//cvSaveImage("cframe.jpg", videoInput->frame);
 
 		trackingSystem->pointTracker.clearTrackers();
 		_autoReload = false;
@@ -689,7 +689,7 @@ void MainGazeTracker::pauseOrRepositionHead() {
 
 		Application::status = Application::isTrackerCalibrated ? Application::STATUS_CALIBRATED : Application::STATUS_IDLE;
 
-		trackingSystem->pointTracker.retrack(videoInput->cFrame, 2);
+		trackingSystem->pointTracker.retrack(videoInput->frame, 2);
 		//choosePoints();
 	} else {
 		if (_recording) {
