@@ -1,13 +1,17 @@
 #pragma once
-#include "utils.h"
+
+#include <boost/scoped_ptr.hpp>
+#include <boost/shared_ptr.hpp>
 
 class FeatureDetector {
-    CvSize eyesize;
-    scoped_ptr<IplImage> sumimage, sum2image, temp;
-    int samples;
 public:
-    FeatureDetector(CvSize eyesize);
-    void addSample(const IplImage *source);
-    shared_ptr<IplImage> getMean();
-    shared_ptr<IplImage> getVariance();
+	FeatureDetector(cv::Size eyeSize);
+	void addSample(const cv::Mat *source);
+	boost::shared_ptr<cv::Mat> getMean();
+	boost::shared_ptr<cv::Mat> getVariance();
+
+private:
+	cv::Size _eyeSize;
+	boost::scoped_ptr<cv::Mat> _sumImage, _sum2Image, _temp;
+	int _samples;
 };

@@ -1,61 +1,61 @@
 #pragma once
-#include "utils.h"
+
 #include "TrackingSystem.h"
-//#include "Alert.h"
 #include "Calibrator.h"
-#include <opencv/highgui.h>
-#include <gtkmm.h>
-
-struct CommandLineArguments {
-    vector<char*> parameters;
-    vector<char*> options;
-     
-    CommandLineArguments(int argc, char **argv);
-    bool isoption(const char* option);
-};
-
-
-
-class VideoInput {
-    CvCapture* capture;
-
- public:
-    int framecount;
-    const IplImage* frame;
-    const CvSize size;
-    VideoInput();
-    VideoInput(const char* avifile);
-    ~VideoInput();
-    void updateFrame();
-};
-
-class VideoWriter;
-/* class FileInput; */
+#include "GameWindow.h"
+#include "OutputMethods.h"
+#include "Video.h"
+#include "Command.h"
 
 class MainGazeTracker {
-    scoped_ptr<VideoWriter> video;
-    int framestoreload;
-    vector<shared_ptr<AbstractStore> > stores;
-    int framecount;
-    bool autoreload;
-//    StateMachine<void> statemachine;
+public:
+	//bool isTesting;
+	bool isCalibrationOutputWritten;
+	boost::shared_ptr<TrackingSystem> trackingSystem;
+	MovingTarget *target;
+	FrameProcessing frameFunctions;
+	boost::scoped_ptr<cv::Mat> canvas;
+	boost::scoped_ptr<VideoInput> videoInput;
 
- public:
-    shared_ptr<TrackingSystem> tracking;
+	MainGazeTracker(int argc, char **argv);
+	~MainGazeTracker();
+	void process();
+	void simulateClicks();
+	void cleanUp();
+	void addTracker(Point point);
+	void addExemplar(Point exemplar);
+	void startCalibration();
+	void startTesting();
+	void startPlaying();
+	void savePoints();
+	void loadPoints();
+	void choosePoints();
+	void clearPoints();
+	void pauseOrRepositionHead();
+	void extractFaceRegionRectangle(cv::Mat &frame, std::vector<Point> featurePoints);
 
-    FrameProcessing framefunctions;
-    scoped_ptr<IplImage> canvas;
-    scoped_ptr<VideoInput> videoinput;
-
-    MainGazeTracker(int argc, char** argv,
-		    const vector<shared_ptr<AbstractStore> > &stores);
-    void doprocessing(void);
-    ~MainGazeTracker(void);
-    void addTracker(Point point);
-    void addExemplar(Point exemplar);
-    void startCalibration();
-    void startTesting();
-    void savepoints();
-    void loadpoints();
-    void clearpoints();
+private:
+	boost::scoped_ptr<VideoWriter> _video;
+	int _frameStoreLoad;
+	std::vector<boost::shared_ptr<AbstractStore> > _stores;
+	int _frameCount;
+	bool _autoReload;
+	std::string _directory;
+	std::string _basePath;
+	std::ofstream *_outputFile;
+	std::ofstream *_commandOutputFile;
+	std::ifstream *_commandInputFile;
+	cv::Mat _conversionImage;
+	cv::Mat _overlayImage;
+	cv::Mat _repositioningImage;
+	cv::Rect _face;
+	Calibrator *_calibrator;
+	int _headDistance;
+	bool _videoOverlays;
+	long _totalFrameCount;
+	bool _recording;
+	std::vector<Command> _commands;
+	int _commandIndex;
+	GameWindow *_gameWin;
 };
+

@@ -1,258 +1,267 @@
 #include "HeadTracker.h"
 #include "FMatrixAffineCompute.cpp"
+#include "utils.h"
 
-static double squarenorm(HomPoint point) {
-    return square(point.x()) + square(point.y());
-}
-
-
-static double mean(vector<HomPoint> const& vec, 
-		   double (HomPoint::*func)() const) 
-{
-    double sum = 0.0;
-    for(int i=0; i<vec.size(); i++)
-	sum += (vec[i].*func)();
-    return sum / vec.size();
-}
-
-
-static void predict(double xorig, double yorig, 
-	     double a, double b, double c, double d, double depth,
-	     double &xnew, double &ynew) 
-{
-    double A =       - a*xorig - b*yorig;
-    double B = depth - b*xorig + a*yorig;
-
-    xnew = (c*A + d*B) / (d*d + c*c);
-    ynew = (d*A - c*B) / (d*d + c*c);
-}
-		 
-
-static HomPoint 
-predictpoint(HomPoint p, double depth, double dmeanx, double dmeany, 
-	     double rotx, double roty, double atx, double aty) 
-{ 
-    HomPoint p2 (p.x() * atx - p.y() * aty,
-		 p.x() * aty + p.y() * atx);
-
-    return HomPoint(p2.x() + roty * depth + dmeanx, 
- 		    p2.y() - rotx * depth + dmeany);
-}
-
-vector<bool> HeadTracker::detectinliers(vector<HomPoint> const &prev, 
-					vector<HomPoint> const &now,
-					double radius)
-{
-    assert(prev.size() == now.size());
-
-    vector<HomPoint> transitions;
-    for(int i=0; i<prev.size(); i++)
-	transitions.push_back(now[i] - prev[i]);
-
-//     cout << "xtrans:";
-//     for(int i=0; i<prev.size(); i++)
-// 	cout << " " << transitions[i].x();
-//     cout << endl;
-
-//     cout << "ytrans:";
-//     for(int i=0; i<prev.size(); i++)
-// 	cout << " " << transitions[i].y();
-//     cout << endl;
-
-    vector<int> closepoints(transitions.size());
-    for(int i=0; i<transitions.size(); i++) {
-	closepoints[i] = 0;
-	for(int j=0; j<transitions.size(); j++)
-	    if (squarenorm(transitions[i] - transitions[j]) <= square(radius))
-		closepoints[i]++;
-    }
-
-    int maxindex = max_element(closepoints.begin(), closepoints.end()) 
-	- closepoints.begin();
-
-    vector<bool> inliers(transitions.size());
-    for(int i=0; i<transitions.size(); i++)
-	inliers[i] = (squarenorm(transitions[i] - transitions[maxindex]) 
-		      <= square(radius));
-
-    for(int i=0; i<inliers.size(); i++)
-	if (!inliers[i]) {
-	    tracker.status[i] = false;
-  	    tracker.currentpoints[i].x = 
-		0.9 * (tracker.origpoints[i].x + transitions[maxindex].x())
-		+ 0.1 * tracker.currentpoints[i].x;
-  	    tracker.currentpoints[i].y = 
-		0.9 * (tracker.origpoints[i].y + transitions[maxindex].y())
-		+ 0.1 * tracker.currentpoints[i].y;
+// Decide whether two numbers have the same sign
+bool issamesign(int a, int b) {
+	if ((a > 0 && b < 0) || (a < 0 && b > 0)) {
+		return false;
 	}
 
-    return inliers;
+	return true;
 }
 
+static double squareNorm(Point point) {
+	return Utils::square(point.x) + Utils::square(point.y);
+}
 
-void 
-HeadTracker::predictpoints(double xx0, double yy0, double xx1, double yy1,
-			   double rotx, double roty, double atx, double aty) 
+static double mean(std::vector<Point> const &vec, double (Point::*prop)) {
+	double sum = 0.0;
+	for (int i = 0; i < vec.size(); i++) {
+		sum += (vec[i].*prop);
+	}
+
+	return sum / vec.size();
+}
+
+static void predict(double xOrig, double yOrig, double a, double b, double c, double d, double depth, double &xNew, double &yNew) {
+	double A = -a * xOrig - b * yOrig;
+	double B = depth - b * xOrig + a * yOrig;
+
+	xNew = (c * A + d * B) / (d * d + c * c);
+	yNew = (d * A - c * B) / (d * d + c * c);
+}
+
+static Point predictPoint(Point p, double depth, double dMeanX, double dMeanY, double rotX, double rotY, double atX, double atY) {
+	Point p2 (p.x * atX - p.y * atY, p.x * atY + p.y * atX);
+
+	return Point(p2.x + rotY * depth + dMeanX, p2.y - rotX * depth + dMeanY);
+}
+
+HeadTracker::HeadTracker(PointTracker &pointTracker):
+	pointTracker(pointTracker)
 {
-    double maxdiff = 0.0;
-    int diffindex = -1;
+}
 
-    vector<HomPoint> points = 
-	tracker.getpoints(&PointTracker::origpoints, true);
+void HeadTracker::draw(cv::Mat &image) {
+	//std::cout << "state: "<< rotX << " " << rotY << " " << atX << " " << atY << std::endl;
 
-    for(int i=0; i<points.size(); i++) {
-	HomPoint p(points[i].x() - xx0, points[i].y() - yy0);
-	HomPoint p1 = predictpoint(p, depths[i], xx1, yy1, 
-				   rotx, roty, atx, aty);
-	HomPoint p2 = predictpoint(p, -depths[i], xx1, yy1,
-				   rotx, roty, atx, aty);
+	cv::line(image, cv::Point(320, 240), cv::Point(320 + int(atX * 50), 240 + int(atY * 50)), cv::Scalar(255,255,255));
 
-	double diff1 = fabs(p1.x() - tracker.currentpoints[i].x) + 
-	    fabs(p1.y() - tracker.currentpoints[i].y);
+	//for (int i = 0; i < pointTracker.pointCount; i++) {
+	// 	cvLine(
+	//		image,
+	//		cvPoint(pointTracker.currentPoints[i].x, pointTracker.currentPoints[i].y),
+	//		cvPoint(pointTracker.origPoints[i].x - xx0 + xx1, pointTracker.origPoints[i].y - yy0 + yy1),
+	//		CV_RGB(255,0,0));
+	//}
 
-	double diff2 = fabs(p2.x() - tracker.currentpoints[i].x) + 
-	    fabs(p2.y() - tracker.currentpoints[i].y);
-
-	double diff = diff1 > diff2 ? diff2 : diff1;
-
-	// dubious code, I'm not sure about it
-	if (!tracker.status[i]) {
-	    tracker.currentpoints[i].x = 
-		0.5 * tracker.currentpoints[i].x + 0.5 * p1.x();
-	    tracker.currentpoints[i].y = 
-		0.5 * tracker.currentpoints[i].y + 0.5 * p1.y();
+	for (int i = 0; i < pointTracker.pointCount(); i++) {
+		cv::line(
+			image,
+			cv::Point((int)pointTracker.currentPoints[i].x, (int)pointTracker.currentPoints[i].y),
+			cv::Point((int)pointTracker.currentPoints[i].x, int(pointTracker.currentPoints[i].y + _depths[i] * 100)),
+			cv::Scalar(0,0,255));
 	}
-    }
+
+	double scale = 10;
+	cv::line(image, cv::Point(320, 240), cvPoint(320 + int(rotY * scale), 240 + int(rotX * scale)), cv::Scalar(255,255,255));
 }
 
-void HeadTracker::updatetracker(void) {
-    depths.resize(tracker.pointcount());
-    detectinliers(tracker.getpoints(&PointTracker::origpoints, true), 
-		  tracker.getpoints(&PointTracker::currentpoints, true));
+void HeadTracker::updateTracker() {
+	try {
+		_depths.resize(pointTracker.pointCount());
+		detectInliers(pointTracker.getPoints(&PointTracker::origPoints, true), pointTracker.getPoints(&PointTracker::currentPoints, true));
 
-    vector<HomPoint> origpoints = 
-	tracker.getpoints(&PointTracker::origpoints, false);
-    vector<HomPoint> currentpoints = 
-	tracker.getpoints(&PointTracker::currentpoints, false);
+		std::vector<Point> origPoints = pointTracker.getPoints(&PointTracker::origPoints, false);
+		std::vector<Point> currentPoints = pointTracker.getPoints(&PointTracker::currentPoints, false);
 
-    double xx0 = mean(origpoints, &HomPoint::x);
-    double yy0 = mean(origpoints, &HomPoint::y);
-    double xx1 = mean(currentpoints, &HomPoint::x);
-    double yy1 = mean(currentpoints, &HomPoint::y);
+		double xx0 = mean(origPoints, &Point::x);
+		double yy0 = mean(origPoints, &Point::y);
+		double xx1 = mean(currentPoints, &Point::x);
+		double yy1 = mean(currentPoints, &Point::y);
 
-    Vector fmatrix = computeAffineFMatrix(origpoints, currentpoints);
-    
-    double a = fmatrix[0];
-    double b = fmatrix[1];
-    double c = fmatrix[2];
-    double d = fmatrix[3];
-    double e = fmatrix[4];
+		std::vector<double> *fmatrix = computeAffineFMatrix(origPoints, currentPoints);
 
-    // compute the change
+		if (fmatrix->empty()) {
+			//std::cout << "Problem in computeAffineFMatrix" << std::endl;
+			return;
+		}
 
-    vector<double> offsets(tracker.pointcount());
+		double a = (*fmatrix)[0];
+		double b = (*fmatrix)[1];
+		double c = (*fmatrix)[2];
+		double d = (*fmatrix)[3];
+		double e = (*fmatrix)[4];
 
-    double depthsum = 0.0001;
-    double offsetsum = 0.0001;
+		// compute the change
+		std::vector<double> offsets(pointTracker.pointCount());
 
-    for(int i=0; i<tracker.pointcount(); i++) 
-	if (tracker.status[i]) {
-	    double xorig = tracker.origpoints[i].x - xx0;
-	    double yorig = tracker.origpoints[i].y - yy0;
-	    double xnew = tracker.currentpoints[i].x - xx1;
-	    double ynew = tracker.currentpoints[i].y - yy1;
-	    double x0 = b*xorig - a*yorig;
-	    double x1 = -d*xnew + c*ynew;
-	    offsets[i] = x0 - x1;
-	    offsetsum += offsets[i]*offsets[i];
-	    depthsum += depths[i]*depths[i];
+		double depthSum = 0.0001;
+		double offsetSum = 0.0001;
+
+		for (int i = 0; i < pointTracker.pointCount(); i++) {
+			if (pointTracker.status[i]) {
+				double xOrig = pointTracker.origPoints[i].x - xx0;
+				double yOrig = pointTracker.origPoints[i].y - yy0;
+				double xNew = pointTracker.currentPoints[i].x - xx1;
+				double yNew = pointTracker.currentPoints[i].y - yy1;
+				double x0 = b * xOrig - a * yOrig;
+				double x1 = -d * xNew + c * yNew;
+				offsets[i] = x0 - x1;
+				offsetSum += offsets[i] * offsets[i];
+				depthSum += _depths[i] * _depths[i];
+			}
+		}
+
+		if (pointTracker.areAllPointsActive()) {
+			//std::cout << std::endl;
+			depthSum = 1.0;
+		}
+
+		double depthScale = sqrt(offsetSum / depthSum);
+
+		rotX = c * depthScale / hypot(a, b) / hypot(c, d);
+		rotY = d * depthScale / hypot(a, b) / hypot(c, d);
+
+		atX = -(a * c + b * d) / (c * c + d * d); // at = AmpliTwist
+		atY = -(a * d - c * b) / (c * c + d * d); // at = AmpliTwist
+
+		// depths
+		std::vector<double> newDepths(pointTracker.pointCount());
+
+		for (int i = 0; i < pointTracker.pointCount(); i++) {
+			if (pointTracker.status[i]) {
+				newDepths[i] = offsets[i] / depthScale;
+			}
+		}
+
+		if (newDepths[1] > newDepths[2]) {
+			rotX = -rotX;
+			rotY = -rotY;
+			for (int i = 0; i < pointTracker.pointCount(); i++) {
+				_depths[i] = -newDepths[i];
+			}
+		} else {
+			for (int i = 0; i < pointTracker.pointCount(); i++) {
+				_depths[i] = newDepths[i];
+			}
+		}
+
+
+		//	distance
+		//double distance1 = 0.0;
+		//double distance2 = 0.0;
+		//for (int i = 0; i < pointTracker.pointCount; i++) {
+		//	if (pointTracker.status[i]) {
+		//		distance1 += square(_depths[i] - newDepths[i]);
+		//		distance2 += square(_depths[i] + newDepths[i]);
+		//	}
+		//}
+
+		//for (int i = 0; i < pointTracker.pointCount; i++) {
+		//	if (pointTracker.status[i]) {
+		//		if (distance1 > distance2) {
+		//			rotx = -rotx;
+		//			roty = -roty;
+		//			_depths[i] = -newDepths[i];
+		//		} else {
+		//			_depths[i] = newDepths[i];
+		//		}
+		//	}
+		//}
+
+		predictPoints(xx0, yy0, xx1, yy1, rotX, rotY, atX, atY);
 	}
-    
-    if (tracker.areallpointsactive()) {
-// 	cout << endl;
-	depthsum = 1.0;
-    }
-
-    double depthscale = sqrt(offsetsum / depthsum);
-
-    rotx = c * depthscale / hypot(a,b) / hypot(c,d);
-    roty = d * depthscale / hypot(a,b) / hypot(c,d);
-
-    atx = -(a*c + b*d) / (c*c + d*d); // at = AmpliTwist
-    aty = -(a*d - c*b) / (c*c + d*d); // at = AmpliTwist
-
-    // depths
-
-    vector<double> newdepths(tracker.pointcount());
-
-    for(int i=0; i<tracker.pointcount(); i++) 
-	if (tracker.status[i]) 
-	    newdepths[i] = offsets[i] / depthscale;
-
-    if (newdepths[1] > newdepths[2]) {
-	rotx = -rotx;
-	roty = -roty;
-	for(int i=0; i<tracker.pointcount(); i++)
-	    depths[i] = -newdepths[i];
-    }
-    else
-	for(int i=0; i<tracker.pointcount(); i++)
-	    depths[i] = newdepths[i];
-	
-
-//     // distance
-//     double distance1 = 0.0;
-//     double distance2 = 0.0;
-//     for(int i=0; i<tracker.pointcount; i++)
-// 	if (tracker.status[i]) {
-// 	    distance1 += square(depths[i] - newdepths[i]);
-// 	    distance2 += square(depths[i] + newdepths[i]);
-// 	}
-
-//     for(int i=0; i<tracker.pointcount; i++) 
-// 	if (tracker.status[i])
-// 	    if (distance1 > distance2) {
-// 		rotx = -rotx;
-// 		roty = -roty;
-// 		depths[i] = -newdepths[i];
-// 	    }
-//             else
-// 		depths[i] = newdepths[i];
-	
-    predictpoints(xx0, yy0, xx1, yy1,
- 		  rotx, roty, atx, aty);
+	catch (std::exception &ex) {
+		std::cout << ex.what() << std::endl;
+	}
 
 }
 
-void HeadTracker::draw(IplImage *image) {
-//     cout << "state: "<< rotx << " " << roty << " " 
-// 	 << atx << " " << aty << endl;
-	
-    cvLine(image, 
-	   cvPoint(320, 240),
-	   cvPoint(320 + int(atx * 50), 240 + int(aty * 50)),
-	   CV_RGB(255,255,255));
+std::vector<bool> HeadTracker::detectInliers(std::vector<Point> const &prev, std::vector<Point> const &now, double radius) {
+	assert(prev.size() == now.size());
 
-//     for(int i=0; i<tracker.pointcount; i++)
-// 	cvLine(image, 
-// 	       cvPoint(tracker.currentpoints[i].x, tracker.currentpoints[i].y),
-// 	       cvPoint(tracker.origpoints[i].x - xx0 + xx1, 
-// 		       tracker.origpoints[i].y - yy0 + yy1), 
-// 	       CV_RGB(255,0,0));
-    
-    for(int i=0; i<tracker.pointcount(); i++) {
-	cvLine(image, 
-	       cvPoint((int)tracker.currentpoints[i].x, 
-		       (int)tracker.currentpoints[i].y),
-	       cvPoint((int)tracker.currentpoints[i].x, 
-		       int(tracker.currentpoints[i].y + depths[i] * 100)),
-	       CV_RGB(0,0,255));
-    }
+	std::vector<Point> transitions;
+	for (int i = 0; i < prev.size(); i++) {
+		transitions.push_back(now[i] - prev[i]);
+	}
 
-    double scale = 10;
+	//std::cout << "xtrans:";
+	//for (int i = 0; i < prev.size(); i++) {
+	//	std::cout << " " << transitions[i].x;
+	//}
+	//std::cout << std::endl;
 
-    cvLine(image, 
-	   cvPoint(320, 240),
-	   cvPoint(320 + int(roty * scale), 240 + int(rotx * scale)),
-	   CV_RGB(255,0,0));    
+	//std::cout << "ytrans:";
+	//for (int i = 0; i < prev.size(); i++) {
+	//	std::cout << " " << transitions[i].y;
+	//}
+	//std::cout << std::endl;
+
+	std::vector<int> closePoints(transitions.size());
+	for (int i = 0; i < transitions.size(); i++) {
+		closePoints[i] = 0;
+		for (int j = 0; j < transitions.size(); j++) {
+			if (squareNorm(transitions[i] - transitions[j]) <= Utils::square(radius)) {
+				closePoints[i]++;
+			}
+		}
+	}
+
+	int maxIndex = max_element(closePoints.begin(), closePoints.end()) - closePoints.begin();
+
+	std::vector<bool> inliers(transitions.size());
+	for (int i = 0; i < transitions.size(); i++) {
+		inliers[i] = squareNorm(transitions[i] - transitions[maxIndex]) <= Utils::square(radius);
+	}
+
+	for (int i = 0; i < inliers.size(); i++) {
+		if (!inliers[i]) {
+			pointTracker.status[i] = false;
+
+			pointTracker.currentPoints[i].x = 0.3 * (pointTracker.origPoints[i].x + transitions[maxIndex].x) + 0.7 * pointTracker.currentPoints[i].x;
+			//pointTracker.origPoints[i].x + transitions[maxindex].x;
+
+			pointTracker.currentPoints[i].y = 0.3 * (pointTracker.origPoints[i].y + transitions[maxIndex].y)+ 0.7 * pointTracker.currentPoints[i].y;
+			//pointTracker.origPoints[i].y + transitions[maxindex].y;
+		}
+	}
+
+	return inliers;
 }
+
+void HeadTracker::predictPoints(double xx0, double yy0, double xx1, double yy1, double rotX, double rotY, double atX, double atY) {
+	double maxDiff = 0.0;
+	int diffIndex = -1;
+
+	std::vector<Point> points = pointTracker.getPoints(&PointTracker::origPoints, true);
+
+	for (int i = 0; i < points.size(); i++) {
+		Point p(points[i].x - xx0, points[i].y - yy0);
+		Point p1 = predictPoint(p, _depths[i], xx1, yy1, rotX, rotY, atX, atY);
+		Point p2 = predictPoint(p, -_depths[i], xx1, yy1, rotX, rotY, atX, atY);
+
+		double diff1 = fabs(p1.x - pointTracker.currentPoints[i].x) + fabs(p1.y - pointTracker.currentPoints[i].y);
+		double diff2 = fabs(p2.x - pointTracker.currentPoints[i].x) + fabs(p2.y - pointTracker.currentPoints[i].y);
+		double diff = diff1 > diff2 ? diff2 : diff1;
+
+		// dubious code, I'm not sure about it
+		if (!pointTracker.status[i]) {
+			//std::cout << "P1 and P2: " << p1.x << ", " << p1.y << " - " << p2.x << ", " << p2.y << std::endl;
+			//std::cout << "DEPTH: " << _depths[i] << std::endl;
+			//std::cout << "DIFFS: " << diff1 << ", " << diff2 << std::endl;
+
+			if (diff == diff1) {
+				pointTracker.currentPoints[i].x = 0 * pointTracker.currentPoints[i].x + 1 * p1.x;
+				pointTracker.currentPoints[i].y = 0 * pointTracker.currentPoints[i].y + 1 * p1.y;
+				//std::cout << "UPDATED WITH P1 POSITION" << std::endl;
+			} else {
+				pointTracker.currentPoints[i].x = 0 * pointTracker.currentPoints[i].x + 1 * p2.x;
+				pointTracker.currentPoints[i].y = 0 * pointTracker.currentPoints[i].y + 1 * p2.y;
+				//std::cout << "UPDATED WITH P2 POSITION" << std::endl;
+			}
+		}
+	}
+}
+

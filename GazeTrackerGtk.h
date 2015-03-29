@@ -1,20 +1,23 @@
-#include <gtkmm/button.h>
-#include <gtkmm/window.h>
-#include <gtkmm/drawingarea.h>
-#include <gtkmm/box.h>
+#pragma once
 
 #include "GazeArea.h"
 
 class GazeTrackerGtk: public Gtk::Window {
- protected:
-  //Member widgets:
-    Gtk::Button calibratebutton, loadbutton, savebutton, clearbutton;
-    Gtk::VBox vbox;
-    Gtk::HBox buttonbar;
+public:
+	GazeTrackerGtk(int argc, char **argv);
+	virtual ~GazeTrackerGtk();
 
- public:
-    GazeArea picture;
-    GazeTrackerGtk(int argc, char **argv);
-    virtual ~GazeTrackerGtk();
-    
+private:
+	GazeArea _picture;
+	Gtk::VBox _vbox;
+	Gtk::HBox _buttonBar;
+	Gtk::Button _calibrateButton;
+	Gtk::Button _loadButton;
+	Gtk::Button _saveButton;
+	Gtk::Button _clearButton;
+	Gtk::Button _chooseButton;
+	Gtk::Button _pauseButton;
+	Gtk::Button _testButton;
+
+	void changePauseButtonText();
 };

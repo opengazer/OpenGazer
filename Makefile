@@ -1,40 +1,57 @@
-# required libraries: vxl, opencv, boost, gtkmm
+# Get UNAME to decide on which system we are building
+UNAME := $(shell uname)
 
-VXLDIR = /opt
-VERSION = opengazer-0.1.2
-CPPFLAGS = -Wall -g -O3
-LINKER = -L$(VXLDIR)/lib -L/usr/local/lib -lm -ldl -lvnl -lmvl -lvnl_algo -lvgl -lgthread-2.0 
+# Command prefix to suppress outputs of executed commands on the terminal
+# remove the @ sign if you want to see the executed commands
+CMD_PREFIX = @
 
-# change the following line if your vxl library is installed elsewhere
-INCLUDES = $(foreach prefix,/usr/local/include $(VXLDIR)/include $(VXLDIR)/include/vxl, \
-	$(foreach suffix,/core /vcl /contrib/oxl,-I$(prefix)$(suffix)))
 
-# -I/usr/include/ffmpeg
-# -lcv0.9.7 -lhighgui0.9.7
-# -lvgui
+######################################
+# NOTHING TO CHANGE AFTER THIS POINT #
+######################################
+VERSION = eyetracker-1.0.0
+CPPFLAGS = -Wall -Wno-reorder -Wno-sign-compare -Wno-unused-variable -Wno-write-strings -g -O3
 
-sources = opengazer.cpp Calibrator.cpp GazeTrackerGtk.cpp HeadTracker.cpp LeastSquares.cpp EyeExtractor.cpp GazeTracker.cpp MainGazeTracker.cpp OutputMethods.cpp PointTracker.cpp FaceDetector.cpp GazeArea.cpp TrackingSystem.cpp GtkStore.cpp Containers.cpp GraphicalPointer.cpp Point.cpp utils.cpp BlinkDetector.cpp FeatureDetector.cpp Alert.cpp 
+# Linux linker parameters and include directories
+ifeq ($(UNAME), Linux)
+	LINKER = -L/usr/local/lib -L/opt/local/lib -lm -ldl -lgthread-2.0 -lfann -lboost_filesystem -lboost_system -lgsl -lgslcblas
+	INCLUDES = -I/usr/local/include
+	INCLUDE_GCH = -include Prefix.hpp
+endif
 
+# Mac OS X linker parameters and include directories
+ifeq ($(UNAME), Darwin)
+	LINKER = -L/opt/local/lib -lm -ldl -lgthread-2.0 -lfann -lboost_filesystem-mt -lboost_system-mt -lgsl -lgslcblas
+	INCLUDES = -I/usr/local/include
+	INCLUDE_GCH = -include Prefix.hpp
+endif
+
+sources = opengazer.cpp Calibrator.cpp GazeTrackerGtk.cpp HeadTracker.cpp LeastSquares.cpp EyeExtractor.cpp GazeTracker.cpp MainGazeTracker.cpp OutputMethods.cpp PointTracker.cpp FaceDetector.cpp GazeArea.cpp TrackingSystem.cpp Containers.cpp WindowPointer.cpp Point.cpp utils.cpp BlinkDetector.cpp FeatureDetector.cpp mir.cpp GameWindow.cpp Application.cpp Video.cpp Detection.cpp Command.cpp
 objects = $(patsubst %.cpp,%.o,$(sources))
 
+.PHONY: all clean_all clean clean_gch
+
 %.o.depends: %.cpp
-	g++ -MM $< > $@
+	$(CMD_PREFIX)g++ -MM $< > $@
 
-%.o: %.cpp 
-	g++ -c $(CPPFLAGS) -o $@ `pkg-config cairomm-1.0 opencv gtkmm-2.4 --cflags` $(INCLUDES) $< 
+%.o: %.cpp
+	$(CMD_PREFIX)g++ -c -o $@ $(INCLUDES) $(INCLUDE_GCH) $< `pkg-config cairomm-1.0 opencv gtkmm-2.4 --cflags` $(CPPFLAGS)
 
-opengazer: 	$(objects)
-	g++ $(CPPFLAGS) -o $@ `pkg-config cairomm-1.0 opencv gtkmm-2.4 --libs`  $(LINKER) $^
+all: Prefix.hpp.gch opengazer
 
-include $(patsubst %.cpp,%.o.depends,$(sources))
+Prefix.hpp.gch: Prefix.hpp
+	$(CMD_PREFIX)g++ -c -o $@ $< `pkg-config opencv gtkmm-2.4 --cflags` $(CPPFLAGS)
 
-TAGS: always
-	etags *.cpp *.h
+opengazer: $(objects)
+	$(CMD_PREFIX)g++ -o $@ $^ `pkg-config cairomm-1.0 opencv gtkmm-2.4 --libs` $(LINKER) $(CPPFLAGS)
 
-ship: always
-	mkdir $(VERSION) || rm -fr $(VERSION)/*
-	cp LICENSE README Makefile calpoints.txt haarcascade_frontalface_alt.xml $$(for file in $$(cat $(addsuffix .depends,$(objects))) ; do test -f $$file && echo $$file ; done | sort -u) $(VERSION)/
-	tar czf $(VERSION).tar.gz $(VERSION)
-	cp $(VERSION).tar.gz README /home/ftp/pub/www/opengazer/
+clean_all: clean clean_gch
 
-.PHONY: always ship
+clean:
+	$(CMD_PREFIX)rm -rf opengazer
+	$(CMD_PREFIX)rm -rf *.o
+	$(CMD_PREFIX)rm -rf *.o.depends
+
+clean_gch:
+	$(CMD_PREFIX)rm -rf Prefix.hpp.gch
+

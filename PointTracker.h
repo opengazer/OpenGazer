@@ -1,48 +1,42 @@
 #pragma once
 
-#include <opencv/cv.h>
-#include <vector>
-#include <vgl/vgl_homg_point_2d.h>
-#include "utils.h"
+#include <boost/scoped_ptr.hpp>
 
-using namespace std;
-typedef vgl_vector_2d<double> HomPoint;
+#include "Point.h"
 
-class TrackingException: public exception {};
+class TrackingException: public std::exception {};
 
 class PointTracker {
 public:
-    static const int eyepoint1 = 0;
-    static const int eyepoint2 = 1;
-    vector<char> status;
-    vector<CvPoint2D32f> origpoints, currentpoints, lastpoints;
+	static const int eyePoint1 = 0;
+	static const int eyePoint2 = 1;
+	std::vector<uchar> status;
+	std::vector<cv::Point2f> origPoints, currentPoints, lastPoints;
 
- private:
-    static const int win_size = 11;
-    int flags;
+	PointTracker(const cv::Size &size);
+	void clearTrackers();
+	void addTracker(const Point &point);
+	void updateTracker(int id, const Point &point);
+	void removeTracker(int id);
+	int getClosestTracker(const Point &point);
+	void track(const cv::Mat &frame, int pyramidDepth=1);
+	void retrack(const cv::Mat &frame, int pyramidDepth=1);
+	int countActivePoints();
+	bool areAllPointsActive();
+	int pointCount();
+	std::vector<Point> getPoints(const std::vector<cv::Point2f> PointTracker::*points, bool allPoints=true);
+	void draw(cv::Mat &canvas);
+	void normalizeOriginalGrey();
 
-    scoped_ptr<IplImage> grey, orig_grey, pyramid, orig_pyramid,
-	last_grey, last_pyramid;
+	void save(std::string filename, std::string newname, const cv::Mat frame);
+	void load(std::string filename, std::string newname, const cv::Mat frame);
+	void saveImage();
 
-    void synchronizepoints();
-
-public:
-    PointTracker(const CvSize &size);
-    void cleartrackers();
-    void addtracker(const Point &point);
-    void updatetracker(int id, const Point &point);
-    void removetracker(int id);
-    int getClosestTracker(const Point &point);
-    void track(const IplImage *frame, int pyramiddepth=1);
-    int countactivepoints(void);
-    bool areallpointsactive(void);
-    int pointcount();
-    void draw(IplImage *canvas);
-
-    vector<HomPoint> 
-	getpoints(const vector<CvPoint2D32f> PointTracker::*points, 
-		  bool allpoints=true);
-
-    void save(string filename, string newname, const IplImage *frame);
-    void load(string filename, string newname, const IplImage *frame);
+private:
+	static const int _winSize = 11;
+	int _flags;
+	cv::Mat _grey, _origGrey, _lastGrey;
+	
+	void synchronizePoints();
 };
+

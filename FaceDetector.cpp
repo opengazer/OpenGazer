@@ -1,59 +1,44 @@
 #include "FaceDetector.h"
+#include "utils.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <assert.h>
-#include <math.h>
-#include <float.h>
-#include <limits.h>
-#include <time.h>
-#include <ctype.h>
+FaceDetector FaceDetector::faceDetector;
 
-FaceDetector FaceDetector::facedetector;
-
-FaceDetector::FaceDetector(char *cascadename):
-    cascade((CvHaarClassifierCascade*)cvLoad(cascadename, 0, 0, 0)),
-    storage(cvCreateMemStorage(0))
-{}
+FaceDetector::FaceDetector(char *cascadeName)
+{
+	_cascade.load(cascadeName);
+}
 
 
 FaceDetector::~FaceDetector() {
-    cvReleaseMemStorage(&storage);
-    // fixme: release the cascade somehow
+	// fixme: release the cascade somehow
 }
 
-vector<CvRect> FaceDetector::detect(const IplImage *img) {
-    double scale = 1.3;
-    IplImage* gray = cvCreateImage( cvSize(img->width,img->height), 8, 1 );
-    IplImage* small_img = 
-	cvCreateImage( cvSize( cvRound (img->width/scale),
-			       cvRound (img->height/scale)), 8, 1 );
-    int i;
+cv::Rect FaceDetector::detect(const cv::Mat img) {
+	cv::Rect largestObject(0, 0, 0, 0);
 
-    cvCvtColor( img, gray, CV_BGR2GRAY );
-    cvResize( gray, small_img, CV_INTER_LINEAR );
-    cvEqualizeHist( small_img, small_img );
-    cvClearMemStorage( storage );
+	try {
+		double scale = 1.3;
+		cv::Mat grayImage;
+		cv::Mat smallImage;
+		std::vector<cv::Rect> results;
 
-    CvSeq* faces = 
-	cvHaarDetectObjects( small_img, cascade, storage,
-			     1.1, 2, 0/*CV_HAAR_DO_CANNY_PRUNING*/,
-			     cvSize(30, 30) );
+		Utils::convertAndResize(img, grayImage, smallImage, scale);
 
-    vector<CvRect> result;
-    for( i = 0; i < (faces ? faces->total : 0); i++ ) {
-	CvRect *rect = (CvRect*)cvGetSeqElem( faces, i );
-	result.push_back(cvRect((int)(rect->x * scale),
-				(int)(rect->y * scale),
-				(int)(rect->width * scale),
-				(int)(rect->height * scale)));
-    }
+		_cascade.detectMultiScale(grayImage, results, 1.1, 2, 0, cv::Size(30, 30));
 
-    cvReleaseImage(&gray);
-    cvReleaseImage(&small_img);
-//     cvReleaseSeq(&faces);
+		for (int i = 0; i < results.size(); i++) {
+			cv::Rect temp = results[0];
 
-    return result;
+			if((temp.width * temp.height) > (largestObject.width*largestObject.height)) {
+				largestObject = temp;
+			}
+		}
+	}
+	catch (std::exception &ex) {
+		std::cout << ex.what() << std::endl;
+		return largestObject;
+	}
+
+	return largestObject;
 }
 

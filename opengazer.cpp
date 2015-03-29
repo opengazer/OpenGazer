@@ -1,22 +1,23 @@
-#include <gtkmm.h>
-#include <iostream>
+#define BOOST_FILESYSTEM_VERSION 3
+
+//#define EXPERIMENT_MODE
+//#define DEBUG
+
 #include "GazeTrackerGtk.h"
-#include "OutputMethods.h"
-#include "GtkStore.h"
 
-int main(int argc, char **argv)
-{
-    Gtk::Main kit(argc, argv);
-    Glib::thread_init();
+int main(int argc, char **argv) {
+	try {
+		Gtk::Main kit(argc, argv);
+		Glib::thread_init();
 
-//     CalibrationWindow calwindow;
-//     calwindow.show();
+		GazeTrackerGtk window(argc, argv);
+		window.show();
 
-    GazeTrackerGtk helloworld(argc, argv);
+		Gtk::Main::run(window);
+	}
+	catch (Utils::QuitNow) {
+		std::cout << "Caught it!\n";
+	}
 
-    helloworld.show();
-
-    Gtk::Main::run(helloworld);
-    
-    return 0;
+	return 0;
 }

@@ -1,64 +1,113 @@
 #pragma once
+
+#include <boost/scoped_ptr.hpp>
+
 #include "utils.h"
 #include "GaussianProcess.cpp"
 
-typedef MeanAdjustedGaussianProcess<SharedImage> ImProcess;
-
 struct Targets {
-    vector<Point> targets;
+	std::vector<Point> targets;
 
-    Targets(void) {};
-    Targets(vector<Point> const& targets): targets(targets) {}
-    int getCurrentTarget(Point point);
+	Targets();
+	Targets(std::vector<Point> const &targets);
+	int getCurrentTarget(Point point);
 };
 
 struct CalTarget {
-    Point point;
-    SharedImage image, origimage;
+	Point point;
+	Utils::SharedImage image;
+	Utils::SharedImage origImage;
 
-    CalTarget();
-    CalTarget(Point point, const IplImage* image, const IplImage* origimage);
-
-    void save(CvFileStorage* out, const char* name=NULL);
-    void load(CvFileStorage* in, CvFileNode *node);
+	CalTarget();
+	CalTarget(Point point, const cv::Mat *image, const cv::Mat *origImage);
+	void save(CvFileStorage *out, const char *name=NULL);
+	void load(CvFileStorage *in, CvFileNode *node);
 };
 
 struct TrackerOutput {
-    Point gazepoint;
-    Point target;
-    int targetid;
+	Point gazePoint;
+	Point gazePointLeft;
 
-    TrackerOutput(Point gazepoint, Point target, int targetid);
+	// Neural network
+	Point nnGazePoint;
+	Point nnGazePointLeft;
+	Point target;
+	Point actualTarget;
+	int targetId;
+	int frameId;
+	//bool outputError;
+
+	TrackerOutput(Point gazePoint, Point target, int targetId);
+	void setActualTarget(Point actual);
+	//void setErrorOutput(bool show);
+	void setFrameId(int id);
 };
 
 class GazeTracker {
-    scoped_ptr<ImProcess> gpx, gpy;
-    vector<CalTarget> caltargets;
-    scoped_ptr<Targets> targets;
-    
-    static double imagedistance(const IplImage *im1, const IplImage *im2);
-    static double covariancefunction(const SharedImage& im1, 
-				     const SharedImage& im2);
+	typedef MeanAdjustedGaussianProcess<Utils::SharedImage> ImProcess;
 
-    void updateGPs(void);
+	static const int _nnEyeWidth = 16;
+	static const int _nnEyeHeight = 8;
 
 public:
-    TrackerOutput output;
+	TrackerOutput output;
+	std::ostream* outputFile;
 
-    GazeTracker(): targets(new Targets), 
-	output(Point(0,0), Point(0,0), -1) {}
+	GazeTracker();
+	bool isActive();
+	void clear();
+	void addExemplar(Point point, const cv::Mat *eyeFloat, const cv::Mat *eyeGrey);
+	void addExemplarLeft(Point point, const cv::Mat *eyeFloat, const cv::Mat *eyeGrey);
 
-    bool isActive() { return gpx.get() && gpy.get(); }
+	// Neural network
+	void addSampleToNN(Point point, const cv::Mat *eyeFloat, const cv::Mat *eyeGrey);
+	void addSampleToNNLeft(Point point, const cv::Mat *eyeFloat, const cv::Mat *eyeGrey);
+	void trainNN();
 
-    void clear();
-    void addExemplar(Point point, 
-		     const IplImage *eyefloat, const IplImage *eyegrey);
-    void draw(IplImage *canvas, int eyedx, int eyedy);
-    void save(void);
-    void save(CvFileStorage *out, const char *name);
-    void load(void);
-    void load(CvFileStorage *in, CvFileNode *node);
-    void update(const IplImage *image);
-    int getTargetId(Point point);
-    Point getTarget(int id);
+	// Calibration error removal
+	void removeCalibrationError(Point &estimate);
+	void boundToScreenCoordinates(Point &estimate);
+	void checkErrorCorrection();
+
+	void draw(cv::Mat &canvas, int eyeDX, int eyeDY);
+	void save();
+	void save(CvFileStorage *out, const char *name);
+	void load();
+	void load(CvFileStorage *in, CvFileNode *node);
+	void update(const cv::Mat *image, const cv::Mat *eyeGrey);
+	void updateLeft(const cv::Mat *image, const cv::Mat *eyeGrey);
+	Point getTarget(int id);
+	int getTargetId(Point point);
+	void calculateTrainingErrors();
+	void printTrainingErrors();
+
+private:
+	boost::scoped_ptr<ImProcess> _gaussianProcessX;
+	boost::scoped_ptr<ImProcess> _gaussianProcessY;
+	std::vector<CalTarget> _calTargets;
+	boost::scoped_ptr<Targets> _targets;
+
+	// ONUR DUPLICATED CODE FOR LEFT EYE
+	boost::scoped_ptr<ImProcess> _gaussianProcessXLeft;
+	boost::scoped_ptr<ImProcess> _gaussianProcessYLeft;
+	std::vector<CalTarget> _calTargetsLeft;
+	//boost::scoped_ptr<Targets> _targetsLeft;
+
+	// Neural network
+	struct fann *_ANN;
+	struct fann *_ANNLeft;
+	int _inputCount;
+	int _inputCountLeft;
+
+	// Calibration error removal
+	double _betaX, _gammaX, _betaY, _gammaY, _sigv[100];	// Max 100 calibration points
+	double _xv[100][2], _fvX[100], _fvY[100];
+
+	cv::Mat *_nnEye;
+
+	static double imageDistance(const cv::Mat *image1, const cv::Mat *image2);
+	static double covarianceFunction(const Utils::SharedImage &image1, const Utils::SharedImage &image2);
+
+	void updateGaussianProcesses();
+	void updateGaussianProcessesLeft();
 };
